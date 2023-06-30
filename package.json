@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "@lit-labs/motion": "^1.0.3",
-    "lit": "^2.7.2"
+    "lit": "^2.7.2",
+    "material-symbols": "^0.8.1"
   },
   "devDependencies": {
     "prettier": "^2.8.8",

@@ -2,17 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/ndx.svg" />
+    <link href="/node_modules/material-symbols/index.css" rel="stylesheet" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NWB Extension Builder</title>
-    <link rel="stylesheet" href="./src/index.css" />
+    <link rel="stylesheet" href="/src/index.css"/>
     <script type="module" src="/src/my-element.ts"></script>
-    <script type="module" src="/src/elems.ts"></script>
-  </head>
+    <script type="module" src="/src/main.ts"></script>
   <body>
     <ndx-titlebar title="NWB Extension Builder" subtitle="Dev"></ndx-titlebar>
-    <ndx-carousel>
-      <ndx-type-builder></ndx-type-builder>
+    <ndx-carousel id="carousel">
+      <ndx-types-builder></ndx-types-builder>
       <ndx-namespace></ndx-namespace>
       <ndx-schema></ndx-schema>
       <div style="background: red">Hey there</div>

@@ -49,7 +49,7 @@ export class NdxCarousel extends LitElement {
       <div class="contextbar">
         <svg
           id="back"
-          class=${this.slide == 0 && this.backEnabled ? "" : "enabled"}
+          class=${this.slide != 0 && this.backEnabled ? "enabled" : ""}
           @click=${this.slideBack}
           height="${this.buttonSize}"
           width="${this.buttonSize}"
@@ -62,9 +62,9 @@ export class NdxCarousel extends LitElement {
         <div class="subtitle">${this.subtitle}</div>
         <svg
           id="next"
-          class=${this.slide == this.length && this.nextEnabled
-            ? ""
-            : "enabled"}
+          class=${this.slide != this.length && this.nextEnabled
+            ? "enabled"
+            : ""}
           @click=${this.slideNext}
           height="${this.buttonSize}"
           width="${this.buttonSize}"

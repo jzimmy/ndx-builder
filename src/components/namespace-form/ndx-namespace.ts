@@ -1,7 +1,7 @@
 import { LitElement, css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { AuthorTable } from "./author-table";
-import { buttonStyles } from "./buttons";
+import { buttonStyles } from "../generic/buttons";
 export { AuthorTable };
 
 @customElement("ndx-namespace")

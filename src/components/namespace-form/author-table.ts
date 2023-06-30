@@ -1,7 +1,7 @@
 import { LitElement, html, css } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { map } from "lit/directives/map.js";
-import { buttonStyles } from "./buttons";
+import { buttonStyles } from "../generic/buttons";
 
 @customElement("author-table")
 export class AuthorTable extends LitElement {

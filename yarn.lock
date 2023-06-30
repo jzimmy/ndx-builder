@@ -194,6 +194,11 @@ lit@^2.0.0, lit@^2.7.2:
     lit-element "^3.3.0"
     lit-html "^2.7.0"
 
+material-symbols@^0.8.1:
+  version "0.8.1"
+  resolved "https://registry.yarnpkg.com/material-symbols/-/material-symbols-0.8.1.tgz#53b0f026086f43632a56416a634a92da426548f5"
+  integrity sha512-hJszgoT33GamNWfuH5GvO8vW+UgHs7SyloJbIfAQQ2KH8iEuQ0PgTdyFQFpVNdlDS3jm4wonswtKB8khGCSDgQ==
+
 nanoid@^3.3.6:
   version "3.3.6"
   resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.6.tgz#443380c856d6e9f9824267d960b4236ad583ea4c"
