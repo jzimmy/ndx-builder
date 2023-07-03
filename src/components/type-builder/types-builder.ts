@@ -1,7 +1,7 @@
 import { LitElement, html, css } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { NdxCarousel } from "../generic/ndx-carousel";
-import { TypeConstructor } from "./typedef";
+import { TypedefConstructor } from "./typedef";
 
 @customElement("ndx-types-builder")
 export class NdxTypesBuilder extends LitElement {
@@ -25,7 +25,7 @@ export class NdxTypesBuilder extends LitElement {
   static styles = css`
     :host {
       display: grid;
-      background-size: 80px 80px;
+      background-size: 60px 60px;
       background-image: linear-gradient(to right, #ddd 1px, transparent 1px),
         linear-gradient(to bottom, #ddd 1px, transparent 1px);
       grid-template-columns: 1fr 5fr;
@@ -74,4 +74,4 @@ export class NdxTypeBar extends LitElement {
   `;
 }
 
-export { TypeConstructor };
+export { TypedefConstructor as TypeConstructor };

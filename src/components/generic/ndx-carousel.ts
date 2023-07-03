@@ -82,8 +82,8 @@ export class NdxCarousel extends LitElement {
 
   static styles = css`
     :host {
-      width: 100%;
-      height: 100%;
+      overflow: hidden;
+      flex: 1;
       display: flex;
       flex-direction: column;
     }
