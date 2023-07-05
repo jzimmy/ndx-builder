@@ -1,121 +1,108 @@
 // TODO refactor TypedefConstructor into abstract class
 // add implementations for group and dataset
-import { LitElement, html, css } from "lit";
+import { LitElement, html, css, TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { symbols } from "../../styles";
-import { assertUnreachable } from "../../main";
 import { map } from "lit/directives/map.js";
 import { DatasetTypeDef, Defaultable, GroupTypeDef } from "../../nwb/spec";
+import { NdxTypesBuilder } from "./types-builder";
+import { assertUnreachable } from "../../main";
 
 type TypedefKind = "GROUP" | "DATASET";
 type Typedef = ["GROUP", GroupTypeDef] | ["DATASET", DatasetTypeDef];
 
-@customElement("typedef-constructor")
-export class TypedefConstructor extends LitElement {
+abstract class TypedefConstructor extends LitElement {
   @property({ type: Boolean })
   minimize = false;
 
   @state()
-  kind: TypedefKind = "GROUP";
+  showKindSelector = false;
 
-  datasetRequiredFields() {
-    return html``;
-  }
+  abstract capitalizedName: string;
+  abstract kind: TypedefKind;
+  abstract icon: TemplateResult<1>;
+  abstract requiredFields(): TemplateResult<1>;
+  abstract advancedFields(): TemplateResult<1>;
+  abstract subtree(): TemplateResult<1>;
+  abstract readFields(): Typedef;
 
-  datasetAdvancedFields() {
-    return html``;
-  }
+  private switchKind(kind: TypedefKind) {
+    // if switch is called
+    // delete this element and create another typedef constructor in the parent
+    if (kind == this.kind) return;
 
-  groupRequiredFields() {
-    return html``;
-  }
+    const parent = document.querySelector(
+      "ndx-types-builder"
+    )! as NdxTypesBuilder;
+    parent.destroyTypedefConstructor();
 
-  groupAdvancedFields() {
-    return html`<label for="name">Name</label>
-      <input name="name" type="text" />
-      <label for="default-name">Default Name</label>
-      <input name="default-name" type="checkbox" />`;
-  }
-
-  fillGroupFields(groupTypedef: GroupTypeDef) {
-    const [groupName, isDefaultName] = groupTypedef.name as Defaultable<string>;
-    const query = this.renderRoot.querySelector;
-    const nameInput = query('input[name="name"]')! as HTMLInputElement;
-    const defaultbox = query('input[name="default-name"]')! as HTMLInputElement;
-    nameInput.value = groupName;
-    defaultbox.checked = isDefaultName;
-  }
-
-  groups: HTMLElement[] = [];
-  attribs: HTMLElement[] = [];
-  datasets: HTMLElement[] = [];
-  links: HTMLElement[] = [];
-
-  groupSubtree() {
-    return html`
-      <subtree-branch .elems=${this.groups} id="groups">
-        <span slot="icon" class="material-symbols-outlined large">folder</span>
-      </subtree-branch>
-      <subtree-branch .elems=${this.datasets} id="datasets">
-        <span slot="icon" class="material-symbols-outlined large">dataset</span>
-      </subtree-branch>
-      <subtree-branch .elems=${this.attribs} id="attributes">
-        <span slot="icon" class="material-symbols-outlined large"
-          >edit_note</span
-        >
-      </subtree-branch>
-      <subtree-branch .elems=${this.links} id="links" lastBranch="true">
-        <span slot="icon" class="material-symbols-outlined large">link</span>
-      </subtree-branch>
-    `;
-  }
-
-  icon = "folder";
-  fillFields = this.fillGroupFields;
-  requiredFields = this.groupRequiredFields;
-  advancedFields = this.groupAdvancedFields;
-  subtree = this.groupSubtree;
-  readFields = () => {};
-
-  switchKind() {
-    console.log("switching kind");
-    switch (this.kind) {
+    switch (kind) {
       case "GROUP":
-        this.requiredFields = this.datasetRequiredFields;
-        this.advancedFields = this.datasetAdvancedFields;
-        break;
+        return parent.addGroupTypedefConstructor();
       case "DATASET":
-        this.requiredFields = this.datasetRequiredFields;
-        this.advancedFields = this.datasetAdvancedFields;
-        break;
+        return parent.addDatasetTypedefConstructor();
       default:
-        assertUnreachable(this.kind);
+        assertUnreachable(kind);
     }
   }
 
-  render() {
+  private destroy() {
+    const parent = document.querySelector(
+      "ndx-types-builder"
+    )! as NdxTypesBuilder;
+    parent.destroyTypedefConstructor();
+  }
+
+  private kindSelector() {
+    return html`<div class="selector">
+      <div
+        class=${this.kind == "GROUP" ? "selected" : ""}
+        @click=${() => this.switchKind("GROUP")}
+      >
+        <span class="material-symbols-outlined">folder</span>Group
+      </div>
+      <div
+        class=${this.kind == "DATASET" ? "selected" : ""}
+        @click=${() => this.switchKind("DATASET")}
+      >
+        <span class="material-symbols-outlined">dataset</span>Dataset
+      </div>
+    </div>`;
+  }
+
+  protected render() {
     return html`
       <!-- Top row with minimize and close buttons -->
       <div class="row">
         <span class="material-symbols-outlined">minimize</span>
-        <span class="material-symbols-outlined">close</span>
+        <span class="material-symbols-outlined" @click=${this.destroy}
+          >close</span
+        >
       </div>
       <!-- Central grid with typedef parameters -->
       <div id="type" class="grid">
         <div id="standard-fields">
           <!-- Top row with kind, typename -->
           <div class="row">
-            <div id="kind" @click=${this.switchKind}>
-              <span class="material-symbols-outlined">${this.icon}</span>
+            <div
+              id="kind"
+              @click=${() => (this.showKindSelector = !this.showKindSelector)}
+            >
+              ${this.showKindSelector ? this.kindSelector() : html``}
+              ${this.icon}
               <span class="material-symbols-outlined">expand_more</span>
             </div>
-            <input name="typename" type="text" placeholder="New type name" />
+            <input
+              name="typename"
+              type="text"
+              placeholder="New ${this.capitalizedName.toLowerCase()} type name"
+            />
           </div>
           <!-- Description -->
           <span class="description">
             <textarea
               name="description"
-              placeholder="Describe this ${this.kind}"
+              placeholder="Describe this ${this.capitalizedName.toLowerCase()}"
             ></textarea>
           </span>
           <!-- Required fields appears below descriptions -->
@@ -125,7 +112,7 @@ export class TypedefConstructor extends LitElement {
             <div id="incType">Pick a type</div>
           </div>
         </div>
-        <!-- vertical line break -->
+        <!-- vertical line break for advanced fields -->
         <div id="advanced-fields">
           <div>Advanced fields:</div>
           ${this.advancedFields()}
@@ -147,6 +134,7 @@ export class TypedefConstructor extends LitElement {
         width: min-content;
         height: min-content;
         margin: 5em 5em;
+        margin-top: 1.5em;
       }
 
       #savebtn {
@@ -268,12 +256,158 @@ export class TypedefConstructor extends LitElement {
         font-size: 30px;
       }
 
-      .DEBUG {
-        border: 2px solid red;
-        padding-botton: auto;
+      #kind {
+        position: relative;
+      }
+
+      .selector {
+        display: flex;
+        flex-direction: column;
+        top: -0.2em;
+        left: -0.2em;
+        width: 120px;
+        padding: 0.5em;
+        background: #fff;
+        border: 2px solid #555;
+        border-radius: 0.5em;
+        box-shadow: 3px 3px 10px #99a;
+        position: absolute;
+      }
+
+      .selector > div {
+        display: flex;
+        flex-direction: row;
+      }
+
+      .selector > div.selected,
+      .selector > div.selected > span {
+        font-weight: bold;
+      }
+
+      .selector:hover > div,
+      .selector:hover > div > span {
+        font-weight: 300;
+      }
+
+      .selector:hover > div:hover,
+      .selector:hover > div:hover > span {
+        font-weight: bold;
+      }
+
+      .selector > div > span {
+        margin-right: 0.5em;
       }
     `,
   ];
+}
+
+@customElement("group-typedef-constructor")
+export class GroupTypedefConstructor extends TypedefConstructor {
+  minimize = false;
+  kind: TypedefKind = "GROUP";
+  icon = html`<span class="material-symbols-outlined">folder</span>`;
+  capitalizedName = "Group";
+
+  groups: HTMLElement[] = [];
+  attribs: HTMLElement[] = [];
+  datasets: HTMLElement[] = [];
+  links: HTMLElement[] = [];
+
+  requiredFields() {
+    return html``;
+  }
+
+  readFields(): never {
+    throw new Error("Method not implemented.");
+  }
+
+  advancedFields() {
+    return html`<label for="name">Name</label>
+      <input name="name" type="text" />
+      <label for="default-name">Default Name</label>
+      <input name="default-name" type="checkbox" />`;
+  }
+
+  fillGroupFields(groupTypedef: GroupTypeDef): void {
+    const [groupName, isDefaultName] = groupTypedef.name as Defaultable<string>;
+    const query = this.renderRoot.querySelector;
+    const nameInput = query('input[name="name"]')! as HTMLInputElement;
+    const defaultbox = query('input[name="default-name"]')! as HTMLInputElement;
+    nameInput.value = groupName;
+    defaultbox.checked = isDefaultName;
+  }
+
+  subtree() {
+    return html`
+      <subtree-branch .elems=${this.groups} id="groups">
+        <span slot="icon" class="material-symbols-outlined large">folder</span>
+      </subtree-branch>
+      <subtree-branch .elems=${this.datasets} id="datasets">
+        <span slot="icon" class="material-symbols-outlined large">dataset</span>
+      </subtree-branch>
+      <subtree-branch .elems=${this.attribs} id="attributes">
+        <span slot="icon" class="material-symbols-outlined large"
+          >edit_note</span
+        >
+      </subtree-branch>
+      <subtree-branch .elems=${this.links} id="links" lastBranch="true">
+        <span slot="icon" class="material-symbols-outlined large">link</span>
+      </subtree-branch>
+    `;
+  }
+}
+
+@customElement("dataset-typedef-constructor")
+export class DatasetTypedefConstructor extends TypedefConstructor {
+  minimize = false;
+  kind: TypedefKind = "DATASET";
+  icon = html`<span class="material-symbols-outlined">dataset</span>`;
+  capitalizedName = "Dataset";
+
+  attribs: HTMLElement[] = [];
+
+  requiredFields() {
+    return html`
+      <label for="dtype">Data Type</label>
+      <input name="dtype" type="text" />
+      <br />
+      <label for="shape">Axes sizes</label>
+      <input name="shape" type="text" />
+      <br />
+      <label for="dims">Axes labels</label>
+      <input name="dims" type="text" />
+    `;
+  }
+
+  readFields(): never {
+    throw new Error("Method not implemented.");
+  }
+
+  advancedFields() {
+    return html`<label for="name">Name</label>
+      <input name="name" type="text" />
+      <label for="default-name">Default Name</label>
+      <input name="default-name" type="checkbox" /> `;
+  }
+
+  fillGroupFields(groupTypedef: GroupTypeDef): void {
+    const [groupName, isDefaultName] = groupTypedef.name as Defaultable<string>;
+    const query = this.renderRoot.querySelector;
+    const nameInput = query('input[name="name"]')! as HTMLInputElement;
+    const defaultbox = query('input[name="default-name"]')! as HTMLInputElement;
+    nameInput.value = groupName;
+    defaultbox.checked = isDefaultName;
+  }
+
+  subtree() {
+    return html`
+      <subtree-branch .elems=${this.attribs} id="attributes" lastBranch="true">
+        <span slot="icon" class="material-symbols-outlined large"
+          >edit_note</span
+        >
+      </subtree-branch>
+    `;
+  }
 }
 
 @customElement("subtree-branch")
@@ -318,7 +452,7 @@ export class SubtreeBranch extends LitElement {
         display: flex;
         flex-direction: row;
         --upper-break: 3em;
-        padding-left: 2em;
+        padding-left: 4em;
       }
 
       :host > div {

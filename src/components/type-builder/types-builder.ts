@@ -1,13 +1,40 @@
 import { LitElement, html, css } from "lit";
-import { customElement, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { NdxCarousel } from "../generic/ndx-carousel";
-import { TypedefConstructor } from "./typedef";
+import { DatasetTypedefConstructor, GroupTypedefConstructor } from "./typedef";
 import { colors, symbols } from "../../styles";
 
 @customElement("ndx-types-builder")
 export class NdxTypesBuilder extends LitElement {
   @state()
   complete: boolean = false;
+
+  @query("#board")
+  board!: HTMLElement;
+
+  destroyTypedefConstructor() {
+    const constructor = this.board.querySelector("#typedef-constructor");
+    console.log(this.board);
+    if (constructor) constructor.remove();
+  }
+
+  addGroupTypedefConstructor() {
+    console.log(this.board);
+    const constructor = this.board.children.length > 0;
+    if (constructor) return;
+    const groupTypedef = new GroupTypedefConstructor();
+    groupTypedef.id = "typedef-constructor";
+    this.board.appendChild(groupTypedef);
+  }
+
+  addDatasetTypedefConstructor() {
+    console.log(this.board);
+    const constructor = this.board.children.length > 0;
+    if (constructor) return;
+    const groupTypedef = new DatasetTypedefConstructor();
+    groupTypedef.id = "typedef-constructor";
+    this.board.appendChild(groupTypedef);
+  }
 
   render() {
     const carousel = document.getElementById("carousel") as NdxCarousel;
@@ -16,9 +43,13 @@ export class NdxTypesBuilder extends LitElement {
     }
 
     return html`
-      <ndx-type-bar></ndx-type-bar>
+      <ndx-type-bar
+        .addfn=${() => this.addGroupTypedefConstructor()}
+      ></ndx-type-bar>
       <div id="board">
-        <typedef-constructor></typedef-constructor>
+        <dataset-typedef-constructor
+          id="typedef-constructor"
+        ></dataset-typedef-constructor>
       </div>
     `;
   }
@@ -42,11 +73,14 @@ export class NdxTypesBuilder extends LitElement {
 
 @customElement("ndx-type-bar")
 export class NdxTypeBar extends LitElement {
+  @property({ type: Function })
+  addfn!: () => void;
+
   render() {
     return html`
       <h1>My Types</h1>
       <slot></slot>
-      <div id="addbtn">
+      <div @click=${this.addfn} id="addbtn">
         <span class="material-symbols-outlined">add</span>
       </div>
     `;
@@ -87,4 +121,4 @@ export class NdxTypeBar extends LitElement {
   ];
 }
 
-export { TypedefConstructor };
+export { GroupTypedefConstructor };
