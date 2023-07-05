@@ -46,25 +46,27 @@ export class TypedefConstructor extends LitElement {
     defaultbox.checked = isDefaultName;
   }
 
+  groups: HTMLElement[] = [];
+  attribs: HTMLElement[] = [];
+  datasets: HTMLElement[] = [];
+  links: HTMLElement[] = [];
+
   groupSubtree() {
     return html`
-      <subtree-branch id="groups">
+      <subtree-branch .elems=${this.groups} id="groups">
         <span slot="icon" class="material-symbols-outlined large">folder</span>
-        <div slot="subtype">"hi there"</div>
-        <div slot="subtype">"hi there"</div>
-        <div slot="subtype">"hi there"</div>
       </subtree-branch>
-      <!-- <subtree-branch id="datasets">
+      <subtree-branch .elems=${this.datasets} id="datasets">
         <span slot="icon" class="material-symbols-outlined large">dataset</span>
       </subtree-branch>
-      <subtree-branch id="attributes">
+      <subtree-branch .elems=${this.attribs} id="attributes">
         <span slot="icon" class="material-symbols-outlined large"
           >edit_note</span
         >
       </subtree-branch>
-      <subtree-branch id="links" lastBranch="true">
+      <subtree-branch .elems=${this.links} id="links" lastBranch="true">
         <span slot="icon" class="material-symbols-outlined large">link</span>
-      </subtree-branch> -->
+      </subtree-branch>
     `;
   }
 
@@ -279,9 +281,12 @@ export class SubtreeBranch extends LitElement {
   @property({ type: Boolean })
   lastBranch = false;
 
+  @property()
+  elems = [];
+
   render() {
-    console.log(this.shadowRoot!.children);
-    return html`<div class="branch-row">
+    console.log(this.elems, this.elems.length);
+    return html`
       <div class="branchline">
         <div class="elbow">
           <span class="icon">
@@ -290,21 +295,20 @@ export class SubtreeBranch extends LitElement {
         </div>
         ${this.lastBranch ? `` : html` <div class="vert"></div>`}
       </div>
-      <slot name="subtype"></slot>
-      <!-- ${map(
-        [...this.renderRoot.children],
-        (_) =>
+      ${map(
+        this.elems,
+        (elem) =>
           html`
-            <div class="branchelement"><slot></slot></div>
+            <div class="branchelement">${elem}</div>
             <div class="branchelement">
               <div class="horizontal"></div>
             </div>
           `
-      )} -->
+      )}
       <div class="branchelement">
         <span class="material-symbols-outlined">add</span>
       </div>
-    </div>`;
+    `;
   }
 
   static styles = [
@@ -312,26 +316,18 @@ export class SubtreeBranch extends LitElement {
     css`
       :host {
         display: flex;
-        flex-direction: column;
-        --upper-break: 3em;
-      }
-
-      .branch-row {
-        display: flex;
         flex-direction: row;
+        --upper-break: 3em;
+        padding-left: 2em;
       }
 
-      .branch-row > * {
-        margin-right: 0.5em;
-      }
-
-      .branch-row > div {
+      :host > div {
         display: flex;
         flex-direction: column;
       }
 
-      .branch-row > div:first-child {
-        margin-left: 5em;
+      :host > * {
+        margin-right: 0.5em;
       }
 
       .branchline {
