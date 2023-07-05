@@ -1,226 +1,388 @@
+// TODO refactor TypedefConstructor into abstract class
+// add implementations for group and dataset
 import { LitElement, html, css } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
+import { symbols } from "../../styles";
+import { assertUnreachable } from "../../main";
+import { map } from "lit/directives/map.js";
+import { DatasetTypeDef, Defaultable, GroupTypeDef } from "../../nwb/spec";
+
+type TypedefKind = "GROUP" | "DATASET";
+type Typedef = ["GROUP", GroupTypeDef] | ["DATASET", DatasetTypeDef];
 
 @customElement("typedef-constructor")
 export class TypedefConstructor extends LitElement {
   @property({ type: Boolean })
-  showall = true;
+  minimize = false;
 
-  @property({ type: Boolean })
-  isDatasetNotFolder = false;
+  @state()
+  kind: TypedefKind = "GROUP";
 
-  generateRequiredFields() {
+  datasetRequiredFields() {
     return html``;
   }
 
-  generateAdvancedFields() {
+  datasetAdvancedFields() {
+    return html``;
+  }
+
+  groupRequiredFields() {
+    return html``;
+  }
+
+  groupAdvancedFields() {
     return html`<label for="name">Name</label>
       <input name="name" type="text" />
       <label for="default-name">Default Name</label>
-      <input name="default-name" type="checkbox" /> `;
+      <input name="default-name" type="checkbox" />`;
+  }
+
+  fillGroupFields(groupTypedef: GroupTypeDef) {
+    const [groupName, isDefaultName] = groupTypedef.name as Defaultable<string>;
+    const query = this.renderRoot.querySelector;
+    const nameInput = query('input[name="name"]')! as HTMLInputElement;
+    const defaultbox = query('input[name="default-name"]')! as HTMLInputElement;
+    nameInput.value = groupName;
+    defaultbox.checked = isDefaultName;
+  }
+
+  groupSubtree() {
+    return html`
+      <subtree-branch id="groups">
+        <span slot="icon" class="material-symbols-outlined large">folder</span>
+        <div slot="subtype">"hi there"</div>
+        <div slot="subtype">"hi there"</div>
+        <div slot="subtype">"hi there"</div>
+      </subtree-branch>
+      <!-- <subtree-branch id="datasets">
+        <span slot="icon" class="material-symbols-outlined large">dataset</span>
+      </subtree-branch>
+      <subtree-branch id="attributes">
+        <span slot="icon" class="material-symbols-outlined large"
+          >edit_note</span
+        >
+      </subtree-branch>
+      <subtree-branch id="links" lastBranch="true">
+        <span slot="icon" class="material-symbols-outlined large">link</span>
+      </subtree-branch> -->
+    `;
+  }
+
+  icon = "folder";
+  fillFields = this.fillGroupFields;
+  requiredFields = this.groupRequiredFields;
+  advancedFields = this.groupAdvancedFields;
+  subtree = this.groupSubtree;
+  readFields = () => {};
+
+  switchKind() {
+    console.log("switching kind");
+    switch (this.kind) {
+      case "GROUP":
+        this.requiredFields = this.datasetRequiredFields;
+        this.advancedFields = this.datasetAdvancedFields;
+        break;
+      case "DATASET":
+        this.requiredFields = this.datasetRequiredFields;
+        this.advancedFields = this.datasetAdvancedFields;
+        break;
+      default:
+        assertUnreachable(this.kind);
+    }
   }
 
   render() {
-    return html`<div id="type">
+    return html`
+      <!-- Top row with minimize and close buttons -->
+      <div class="row">
+        <span class="material-symbols-outlined">minimize</span>
+        <span class="material-symbols-outlined">close</span>
+      </div>
+      <!-- Central grid with typedef parameters -->
+      <div id="type" class="grid">
         <div id="standard-fields">
+          <!-- Top row with kind, typename -->
           <div class="row">
-            <div id="kind">Folder <span id="dropdownbtn">▾</span></div>
+            <div id="kind" @click=${this.switchKind}>
+              <span class="material-symbols-outlined">${this.icon}</span>
+              <span class="material-symbols-outlined">expand_more</span>
+            </div>
             <input name="typename" type="text" placeholder="New type name" />
           </div>
-          <textarea
-            name="description"
-            placeholder="Describe this ${this.isDatasetNotFolder
-              ? "dataset"
-              : "folder"}"
-          ></textarea>
-          ${this.generateRequiredFields()}
+          <!-- Description -->
+          <span class="description">
+            <textarea
+              name="description"
+              placeholder="Describe this ${this.kind}"
+            ></textarea>
+          </span>
+          <!-- Required fields appears below descriptions -->
+          ${this.requiredFields()}
           <div class="row">
             <div id="extends">extends</div>
             <div id="incType">Pick a type</div>
           </div>
         </div>
+        <!-- vertical line break -->
         <div id="advanced-fields">
           <div>Advanced fields:</div>
-          ${this.generateAdvancedFields()}
+          ${this.advancedFields()}
         </div>
       </div>
-      <typedef-subtree></typedef-subtree>`;
+      <!-- subtree -->
+      ${this.subtree()}
+      <!-- save button fixed to bottom right corner -->
+      <div id="savebtn">Save</div>
+    `;
   }
 
-  static styles = css`
-    :host {
-      display: flex;
-      flex-direction: column;
-      width: min-content;
-      height: min-content;
-      margin: 5em 5em;
-    }
+  static styles = [
+    symbols,
+    css`
+      :host {
+        display: flex;
+        flex-direction: column;
+        width: min-content;
+        height: min-content;
+        margin: 5em 5em;
+      }
 
-    #type {
-      border-radius: 1em;
-      border: 2px solid #aaa;
-      background: #fff;
-      padding: 1em;
-      display: grid;
-      grid-template-columns: 5fr 3fr;
-      min-width: 600px;
-    }
+      #savebtn {
+        position: fixed;
+        bottom: 10%;
+        right: 10%;
+        background: blue;
+        color: #fff;
+        padding: 0.3em 1em;
+        border-radius: 0.5em;
+        cursor: pointer;
+      }
 
-    .row {
-      display: flex;
-      flex-direction: row;
-      width: 100%;
-      align-items: center;
-    }
+      #type {
+        border-radius: 1em;
+        border: 2px solid #aaa;
+        background: #fff;
+        min-width: 600px;
+      }
 
-    #kind {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: none;
-      border: 2px solid #aaa;
-      padding: 0.5em;
-      border-radius: 0.3em;
-      margin-right: 1em;
-    }
+      :host > .row:first-child {
+        box-sizing: border-box;
+        padding: 0.3em 0.8em;
+      }
 
-    input[name="typename"] {
-      width: 100%;
-      font-size: 2em;
-      padding: 0 0.5em;
-    }
+      :host > .row:first-child > .material-symbols-outlined:first-child {
+        margin-left: auto;
+        margin-right: 0.5em;
+      }
 
-    textarea {
-      margin: 1em 0;
-    }
+      :host > .row:first-child > .material-symbols-outlined {
+        font-weight: 500;
+        cursor: pointer;
+      }
 
-    #dropdownbtn {
-    }
+      .grid {
+        display: grid;
+        padding: 1em;
+        grid-template-columns: 5fr 3fr;
+      }
 
-    #incType {
-      padding: 0.3em 0.7em;
-      font-size: 1.5em;
-      border: 2px solid #aaa;
-      border-radius: 0.3em;
-      color: #aaa;
-      cursor: pointer;
-    }
+      .row {
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        align-items: center;
+      }
 
-    #extends {
-      margin-left: auto;
-      margin-right: 0.5em;
-      font-size: 1.5em;
-    }
+      #kind {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: none;
+        border: 1.5px solid #aaa;
+        padding: 0.5em;
+        padding-right: 0.1em;
+        border-radius: 0.3em;
+        margin-right: 1em;
+        cursor: pointer;
+      }
 
-    #advanced-fields {
-      padding: 0.5em 1em;
-      margin-left: 1em;
-      border-left: 1px solid #888;
-    }
+      input[name="typename"] {
+        box-sizing: border-box;
+        width: 100%;
+        margin: 0;
+        font-weight: bold;
+        padding: 0.3em;
+        height: 2.2em;
+        font-size: 1.2em;
+      }
 
-    #advanced-fields > div:first-child {
-      margin-top: -0.5em;
-      margin-bottom: 0.5em;
-    }
+      .description {
+        display: flex;
+      }
 
-    #advanced-fields > label {
-      text-decoration: underline;
-    }
-  `;
+      .description > textarea {
+        margin: 1em 0;
+        padding: 0.3em 0.5em;
+        height: 3em;
+        width: 100%;
+        resize: vertical;
+        font-family: inherit;
+      }
+
+      #incType {
+        padding: 0.3em 0.7em;
+        font-size: 1.5em;
+        border: 2px solid #aaa;
+        border-radius: 0.3em;
+        color: #aaa;
+        cursor: pointer;
+      }
+
+      #extends {
+        margin-left: auto;
+        margin-right: 0.5em;
+        font-size: 1.5em;
+      }
+
+      #advanced-fields {
+        padding: 0.5em 1em;
+        margin-left: 1em;
+        border-left: 1px solid #888;
+      }
+
+      #advanced-fields > input {
+        margin-bottom: 0.5em;
+      }
+
+      #advanced-fields > div:first-child {
+        margin-top: -0.5em;
+        margin-bottom: 0.5em;
+      }
+
+      #advanced-fields > label {
+        text-decoration: underline;
+      }
+
+      .material-symbols-outlined.large {
+        font-size: 30px;
+      }
+
+      .DEBUG {
+        border: 2px solid red;
+        padding-botton: auto;
+      }
+    `,
+  ];
 }
 
-@customElement("typedef-subtree")
-export class TypedefSubtree extends LitElement {
-  subtreeBranch(vert: boolean = true) {
+@customElement("subtree-branch")
+export class SubtreeBranch extends LitElement {
+  @property({ type: Boolean })
+  lastBranch = false;
+
+  render() {
+    console.log(this.shadowRoot!.children);
     return html`<div class="branch-row">
       <div class="branchline">
-        <div class="elbow"></div>
-        ${vert ? html` <div class="vert"></div>` : ``}
+        <div class="elbow">
+          <span class="icon">
+            <slot name="icon"></slot>
+          </span>
+        </div>
+        ${this.lastBranch ? `` : html` <div class="vert"></div>`}
       </div>
+      <slot name="subtype"></slot>
+      <!-- ${map(
+        [...this.renderRoot.children],
+        (_) =>
+          html`
+            <div class="branchelement"><slot></slot></div>
+            <div class="branchelement">
+              <div class="horizontal"></div>
+            </div>
+          `
+      )} -->
       <div class="branchelement">
-        <div class="typedec">newdata</div>
-      </div>
-      <div class="branchelement">
-        <div class="horizontal"></div>
-      </div>
-      <div class="branchelement">
-        <div>Add</div>
+        <span class="material-symbols-outlined">add</span>
       </div>
     </div>`;
   }
 
-  render() {
-    return html`
-      ${this.subtreeBranch()} ${this.subtreeBranch()} ${this.subtreeBranch()}
-      ${this.subtreeBranch(false)}
-    `;
-  }
+  static styles = [
+    symbols,
+    css`
+      :host {
+        display: flex;
+        flex-direction: column;
+        --upper-break: 3em;
+      }
 
-  static styles = css`
-    :host {
-      display: flex;
-      flex-direction: column;
-    }
+      .branch-row {
+        display: flex;
+        flex-direction: row;
+      }
 
-    // DEBUG
-    // :host * {
-    //   border: 1px solid red;
-    // }
+      .branch-row > * {
+        margin-right: 0.5em;
+      }
 
-    .branch-row {
-      display: flex;
-      flex-direction: row;
-    }
+      .branch-row > div {
+        display: flex;
+        flex-direction: column;
+      }
 
-    .branch-row > * {
-      margin-right: 0.5em;
-    }
+      .branch-row > div:first-child {
+        margin-left: 5em;
+      }
 
-    .branch-row > div {
-      display: flex;
-      flex-direction: column;
-    }
+      .branchline {
+        display: flex;
+        flex-direction: column;
+      }
 
-    .branch-row > div:first-child {
-      margin-left: 5em;
-    }
+      .branchline > .elbow {
+        min-height: var(--upper-break);
+        width: 4em;
+        border-bottom: 8px solid #aaa;
+        border-left: 8px solid #aaa;
+        display: flex;
+      }
 
-    .branchline {
-      display: flex;
-      flex-direction: column;
-    }
+      .branchline > .vert {
+        height: 100%;
+        border-left: 8px solid #aaa;
+      }
 
-    .branchline > .elbow {
-      min-height: 4em;
-      width: 4em;
-      border-bottom: 8px solid #aaa;
-      border-left: 8px solid #aaa;
-    }
+      .branchelement > .horizontal {
+        padding-top: 1em;
+        width: 2em;
+        border-bottom: 8px solid #aaa;
+      }
 
-    .branchline > .vert {
-      height: 100%;
-      border-left: 8px solid #aaa;
-    }
+      .branchelement {
+        margin-top: calc(var(--upper-break) - 1em);
+      }
 
-    .branchelement > .horizontal {
-      padding-top: 1em;
-      width: 2em;
-      border-bottom: 8px solid #aaa;
-    }
+      /* add button */
+      .branchelement:last-child {
+        margin-top: calc(var(--upper-break) - 0.6em);
+        border: 2px solid #aaa;
+        margin-bottom: auto;
+        border-radius: 10%;
+        cursor: pointer;
+      }
 
-    .branchelement {
-      margin-top: 3em;
-    }
+      .typedec {
+        height: 200px;
+        background: lightblue;
+      }
 
-    .branchelement:last-child {
-      margin-top: 3.2em;
-      border: 2px solid #aaa;
-      margin-bottom: auto;
-      padding: 0.2em 0.5em;
-    }
-
-    .typedec {
-      height: 200px;
-      background: lightblue;
-    }
-  `;
+      .icon {
+        margin-top: auto;
+        margin-left: auto;
+        margin-right: 0.5em;
+        margin-bottom: 0.3em;
+        cursor: default;
+      }
+    `,
+  ];
 }

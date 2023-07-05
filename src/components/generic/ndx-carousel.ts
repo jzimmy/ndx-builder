@@ -1,5 +1,6 @@
 import { LitElement, css, html, svg } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { colors } from "../../styles";
 
 @customElement("ndx-carousel")
 export class NdxCarousel extends LitElement {
@@ -80,59 +81,62 @@ export class NdxCarousel extends LitElement {
     `;
   }
 
-  static styles = css`
-    :host {
-      overflow: hidden;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
+  static styles = [
+    colors,
+    css`
+      :host {
+        overflow: hidden;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
 
-    .contextbar {
-      display: flex;
-      flex-direction: row;
-      border-bottom: 1px solid black;
-      align-items: center;
-      padding: 20px;
-    }
+      .contextbar {
+        display: flex;
+        flex-direction: row;
+        border-bottom: 1px solid var(--color-border-alt);
+        align-items: center;
+        padding: 20px;
+      }
 
-    svg {
-      border-radius: 25%;
-      margin: 0.3em;
-      padding: 0.2em;
-      transition: 0.2s;
-      opacity: 0.2;
-    }
+      svg {
+        border-radius: 25%;
+        margin: 0.3em;
+        padding: 0.2em;
+        transition: 0.2s;
+        opacity: 0.2;
+      }
 
-    .enabled {
-      opacity: 1;
-    }
+      .enabled {
+        opacity: 1;
+      }
 
-    .enabled:hover {
-      background: #f0f0f0;
-    }
+      .enabled:hover {
+        background: #f0f0f0;
+      }
 
-    .title {
-      margin: 0 1em;
-    }
+      .title {
+        margin: 0 1em;
+      }
 
-    #next {
-      margin-left: auto;
-    }
+      #next {
+        margin-left: auto;
+      }
 
-    #ndx-main {
-      margin-bottom: auto;
-      flex: 1;
-      overflow: hidden;
-      display: flex;
-      flex-direction: row;
-    }
+      #ndx-main {
+        margin-bottom: auto;
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: row;
+      }
 
-    ::slotted(*) {
-      flex-shrink: 0;
-      width: 100%;
-      height: 100%;
-      transition: 0.3s;
-    }
-  `;
+      ::slotted(*) {
+        flex-shrink: 0;
+        width: 100%;
+        height: 100%;
+        transition: 0.3s;
+      }
+    `,
+  ];
 }

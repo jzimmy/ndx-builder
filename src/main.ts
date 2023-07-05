@@ -5,6 +5,10 @@ import { NdxNamespaceBuilder } from "./components/namespace-form/ndx-namespace";
 import { NdxSchema } from "./components/namespace-form/ndx-schema";
 import { NdxTypesBuilder } from "./components/type-builder/types-builder";
 
+export function assertUnreachable(_: never): never {
+  throw new Error("Didn't expect to get here");
+}
+
 declare global {
   interface HTMLElementTagNameMap {
     "ndx-titlebar": NdxTitlebar;

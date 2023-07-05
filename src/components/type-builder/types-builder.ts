@@ -2,6 +2,7 @@ import { LitElement, html, css } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { NdxCarousel } from "../generic/ndx-carousel";
 import { TypedefConstructor } from "./typedef";
+import { colors, symbols } from "../../styles";
 
 @customElement("ndx-types-builder")
 export class NdxTypesBuilder extends LitElement {
@@ -33,6 +34,8 @@ export class NdxTypesBuilder extends LitElement {
 
     #board {
       overflow: scroll;
+      display: flex;
+      flex-direction: column;
     }
   `;
 }
@@ -43,35 +46,45 @@ export class NdxTypeBar extends LitElement {
     return html`
       <h1>My Types</h1>
       <slot></slot>
-      <span id="addbtn">add</span>
+      <div id="addbtn">
+        <span class="material-symbols-outlined">add</span>
+      </div>
     `;
   }
 
-  static styles = css`
-    :host {
-      display: flex;
-      flex-direction: column;
-      background: #fff;
-      border-right: 1px solid #555;
-      padding: auto;
-    }
+  static styles = [
+    colors,
+    symbols,
+    css`
+      :host {
+        display: flex;
+        flex-direction: column;
+        background: var(--color-background-alt);
+        border-right: 1px solid var(--color-border-alt);
+        padding: auto;
+      }
 
-    h1 {
-      margin: 0 0 0.5em 0;
-      padding: 0.2em 0;
-      text-align: center;
-      border-bottom: 1px solid #555;
-    }
+      :host * {
+        background: var(--color-background);
+      }
 
-    #addbtn {
-      cursor: pointer;
-      margin: 0 auto;
-      padding: 0.5em 3em;
-      font-weight: bold;
-      border-radius: 0.5em;
-      border: 1px solid #808080;
-    }
-  `;
+      h1 {
+        margin: 0 0 0.5em 0;
+        padding: 0.2em 0;
+        text-align: center;
+        border-bottom: 1px solid var(--color-border-alt);
+      }
+
+      #addbtn {
+        cursor: pointer;
+        margin: 0 auto;
+        padding: 0.5em 3em;
+        font-weight: bold;
+        border-radius: 0.5em;
+        border: 1px solid var(--color-border-alt);
+      }
+    `,
+  ];
 }
 
-export { TypedefConstructor as TypeConstructor };
+export { TypedefConstructor };

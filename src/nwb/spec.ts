@@ -51,23 +51,27 @@
  */
 
 // [_, true] means default
-type Defaultable<T> = [T, boolean];
+export type Defaultable<T> = [T, boolean];
 
-type Quantity = ["?", null] | ["*", null] | ["+", null] | ["Num", number];
+export type Quantity =
+  | ["?", null]
+  | ["*", null]
+  | ["+", null]
+  | ["Num", number];
 
-enum CoreGroupType {
+export enum CoreGroupType {
   Example,
   New,
   // ...
 }
 
-enum CoreDatasetType {
+export enum CoreDatasetType {
   Example,
   New,
   // ...
 }
 
-enum Dtype {
+export enum PrimitiveDtype {
   i8,
   i16,
   i32,
@@ -81,14 +85,18 @@ enum Dtype {
   Text,
   IsoDatetime,
 }
+export type Dtype =
+  | ["PRIMITIVE", PrimitiveDtype]
+  | ["REFSPEC", GroupType | DatasetType]
+  | ["COMPOUND", Dtype[]];
 
 // Discriminated Union for top level GroupTypes
 // GroupType is a top level NWB Group, that can be used in a neurodataTypeInc and
 // can be used anywhere in a namespace
-type GroupType = ["Core", CoreGroupType] | ["Typedef", GroupTypeDef];
+export type GroupType = ["Core", CoreGroupType] | ["Typedef", GroupTypeDef];
 
 // GroupTypeDef is a GroupType that was created using the NDX API.
-type GroupTypeDef = {
+export type GroupTypeDef = {
   neurodataTypeDef: string;
   neurodataTypeInc: GroupType;
 
@@ -102,12 +110,14 @@ type GroupTypeDef = {
 };
 
 // GroupDec is an instantiation of a GroupType, it does not define a top level type
-type GroupDec = ["ANONYMOUS", AnonymousGroupTypeDec] | ["INC", IncGroupDec];
+export type GroupDec =
+  | ["ANONYMOUS", AnonymousGroupTypeDec]
+  | ["INC", IncGroupDec];
 
 // AnonymousGroupTypeDec is an instantiation of custom GroupDec
 // that is not in the top level. It creates an inline GroupType
 // that cannot be referenced elsewhere.
-type AnonymousGroupTypeDec = {
+export type AnonymousGroupTypeDec = {
   doc: string;
   name: string;
   groups: GroupDec[];
@@ -117,17 +127,19 @@ type AnonymousGroupTypeDec = {
 };
 
 // IncGroupDec is an instantiation of an existing GroupType.
-type IncGroupDec = {
+export type IncGroupDec = {
   doc: string;
   neurodataTypeInc: GroupType;
   quantityOrName: Quantity | string; // if named, quantity is one
 };
 
 // Top level dataset neurodata type
-type DatasetType = ["Core", CoreDatasetType] | ["Typedef", DatasetTypeDef];
+export type DatasetType =
+  | ["Core", CoreDatasetType]
+  | ["Typedef", DatasetTypeDef];
 
 // DatasetTypeDef is a DatasetType that was created using the NDX API.
-type DatasetTypeDef = {
+export type DatasetTypeDef = {
   neurodataTypeDef: string;
   neurodataTypeInc: DatasetType;
 
@@ -142,17 +154,19 @@ type DatasetTypeDef = {
 
 // DatasetDec is an instantiation of a DatasetType. It is used in the
 // subfields of a GroupType
-type DatasetDec = ["Inc", IncDatasetDec] | ["Anonymous", AnonymousDatasetDec];
+export type DatasetDec =
+  | ["Inc", IncDatasetDec]
+  | ["Anonymous", AnonymousDatasetDec];
 
 // An instance of an existing DatasetDec
-type IncDatasetDec = {
+export type IncDatasetDec = {
   doc: string;
   neurodataTypeInc: DatasetType;
   quantityOrName: Quantity | string; // if named, quantity is one
 };
 
 // An instance of a custom dataset that is defined inline
-type AnonymousDatasetDec = {
+export type AnonymousDatasetDec = {
   doc: string;
   name: string;
   shape: [number, string][];
@@ -160,7 +174,7 @@ type AnonymousDatasetDec = {
   attributes: AttributeDec[];
 };
 
-type AttributeDec = {
+export type AttributeDec = {
   name: string;
   doc: string;
   dtype: Dtype;
@@ -169,11 +183,13 @@ type AttributeDec = {
   value?: Defaultable<string>; // boolean flag means value is default
 };
 
-type LinkDec = {
+export type LinkDec = {
   doc: string;
   targetType: GroupType | DatasetType;
   quantityOrName: Quantity | string; // if named, quantity is one
 };
+
+export type TypeDef = ["GROUP", GroupTypeDef] | ["DATASET", DatasetTypeDef];
 
 // required UI componenets
 
