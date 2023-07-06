@@ -24,14 +24,16 @@ export class NdxTitlebar extends LitElement {
       display: flex;
       flex-direction: row;
       padding: 0.5em;
-      background: rgb(120, 190, 255);
+      background: var(--clickable-hover);
     }
     .title {
       font-size: 1.5em;
       font-weight: bold;
       margin-right: 1em;
+      color: #fff;
     }
     .subtitle {
+      color: #fff;
       font-size: 1em;
       font-weight: normal;
     }

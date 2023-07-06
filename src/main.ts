@@ -4,6 +4,7 @@ import { NdxCarousel } from "./components/generic/ndx-carousel";
 import { NdxNamespaceBuilder } from "./components/namespace-form/ndx-namespace";
 import { NdxSchema } from "./components/namespace-form/ndx-schema";
 import { NdxTypesBuilder } from "./components/type-builder/types-builder";
+import { Dropdown } from "./components/generic/dropdown";
 
 export function assertUnreachable(_: never): never {
   throw new Error("Didn't expect to get here");
@@ -17,6 +18,7 @@ declare global {
     "ndx-schema": NdxSchema;
     "ndx-namespace": NdxNamespaceBuilder;
     "ndx-type-builder": NdxTypesBuilder;
+    "click-dropdown": Dropdown;
   }
 }
 
@@ -27,4 +29,5 @@ export {
   NdxSchema,
   NdxNamespaceBuilder,
   NdxTypesBuilder,
+  Dropdown,
 };

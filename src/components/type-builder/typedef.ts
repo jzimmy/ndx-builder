@@ -12,11 +12,11 @@ type TypedefKind = "GROUP" | "DATASET";
 type Typedef = ["GROUP", GroupTypeDef] | ["DATASET", DatasetTypeDef];
 
 abstract class TypedefConstructor extends LitElement {
-  @property({ type: Boolean })
-  minimize = false;
+  @state()
+  private minimize = true;
 
   @state()
-  showKindSelector = false;
+  private showSubtree = false;
 
   abstract capitalizedName: string;
   abstract kind: TypedefKind;
@@ -27,15 +27,11 @@ abstract class TypedefConstructor extends LitElement {
   abstract readFields(): Typedef;
 
   private switchKind(kind: TypedefKind) {
-    // if switch is called
-    // delete this element and create another typedef constructor in the parent
     if (kind == this.kind) return;
-
     const parent = document.querySelector(
       "ndx-types-builder"
     )! as NdxTypesBuilder;
     parent.destroyTypedefConstructor();
-
     switch (kind) {
       case "GROUP":
         return parent.addGroupTypedefConstructor();
@@ -53,21 +49,17 @@ abstract class TypedefConstructor extends LitElement {
     parent.destroyTypedefConstructor();
   }
 
-  private kindSelector() {
-    return html`<div class="selector">
-      <div
-        class=${this.kind == "GROUP" ? "selected" : ""}
-        @click=${() => this.switchKind("GROUP")}
-      >
-        <span class="material-symbols-outlined">folder</span>Group
-      </div>
-      <div
-        class=${this.kind == "DATASET" ? "selected" : ""}
-        @click=${() => this.switchKind("DATASET")}
-      >
-        <span class="material-symbols-outlined">dataset</span>Dataset
-      </div>
+  private renderAdvancedFields() {
+    if (this.minimize) return html``;
+    return html`<div id="advanced-fields">
+      <div>Advanced fields:</div>
+      ${this.advancedFields()}
     </div>`;
+  }
+
+  private renderRequiredFields() {
+    if (this.minimize) return html``;
+    return this.requiredFields();
   }
 
   protected render() {
@@ -80,18 +72,25 @@ abstract class TypedefConstructor extends LitElement {
         >
       </div>
       <!-- Central grid with typedef parameters -->
-      <div id="type" class="grid">
+      <div id="type" class=${this.minimize ? "" : "grid"}>
         <div id="standard-fields">
           <!-- Top row with kind, typename -->
           <div class="row">
-            <div
-              id="kind"
-              @click=${() => (this.showKindSelector = !this.showKindSelector)}
-            >
-              ${this.showKindSelector ? this.kindSelector() : html``}
-              ${this.icon}
-              <span class="material-symbols-outlined">expand_more</span>
-            </div>
+            <click-dropdown style="margin-right: 0.5em;"
+              ><span slot="selected" class="material-symbols-outlined"
+                >${this.kind == "DATASET" ? "dataset" : "folder"}</span
+              >
+              <div class="menuitem" @click=${() => this.switchKind("GROUP")}>
+                <span slot="selected" class="material-symbols-outlined"
+                  >folder</span
+                >Group
+              </div>
+              <div class="menuitem" @click=${() => this.switchKind("DATASET")}>
+                <span slot="selected" class="material-symbols-outlined"
+                  >dataset</span
+                >Dataset
+              </div>
+            </click-dropdown>
             <input
               name="typename"
               type="text"
@@ -105,21 +104,21 @@ abstract class TypedefConstructor extends LitElement {
               placeholder="Describe this ${this.capitalizedName.toLowerCase()}"
             ></textarea>
           </span>
-          <!-- Required fields appears below descriptions -->
-          ${this.requiredFields()}
+          <!-- Extends -->
           <div class="row">
             <div id="extends">extends</div>
             <div id="incType">Pick a type</div>
           </div>
+          <!-- Required fields appears below descriptions -->
+          ${this.renderRequiredFields()}
         </div>
         <!-- vertical line break for advanced fields -->
-        <div id="advanced-fields">
-          <div>Advanced fields:</div>
-          ${this.advancedFields()}
-        </div>
+        ${this.renderAdvancedFields()}
       </div>
       <!-- subtree -->
-      ${this.subtree()}
+      ${this.showSubtree
+        ? this.subtree()
+        : html`<span style="opacity:0.3">${this.subtree()}</span>`}
       <!-- save button fixed to bottom right corner -->
       <div id="savebtn">Save</div>
     `;
@@ -141,8 +140,9 @@ abstract class TypedefConstructor extends LitElement {
         position: fixed;
         bottom: 10%;
         right: 10%;
-        background: blue;
+        background: var(--clickable-hover);
         color: #fff;
+        font-weight: bold;
         padding: 0.3em 1em;
         border-radius: 0.5em;
         cursor: pointer;
@@ -150,8 +150,13 @@ abstract class TypedefConstructor extends LitElement {
 
       #type {
         border-radius: 1em;
-        border: 2px solid #aaa;
+        border: 2px solid var(--border-dark);
         background: #fff;
+        min-width: 350px;
+        padding: 1em;
+      }
+
+      #type.grid {
         min-width: 600px;
       }
 
@@ -170,9 +175,16 @@ abstract class TypedefConstructor extends LitElement {
         cursor: pointer;
       }
 
+      #standard-fields > * {
+        margin-bottom: 0.5em;
+      }
+
+      #standard-fields > .row:last-child {
+        margin-bottom: 0;
+      }
+
       .grid {
         display: grid;
-        padding: 1em;
         grid-template-columns: 5fr 3fr;
       }
 
@@ -199,10 +211,10 @@ abstract class TypedefConstructor extends LitElement {
         box-sizing: border-box;
         width: 100%;
         margin: 0;
-        font-weight: bold;
+        font-weight: 500;
         padding: 0.3em;
-        height: 2.2em;
-        font-size: 1.2em;
+        height: 2em;
+        font-size: 1.3em;
       }
 
       .description {
@@ -210,21 +222,38 @@ abstract class TypedefConstructor extends LitElement {
       }
 
       .description > textarea {
-        margin: 1em 0;
         padding: 0.3em 0.5em;
         height: 3em;
         width: 100%;
         resize: vertical;
         font-family: inherit;
+        font-size: 1em;
+      }
+
+      click-dropdown {
+        color: var(--clickable-hover);
+        border: 2px solid var(--clickable);
+        box-shadow: 0.05em 0.05em 0.2em #ddd;
+      }
+
+      click-dropdown:hover {
+        border: 2px solid var(--clickable-hover);
       }
 
       #incType {
-        padding: 0.3em 0.7em;
+        padding: 0 0.7em;
         font-size: 1.5em;
-        border: 2px solid #aaa;
+        border: 2px solid var(--clickable);
+        box-shadow: 0.05em 0.05em 0.2em #ddd;
         border-radius: 0.3em;
-        color: #aaa;
+        color: var(--clickable-hover);
         cursor: pointer;
+      }
+
+      #incType:hover {
+        color: var(--clickable-hover);
+        border: 2px solid var(--clickable-hover);
+        outline: 1px solid var(--clickable-hover);
       }
 
       #extends {
@@ -274,6 +303,15 @@ abstract class TypedefConstructor extends LitElement {
         position: absolute;
       }
 
+      .menuitem {
+        display: flex;
+        flex-direction: row;
+      }
+
+      .menuitem > span {
+        margin-right: 0.2em;
+      }
+
       .selector > div {
         display: flex;
         flex-direction: row;
@@ -303,7 +341,6 @@ abstract class TypedefConstructor extends LitElement {
 
 @customElement("group-typedef-constructor")
 export class GroupTypedefConstructor extends TypedefConstructor {
-  minimize = false;
   kind: TypedefKind = "GROUP";
   icon = html`<span class="material-symbols-outlined">folder</span>`;
   capitalizedName = "Group";
@@ -359,7 +396,6 @@ export class GroupTypedefConstructor extends TypedefConstructor {
 
 @customElement("dataset-typedef-constructor")
 export class DatasetTypedefConstructor extends TypedefConstructor {
-  minimize = false;
   kind: TypedefKind = "DATASET";
   icon = html`<span class="material-symbols-outlined">dataset</span>`;
   capitalizedName = "Dataset";

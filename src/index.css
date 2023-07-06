@@ -13,6 +13,13 @@
   -webkit-text-size-adjust: 100%;
 
   --some-green: #00ff00;
+  --clickable: #839bf2;
+  --clickable-hover: #535bf2;
+  --border-dark: #88a;
+  --color-background: #ffffff;
+  --color-background-alt: #f7f7f7;
+  --color-border: #505050;
+  --color-border-alt: #a0a0a0;
 }
 
 a {
@@ -35,4 +42,26 @@ body {
   height: 100%;
   min-width: 320px;
   min-height: 100vh;
+}
+
+@font-face {
+  font-family: "Material Symbols Outlined";
+  font-style: normal;
+  src: url("/node_modules/material-symbols/material-symbols-outlined.woff2")
+    format("woff2");
+}
+
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  vertical-align: middle;
 }

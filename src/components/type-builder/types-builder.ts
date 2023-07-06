@@ -110,12 +110,24 @@ export class NdxTypeBar extends LitElement {
       }
 
       #addbtn {
+        background: inherit;
         cursor: pointer;
         margin: 0 auto;
         padding: 0.5em 3em;
-        font-weight: bold;
         border-radius: 0.5em;
-        border: 1px solid var(--color-border-alt);
+        border: 2px solid var(--clickable-hover);
+        color: var(--clickable-hover);
+        box-shadow: 0.05em 0.05em 0.2em #ddd;
+        transition: 0.2s;
+      }
+
+      #addbtn > span {
+        font-weight: 700;
+        background: inherit;
+      }
+
+      #addbtn:hover {
+        box-shadow: 0.1em 0.2em 0.2em #ccc;
       }
     `,
   ];
