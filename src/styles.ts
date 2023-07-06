@@ -1,11 +1,9 @@
 import { css } from "lit";
 
-export const colors = css`
-  :host {
-    --color-background: #ffffff;
-    --color-background-alt: #f7f7f7;
-    --color-border: #505050;
-    --color-border-alt: #a0a0a0;
+export const shadowRootCss = css`
+  :host input:focus,
+  :host textarea:focus {
+    outline: 2px solid #99f;
   }
 `;
 

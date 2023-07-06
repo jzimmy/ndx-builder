@@ -2,7 +2,7 @@ import { LitElement, html, css } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { NdxCarousel } from "../generic/ndx-carousel";
 import { DatasetTypedefConstructor, GroupTypedefConstructor } from "./typedef";
-import { colors, symbols } from "../../styles";
+import { shadowRootCss, symbols } from "../../styles";
 
 @customElement("ndx-types-builder")
 export class NdxTypesBuilder extends LitElement {
@@ -87,7 +87,7 @@ export class NdxTypeBar extends LitElement {
   }
 
   static styles = [
-    colors,
+    shadowRootCss,
     symbols,
     css`
       :host {

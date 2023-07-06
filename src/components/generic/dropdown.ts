@@ -1,6 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { customElement, state } from "lit/decorators.js";
-import { colors, symbols } from "../../styles";
+import { symbols } from "../../styles";
 
 @customElement("click-dropdown")
 export class Dropdown extends LitElement {
@@ -20,7 +20,6 @@ export class Dropdown extends LitElement {
   }
 
   static styles = [
-    colors,
     symbols,
     css`
       :host {

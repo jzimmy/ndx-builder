@@ -2,7 +2,7 @@
 // add implementations for group and dataset
 import { LitElement, html, css, TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { symbols } from "../../styles";
+import { shadowRootCss, symbols } from "../../styles";
 import { map } from "lit/directives/map.js";
 import { DatasetTypeDef, Defaultable, GroupTypeDef } from "../../nwb/spec";
 import { NdxTypesBuilder } from "./types-builder";
@@ -13,7 +13,7 @@ type Typedef = ["GROUP", GroupTypeDef] | ["DATASET", DatasetTypeDef];
 
 abstract class TypedefConstructor extends LitElement {
   @state()
-  private minimize = true;
+  private minimize = false;
 
   @state()
   private showSubtree = false;
@@ -125,6 +125,7 @@ abstract class TypedefConstructor extends LitElement {
   }
 
   static styles = [
+    shadowRootCss,
     symbols,
     css`
       :host {

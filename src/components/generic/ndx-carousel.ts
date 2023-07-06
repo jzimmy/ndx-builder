@@ -1,6 +1,5 @@
 import { LitElement, css, html, svg } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { colors } from "../../styles";
 
 @customElement("ndx-carousel")
 export class NdxCarousel extends LitElement {
@@ -82,7 +81,6 @@ export class NdxCarousel extends LitElement {
   }
 
   static styles = [
-    colors,
     css`
       :host {
         overflow: hidden;
