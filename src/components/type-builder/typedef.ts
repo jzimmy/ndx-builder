@@ -6,7 +6,6 @@ import { shadowRootCss, symbols } from "../../styles";
 import { map } from "lit/directives/map.js";
 import { DatasetTypeDef, Defaultable, GroupTypeDef } from "../../nwb/spec";
 import { NdxTypesBuilder } from "./types-builder";
-// import { IncTypeBrowser } from "./inctype-browser";
 
 type TypedefKind = "GROUP" | "DATASET";
 type Typedef = ["GROUP", GroupTypeDef] | ["DATASET", DatasetTypeDef];

@@ -4,6 +4,7 @@ import { NdxCarousel } from "../generic/ndx-carousel";
 import { DatasetTypedefConstructor, GroupTypedefConstructor } from "./typedef";
 import { shadowRootCss, symbols } from "../../styles";
 import { TypeDef } from "../../nwb/spec";
+import "./inctype-browser";
 // import { IncTypeBrowser } from "./inctype-browser";
 
 @customElement("ndx-types-builder")
