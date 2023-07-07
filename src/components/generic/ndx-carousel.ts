@@ -7,7 +7,7 @@ export class NdxCarousel extends LitElement {
   slide: number = 0;
 
   @property({ type: String })
-  title = "Create a namespace";
+  title = "Extend an NWB Type";
 
   @property({ type: String })
   subtitle = "v0.1.0";

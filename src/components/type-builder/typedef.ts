@@ -6,41 +6,26 @@ import { shadowRootCss, symbols } from "../../styles";
 import { map } from "lit/directives/map.js";
 import { DatasetTypeDef, Defaultable, GroupTypeDef } from "../../nwb/spec";
 import { NdxTypesBuilder } from "./types-builder";
-import { assertUnreachable } from "../../main";
+// import { IncTypeBrowser } from "./inctype-browser";
 
 type TypedefKind = "GROUP" | "DATASET";
 type Typedef = ["GROUP", GroupTypeDef] | ["DATASET", DatasetTypeDef];
 
-abstract class TypedefConstructor extends LitElement {
-  @state()
-  private minimize = false;
+export abstract class TypedefConstructor extends LitElement {
+  @property()
+  minimize = true;
 
   @state()
-  private showSubtree = false;
+  private disableSubtree = true;
 
   abstract capitalizedName: string;
   abstract kind: TypedefKind;
-  abstract icon: TemplateResult<1>;
+  abstract icon: string;
   abstract requiredFields(): TemplateResult<1>;
   abstract advancedFields(): TemplateResult<1>;
   abstract subtree(): TemplateResult<1>;
   abstract readFields(): Typedef;
-
-  private switchKind(kind: TypedefKind) {
-    if (kind == this.kind) return;
-    const parent = document.querySelector(
-      "ndx-types-builder"
-    )! as NdxTypesBuilder;
-    parent.destroyTypedefConstructor();
-    switch (kind) {
-      case "GROUP":
-        return parent.addGroupTypedefConstructor();
-      case "DATASET":
-        return parent.addDatasetTypedefConstructor();
-      default:
-        assertUnreachable(kind);
-    }
-  }
+  hasRequiredFields = true;
 
   private destroy() {
     const parent = document.querySelector(
@@ -51,23 +36,36 @@ abstract class TypedefConstructor extends LitElement {
 
   private renderAdvancedFields() {
     if (this.minimize) return html``;
-    return html`<div id="advanced-fields">
-      <div>Advanced fields:</div>
-      ${this.advancedFields()}
-    </div>`;
-  }
-
-  private renderRequiredFields() {
-    if (this.minimize) return html``;
-    return this.requiredFields();
+    return html`
+      ${this.hasRequiredFields
+        ? html`<div class="optional-fields">
+            <div>Properties:</div>
+            ${this.requiredFields()}
+          </div>`
+        : html``}
+      <div class="optional-fields">
+        <div>Optional fields:</div>
+        ${this.advancedFields()}
+      </div>
+    `;
   }
 
   protected render() {
     return html`
       <!-- Top row with minimize and close buttons -->
       <div class="row">
-        <span class="material-symbols-outlined">minimize</span>
-        <span class="material-symbols-outlined" @click=${this.destroy}
+        <span
+          class="material-symbols-outlined"
+          title=${this.minimize ? "Show more" : "Minimize"}
+          @click=${() => {
+            this.minimize = !this.minimize;
+          }}
+          >${this.minimize ? "expand_content" : "minimize"}</span
+        >
+        <span
+          class="material-symbols-outlined"
+          title="Close"
+          @click=${this.destroy}
           >close</span
         >
       </div>
@@ -76,21 +74,9 @@ abstract class TypedefConstructor extends LitElement {
         <div id="standard-fields">
           <!-- Top row with kind, typename -->
           <div class="row">
-            <click-dropdown style="margin-right: 0.5em;"
-              ><span slot="selected" class="material-symbols-outlined"
-                >${this.kind == "DATASET" ? "dataset" : "folder"}</span
-              >
-              <div class="menuitem" @click=${() => this.switchKind("GROUP")}>
-                <span slot="selected" class="material-symbols-outlined"
-                  >folder</span
-                >Group
-              </div>
-              <div class="menuitem" @click=${() => this.switchKind("DATASET")}>
-                <span slot="selected" class="material-symbols-outlined"
-                  >dataset</span
-                >Dataset
-              </div>
-            </click-dropdown>
+            <span class="material-symbols-outlined" title=${this.kind}
+              >${this.icon}</span
+            >
             <input
               name="typename"
               type="text"
@@ -109,16 +95,15 @@ abstract class TypedefConstructor extends LitElement {
             <div id="extends">extends</div>
             <div id="incType">Pick a type</div>
           </div>
-          <!-- Required fields appears below descriptions -->
-          ${this.renderRequiredFields()}
         </div>
         <!-- vertical line break for advanced fields -->
+        <!-- Required fields appears below descriptions -->
         ${this.renderAdvancedFields()}
       </div>
       <!-- subtree -->
-      ${this.showSubtree
-        ? this.subtree()
-        : html`<span style="opacity:0.3">${this.subtree()}</span>`}
+      ${this.disableSubtree
+        ? html`<span style="opacity:0.3">${this.subtree()}</span>`
+        : this.subtree()}
       <!-- save button fixed to bottom right corner -->
       <div id="savebtn">Save</div>
     `;
@@ -133,8 +118,12 @@ abstract class TypedefConstructor extends LitElement {
         flex-direction: column;
         width: min-content;
         height: min-content;
-        margin: 5em 5em;
+        margin: 5em;
         margin-top: 1.5em;
+      }
+
+      :host([minimize]) {
+        transform: scaleX(30);
       }
 
       #savebtn {
@@ -153,12 +142,7 @@ abstract class TypedefConstructor extends LitElement {
         border-radius: 1em;
         border: 2px solid var(--border-dark);
         background: #fff;
-        min-width: 350px;
         padding: 1em;
-      }
-
-      #type.grid {
-        min-width: 600px;
       }
 
       :host > .row:first-child {
@@ -178,15 +162,21 @@ abstract class TypedefConstructor extends LitElement {
 
       #standard-fields > * {
         margin-bottom: 0.5em;
+        min-width: 350px;
       }
 
       #standard-fields > .row:last-child {
         margin-bottom: 0;
       }
 
+      #standard-fields > .row:first-child > span {
+        font-size: 2.5em;
+        margin-right: 0.3em;
+      }
+
       .grid {
-        display: grid;
-        grid-template-columns: 5fr 3fr;
+        display: flex;
+        flex-direction: row;
       }
 
       .row {
@@ -212,10 +202,10 @@ abstract class TypedefConstructor extends LitElement {
         box-sizing: border-box;
         width: 100%;
         margin: 0;
-        font-weight: 500;
-        padding: 0.3em;
-        height: 2em;
-        font-size: 1.3em;
+        font-weight: 700;
+        color: #333;
+        padding: 0.1em 0.2em;
+        font-size: 1.4em;
       }
 
       .description {
@@ -263,22 +253,24 @@ abstract class TypedefConstructor extends LitElement {
         font-size: 1.5em;
       }
 
-      #advanced-fields {
+      .optional-fields {
+        display: flex;
+        flex-direction: column;
         padding: 0.5em 1em;
         margin-left: 1em;
         border-left: 1px solid #888;
       }
 
-      #advanced-fields > input {
+      .optional-fields > input {
         margin-bottom: 0.5em;
       }
 
-      #advanced-fields > div:first-child {
+      .optional-fields > div:first-child {
         margin-top: -0.5em;
         margin-bottom: 0.5em;
       }
 
-      #advanced-fields > label {
+      .optional-fields > label {
         text-decoration: underline;
       }
 
@@ -343,8 +335,9 @@ abstract class TypedefConstructor extends LitElement {
 @customElement("group-typedef-constructor")
 export class GroupTypedefConstructor extends TypedefConstructor {
   kind: TypedefKind = "GROUP";
-  icon = html`<span class="material-symbols-outlined">folder</span>`;
+  icon = "folder";
   capitalizedName = "Group";
+  hasRequiredFields = false;
 
   groups: HTMLElement[] = [];
   attribs: HTMLElement[] = [];
@@ -398,7 +391,7 @@ export class GroupTypedefConstructor extends TypedefConstructor {
 @customElement("dataset-typedef-constructor")
 export class DatasetTypedefConstructor extends TypedefConstructor {
   kind: TypedefKind = "DATASET";
-  icon = html`<span class="material-symbols-outlined">dataset</span>`;
+  icon = "dataset";
   capitalizedName = "Dataset";
 
   attribs: HTMLElement[] = [];
@@ -421,9 +414,9 @@ export class DatasetTypedefConstructor extends TypedefConstructor {
   }
 
   advancedFields() {
-    return html`<label for="name">Name</label>
+    return html`<label for="name">Default instance name</label>
       <input name="name" type="text" />
-      <label for="default-name">Default Name</label>
+      <label for="default-name">Name Fixed</label>
       <input name="default-name" type="checkbox" /> `;
   }
 

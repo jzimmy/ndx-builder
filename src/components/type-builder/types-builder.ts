@@ -3,11 +3,16 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { NdxCarousel } from "../generic/ndx-carousel";
 import { DatasetTypedefConstructor, GroupTypedefConstructor } from "./typedef";
 import { shadowRootCss, symbols } from "../../styles";
+import { TypeDef } from "../../nwb/spec";
+// import { IncTypeBrowser } from "./inctype-browser";
 
 @customElement("ndx-types-builder")
 export class NdxTypesBuilder extends LitElement {
   @state()
   complete: boolean = false;
+
+  @state()
+  typesEnvironment: TypeDef[] = [];
 
   @query("#board")
   board!: HTMLElement;
@@ -18,23 +23,23 @@ export class NdxTypesBuilder extends LitElement {
     if (constructor) constructor.remove();
   }
 
-  addGroupTypedefConstructor() {
+  addGroupTypedefConstructor = () => {
     console.log(this.board);
     const constructor = this.board.children.length > 0;
     if (constructor) return;
     const groupTypedef = new GroupTypedefConstructor();
     groupTypedef.id = "typedef-constructor";
     this.board.appendChild(groupTypedef);
-  }
+  };
 
-  addDatasetTypedefConstructor() {
+  addDatasetTypedefConstructor = () => {
     console.log(this.board);
     const constructor = this.board.children.length > 0;
     if (constructor) return;
     const groupTypedef = new DatasetTypedefConstructor();
     groupTypedef.id = "typedef-constructor";
     this.board.appendChild(groupTypedef);
-  }
+  };
 
   render() {
     const carousel = document.getElementById("carousel") as NdxCarousel;
@@ -44,12 +49,15 @@ export class NdxTypesBuilder extends LitElement {
 
     return html`
       <ndx-type-bar
-        .addfn=${() => this.addGroupTypedefConstructor()}
-      ></ndx-type-bar>
+        .addGroup=${this.addGroupTypedefConstructor}
+        .addDataset=${this.addDatasetTypedefConstructor}
+      >
+      </ndx-type-bar>
       <div id="board">
-        <dataset-typedef-constructor
+        <inctype-browser></inctype-browser>
+        <!-- <dataset-typedef-constructor
           id="typedef-constructor"
-        ></dataset-typedef-constructor>
+        ></dataset-typedef-constructor> -->
       </div>
     `;
   }
@@ -74,13 +82,22 @@ export class NdxTypesBuilder extends LitElement {
 @customElement("ndx-type-bar")
 export class NdxTypeBar extends LitElement {
   @property({ type: Function })
-  addfn!: () => void;
+  addGroup!: () => void;
+  @property({ type: Function })
+  addDataset!: () => void;
 
   render() {
     return html`
       <h1>My Types</h1>
       <slot></slot>
-      <div @click=${this.addfn} id="addbtn">
+      <div @click=${this.addGroup} class="addbtn">
+        <span>Group</span>
+        <span class="material-symbols-outlined">folder</span>
+        <span class="material-symbols-outlined">add</span>
+      </div>
+      <div @click=${this.addDataset} class="addbtn">
+        <span>Dataset</span>
+        <span class="material-symbols-outlined">dataset</span>
         <span class="material-symbols-outlined">add</span>
       </div>
     `;
@@ -98,22 +115,31 @@ export class NdxTypeBar extends LitElement {
         padding: auto;
       }
 
-      :host * {
+      :host > * {
+        display: flex;
+        flex-direction: row;
+      }
+
+      ::slotted(*) {
         background: var(--color-background);
       }
 
+      :host > div {
+        background: inherit;
+        margin: 0.5em 0.5em;
+      }
+
       h1 {
-        margin: 0 0 0.5em 0;
+        background: var(--color-background);
+        margin: 0;
         padding: 0.2em 0;
-        text-align: center;
+        justify-content: center;
         border-bottom: 1px solid var(--color-border-alt);
       }
 
-      #addbtn {
-        background: inherit;
+      .addbtn {
         cursor: pointer;
-        margin: 0 auto;
-        padding: 0.5em 3em;
+        padding: 0.5em 1em;
         border-radius: 0.5em;
         border: 2px solid var(--clickable-hover);
         color: var(--clickable-hover);
@@ -121,16 +147,19 @@ export class NdxTypeBar extends LitElement {
         transition: 0.2s;
       }
 
-      #addbtn > span {
+      .addbtn > span {
         font-weight: 700;
         background: inherit;
+        margin-left: 0.3em;
       }
 
-      #addbtn:hover {
+      .addbtn > span:first-child {
+        margin-right: auto;
+      }
+
+      .addbtn:hover {
         box-shadow: 0.1em 0.2em 0.2em #ccc;
       }
     `,
   ];
 }
-
-export { GroupTypedefConstructor };

@@ -12,30 +12,39 @@ export class NdxTitlebar extends LitElement {
 
   render() {
     return html`
-      <div class="titlebar">
-        <div class="title">${this.title}</div>
-        <div class="subtitle">${this.subtitle}</div>
-      </div>
+      <div class="title">${this.title}</div>
+      <div class="subtitle">${this.subtitle}</div>
+      <a href="">Need help?</a>
     `;
   }
 
   static styles = css`
-    .titlebar {
+    :host {
       display: flex;
       flex-direction: row;
       padding: 0.5em;
+      align-items: center;
       background: var(--clickable-hover);
+      color: #fff;
     }
+
     .title {
       font-size: 1.5em;
       font-weight: bold;
       margin-right: 1em;
-      color: #fff;
     }
+
     .subtitle {
-      color: #fff;
       font-size: 1em;
       font-weight: normal;
+    }
+
+    :host > a {
+      all: unset;
+      margin-left: auto;
+      margin-right: 3em;
+      text-decoration: underline;
+      cursor: pointer;
     }
   `;
 }
