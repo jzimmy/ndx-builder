@@ -1,14 +1,12 @@
-// TODO refactor TypedefConstructor into abstract class
-// add implementations for group and dataset
 import { LitElement, html, css, TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { shadowRootCss, symbols } from "../../styles";
 import { map } from "lit/directives/map.js";
 import { DatasetTypeDef, Defaultable, GroupTypeDef } from "../../nwb/spec";
 import { NdxTypesBuilder } from "./types-builder";
+import { TypeDef } from "../../nwb/spec";
 
-type TypedefKind = "GROUP" | "DATASET";
-type Typedef = ["GROUP", GroupTypeDef] | ["DATASET", DatasetTypeDef];
+export type TypedefKind = "GROUP" | "DATASET";
 
 export abstract class TypedefConstructor extends LitElement {
   @property()
@@ -23,7 +21,7 @@ export abstract class TypedefConstructor extends LitElement {
   abstract requiredFields(): TemplateResult<1>;
   abstract advancedFields(): TemplateResult<1>;
   abstract subtree(): TemplateResult<1>;
-  abstract readFields(): Typedef;
+  abstract readFields(): TypeDef;
   hasRequiredFields = true;
 
   private destroy() {

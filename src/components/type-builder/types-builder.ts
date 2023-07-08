@@ -55,7 +55,7 @@ export class NdxTypesBuilder extends LitElement {
       >
       </ndx-type-bar>
       <div id="board">
-        <inctype-browser></inctype-browser>
+        <group-inctype-browser></group-inctype-browser>
         <!-- <dataset-typedef-constructor
           id="typedef-constructor"
         ></dataset-typedef-constructor> -->
@@ -69,7 +69,7 @@ export class NdxTypesBuilder extends LitElement {
       background-size: 60px 60px;
       background-image: linear-gradient(to right, #ddd 1px, transparent 1px),
         linear-gradient(to bottom, #ddd 1px, transparent 1px);
-      grid-template-columns: 1fr 5fr;
+      grid-template-columns: 1fr 6fr;
     }
 
     #board {
@@ -113,7 +113,7 @@ export class NdxTypeBar extends LitElement {
         flex-direction: column;
         background: var(--color-background-alt);
         border-right: 1px solid var(--color-border-alt);
-        padding: auto;
+        align-items: center;
       }
 
       :host > * {
@@ -131,6 +131,7 @@ export class NdxTypeBar extends LitElement {
       }
 
       h1 {
+        width: 100%;
         background: var(--color-background);
         margin: 0;
         padding: 0.2em 0;
@@ -139,12 +140,13 @@ export class NdxTypeBar extends LitElement {
       }
 
       .addbtn {
-        cursor: pointer;
+        width: 8em;
         padding: 0.5em 1em;
+        color: var(--clickable-hover);
         border-radius: 0.5em;
         border: 2px solid var(--clickable-hover);
-        color: var(--clickable-hover);
         box-shadow: 0.05em 0.05em 0.2em #ddd;
+        cursor: pointer;
         transition: 0.2s;
       }
 
@@ -155,7 +157,7 @@ export class NdxTypeBar extends LitElement {
       }
 
       .addbtn > span:first-child {
-        margin-right: auto;
+        margin: 0 auto;
       }
 
       .addbtn:hover {

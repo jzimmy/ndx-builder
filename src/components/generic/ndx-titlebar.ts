@@ -24,7 +24,7 @@ export class NdxTitlebar extends LitElement {
       flex-direction: row;
       padding: 0.5em;
       align-items: center;
-      background: var(--clickable-hover);
+      background: var(--clickable);
       color: #fff;
     }
 
@@ -45,6 +45,8 @@ export class NdxTitlebar extends LitElement {
       margin-right: 3em;
       text-decoration: underline;
       cursor: pointer;
+      font-weight: 700;
+      font-size: 1.1em;
     }
   `;
 }
