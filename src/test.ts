@@ -13,10 +13,24 @@ export class TestElem extends CarouselItem {
   complete = true;
 
   render() {
-    return html`<div>
-      <div class="backdrop"></div>
-      <div class="large">hello</div>
-    </div>`;
+    return html`
+      <div class="sidebar">Sidebar</div>
+      <div class="strange-necessary-wrapper">
+        <div class="board">
+          <div class="backdrop"></div>
+          <ul>
+            <div class="large">
+              hello this is more and more andmore andmore andmore andmore
+              andmore andmore andmore andmore andmore
+            </div>
+            <div class="large">
+              hello this is more and more andmore andmore andmore andmore
+              andmore andmore andmore andmore andmore
+            </div>
+          </ul>
+        </div>
+      </div>
+    `;
   }
 
   static styles = css`
@@ -26,25 +40,47 @@ export class TestElem extends CarouselItem {
       overflow: hidden;
     }
 
-    :host > * {
-      outline: 2px solid blue;
+    :host > .strange-necessary-wrapper {
+      flex: 1;
+      overflow: scroll;
+      position: relative;
+    }
+
+    :host > .sidebar {
+      width: 20%;
+      height: 100%;
+    }
+
+    .board {
+      position: relative;
+      border: 2px solid blue;
       width: 100%;
       overflow: scroll;
       display: flex;
     }
 
-    :host > div > * {
+    .board > * {
       margin: 40px;
     }
 
-    .large {
-      flex: 1;
-      font-size: 12em;
-      height: 900px;
-      border: 2px solid green;
+    .board > ul {
+      display: flex;
+      flex-direction: row;
     }
 
-    div.backdrop {
+    .large {
+      flex: 0 0;
+      font-size: 12em;
+      border: 2px solid green;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .large > div {
+      flex-shrink: 0;
+    }
+
+    .board > .backdrop {
       margin: 0;
       top: 0;
       left: 0;

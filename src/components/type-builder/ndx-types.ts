@@ -1,16 +1,37 @@
 import { LitElement, html, css } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
-import { NdxCarousel } from "../generic/ndx-carousel";
-import { DatasetTypedefConstructor, GroupTypedefConstructor } from "./typedef";
-import { shadowRootCss, symbols } from "../../styles";
+import { CarouselItem } from "../generic/carousel";
+import {
+  DatasetTypedefConstructor,
+  GroupTypedefConstructor,
+  TypedefConstructor,
+} from "./typedef";
+import { symbols } from "../../styles";
 import { TypeDef } from "../../nwb/spec";
+import { WebGLBackground } from "../generic/glbackground";
 import "./inctype-browser";
-// import { IncTypeBrowser } from "./inctype-browser";
 
-@customElement("ndx-types-builder")
-export class NdxTypesBuilder extends LitElement {
+declare global {
+  interface HTMLElementTagNameMap {
+    "ndx-types": NdxTypes;
+  }
+}
+
+@customElement("ndx-types")
+export class NdxTypes extends CarouselItem {
+  protected firstUpdated(): void {
+    const truple = (x: number): any => [x, x, x];
+    this.background = new WebGLBackground(
+      this.canvas,
+      truple(0.97),
+      truple(0.9),
+      30,
+      0.08
+    );
+  }
+
   @state()
-  complete: boolean = false;
+  complete: boolean = true;
 
   @state()
   typesEnvironment: TypeDef[] = [];
@@ -18,47 +39,33 @@ export class NdxTypesBuilder extends LitElement {
   @query("#board")
   board!: HTMLElement;
 
-  destroyTypedefConstructor() {
-    const constructor = this.board.querySelector("#typedef-constructor");
-    console.log(this.board);
-    if (constructor) constructor.remove();
-  }
+  @query("canvas", true)
+  canvas!: HTMLCanvasElement;
 
-  addGroupTypedefConstructor = () => {
-    console.log(this.board);
-    const constructor = this.board.children.length > 0;
-    if (constructor) return;
-    const groupTypedef = new GroupTypedefConstructor();
-    groupTypedef.id = "typedef-constructor";
-    this.board.appendChild(groupTypedef);
-  };
+  background: WebGLBackground | null = null;
 
-  addDatasetTypedefConstructor = () => {
-    console.log(this.board);
-    const constructor = this.board.children.length > 0;
-    if (constructor) return;
-    const groupTypedef = new DatasetTypedefConstructor();
-    groupTypedef.id = "typedef-constructor";
-    this.board.appendChild(groupTypedef);
+  addTypedef = (lazyTypedefElem: () => TypedefConstructor) => {
+    if (this.board.querySelector("#typedef")) return;
+    const typedefElem = lazyTypedefElem();
+    typedefElem.id = "typedef";
+    this.board.appendChild(typedefElem);
   };
 
   render() {
-    const carousel = document.getElementById("carousel") as NdxCarousel;
-    if (!this.complete) {
-      carousel.nextEnabled = false;
-    }
-
     return html`
       <ndx-type-bar
-        .addGroup=${this.addGroupTypedefConstructor}
-        .addDataset=${this.addDatasetTypedefConstructor}
+        .addGroup=${() => this.addTypedef(() => new GroupTypedefConstructor())}
+        .addDataset=${() =>
+          this.addTypedef(() => new DatasetTypedefConstructor())}
       >
       </ndx-type-bar>
       <div id="board">
-        <group-inctype-browser></group-inctype-browser>
+        <canvas id="background"></canvas>
+        <!-- <div></div> -->
         <!-- <dataset-typedef-constructor
-          id="typedef-constructor"
+          id="typedef"
         ></dataset-typedef-constructor> -->
+        <!-- <group-inctype-browser></group-inctype-browser> -->
       </div>
     `;
   }
@@ -73,9 +80,32 @@ export class NdxTypesBuilder extends LitElement {
     }
 
     #board {
+      position: relative;
       overflow: scroll;
       display: flex;
       flex-direction: column;
+      padding: 5em;
+      padding-top: 1.5em;
+    }
+
+    canvas {
+      display: block;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    #board > div {
+      background: red;
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
     }
   `;
 }
@@ -105,7 +135,7 @@ export class NdxTypeBar extends LitElement {
   }
 
   static styles = [
-    shadowRootCss,
+    // shadowRootCss,
     symbols,
     css`
       :host {

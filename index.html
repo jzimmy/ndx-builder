@@ -7,15 +7,16 @@
     <title>NWB Extension Builder</title>
     <link rel="stylesheet" href="/src/index.css"/>
     <script type="module" src="/src/main.ts"></script>
+    <script type="module" src="/src/test.ts"></script>
   <body>
-    <ndx-titlebar title="NWB Extension Builder" subtitle="Dev"></ndx-titlebar>
-    <ndx-carousel id="carousel">
-      <ndx-types-builder></ndx-types-builder>
-      <ndx-namespace></ndx-namespace>
-      <ndx-schema></ndx-schema>
+    <title-bar title="NWB Extension Builder" subtitle="Dev"></title-bar>
+    <sliding-carousel id="carousel">
+      <ndx-types></ndx-types>
+      <!-- <ndx-namespace></ndx-namespace>
+      <ndx-schema></ndx-schema> -->
       <div style="background: red">Hey there</div>
       <div style="background: blue">Hi there</div>
       <div style="background: yellow">What's up</div>
-    </ndx-carousel>
+    </sliding-carousel>
   </body>
 </html>

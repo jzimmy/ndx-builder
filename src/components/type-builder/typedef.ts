@@ -1,12 +1,19 @@
 import { LitElement, html, css, TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { shadowRootCss, symbols } from "../../styles";
+import { symbols } from "../../styles";
 import { map } from "lit/directives/map.js";
 import { DatasetTypeDef, Defaultable, GroupTypeDef } from "../../nwb/spec";
-import { NdxTypesBuilder } from "./types-builder";
 import { TypeDef } from "../../nwb/spec";
 
 export type TypedefKind = "GROUP" | "DATASET";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "group-typedef-constructor": GroupTypedefConstructor;
+    "dataset-typedef-constructor": DatasetTypedefConstructor;
+    "subtree-branch": SubtreeBranch;
+  }
+}
 
 export abstract class TypedefConstructor extends LitElement {
   @property()
@@ -24,11 +31,20 @@ export abstract class TypedefConstructor extends LitElement {
   abstract readFields(): TypeDef;
   hasRequiredFields = true;
 
+  private openTypePicker() {
+    const builder = document.querySelector("ndx-types-builder");
+    switch (this.kind) {
+      case "GROUP":
+        const typePicker = document.createElement("group-inctype-browser");
+        builder?.appendChild(typePicker);
+        break;
+      case "DATASET":
+        break;
+    }
+  }
+
   private destroy() {
-    const parent = document.querySelector(
-      "ndx-types-builder"
-    )! as NdxTypesBuilder;
-    parent.destroyTypedefConstructor();
+    this.remove();
   }
 
   private renderAdvancedFields() {
@@ -90,7 +106,7 @@ export abstract class TypedefConstructor extends LitElement {
           <!-- Extends -->
           <div class="row">
             <div id="extends">extends</div>
-            <div id="incType">Pick a type</div>
+            <div @click=${this.openTypePicker} id="incType">Pick a type</div>
           </div>
         </div>
         <!-- vertical line break for advanced fields -->
@@ -107,16 +123,15 @@ export abstract class TypedefConstructor extends LitElement {
   }
 
   static styles = [
-    shadowRootCss,
+    // shadowRootCss,
     symbols,
     css`
       :host {
+        z-index: 1;
         display: flex;
         flex-direction: column;
         width: min-content;
         height: min-content;
-        margin: 5em;
-        margin-top: 1.5em;
       }
 
       :host([minimize]) {
@@ -381,6 +396,18 @@ export class GroupTypedefConstructor extends TypedefConstructor {
       <subtree-branch .elems=${this.links} id="links" lastBranch="true">
         <span slot="icon" class="material-symbols-outlined large">link</span>
       </subtree-branch>
+      <subtree-branch .elems=${this.links} id="links" lastBranch="true">
+        <span slot="icon" class="material-symbols-outlined large">link</span>
+      </subtree-branch>
+      <subtree-branch .elems=${this.links} id="links" lastBranch="true">
+        <span slot="icon" class="material-symbols-outlined large">link</span>
+      </subtree-branch>
+      <subtree-branch .elems=${this.links} id="links" lastBranch="true">
+        <span slot="icon" class="material-symbols-outlined large">link</span>
+      </subtree-branch>
+      <subtree-branch .elems=${this.links} id="links" lastBranch="true">
+        <span slot="icon" class="material-symbols-outlined large">link</span>
+      </subtree-branch>
     `;
   }
 }
@@ -417,8 +444,10 @@ export class DatasetTypedefConstructor extends TypedefConstructor {
       <input name="default-name" type="checkbox" /> `;
   }
 
-  fillGroupFields(groupTypedef: GroupTypeDef): void {
-    const [groupName, isDefaultName] = groupTypedef.name as Defaultable<string>;
+  fillDatasetFields(datasetTypeDef: DatasetTypeDef): void {
+    // TODO
+    const [groupName, isDefaultName] =
+      datasetTypeDef.name as Defaultable<string>;
     const query = this.renderRoot.querySelector;
     const nameInput = query('input[name="name"]')! as HTMLInputElement;
     const defaultbox = query('input[name="default-name"]')! as HTMLInputElement;
@@ -446,7 +475,6 @@ export class SubtreeBranch extends LitElement {
   elems = [];
 
   render() {
-    console.log(this.elems, this.elems.length);
     return html`
       <div class="branchline">
         <div class="elbow">

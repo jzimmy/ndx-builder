@@ -1,9 +1,14 @@
 import { LitElement, css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
-// TODO: Fix subtitle vertical alignment
-@customElement("ndx-titlebar")
-export class NdxTitlebar extends LitElement {
+declare global {
+  interface HTMLElementMap {
+    "title-bar": Titlebar;
+  }
+}
+
+@customElement("title-bar")
+export class Titlebar extends LitElement {
   @property()
   title = "";
 

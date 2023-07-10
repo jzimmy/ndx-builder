@@ -1,20 +1,13 @@
 import { css } from "lit";
 
-export const shadowRootCss = css`
-  :host input:focus,
-  :host textarea:focus {
-    outline: 2px solid #99f;
-  }
-`;
+// export const shadowRootCss = css`
+//   :host input:focus,
+//   :host textarea:focus {
+//     outline: 2px solid #99f;
+//   }
+// `;
 
 export const symbols = css`
-  @font-face {
-    font-family: "Material Symbols Outlined";
-    font-style: normal;
-    src: url("/node_modules/material-symbols/material-symbols-outlined.woff2")
-      format("woff2");
-  }
-
   .material-symbols-outlined {
     font-family: "Material Symbols Outlined";
     font-weight: normal;

@@ -1,8 +1,8 @@
-import { LitElement, html, css, TemplateResult } from "lit";
+import { LitElement, html, css } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { symbols } from "../../styles";
 import { map } from "lit/directives/map.js";
-import { NdxTypesBuilder } from "./types-builder";
+import { NdxTypes } from "./ndx-types";
 import {
   DatasetTypeDef,
   Defaultable,
@@ -27,12 +27,12 @@ const coreModules: IncTypeGroup[] = [
     ],
   },
   {
-    name: "Behavioural",
+    name: "Behavioral",
     types: [
-      { typename: "Behavioural1" },
-      { typename: "Behavioural2" },
-      { typename: "Behavioural3" },
-      { typename: "Behavioural4" },
+      { typename: "Behavioral1" },
+      { typename: "Behavioral2" },
+      { typename: "Behavioral3" },
+      { typename: "Behavioral4" },
     ],
   },
   {
@@ -85,7 +85,7 @@ export class GroupIncTypeBrowser extends LitElement {
 
   readonly kind: TypedefKind = "GROUP";
 
-  parent = document.querySelector("ndx-types-builder")! as NdxTypesBuilder;
+  parent = document.querySelector("ndx-types-builder")! as NdxTypes;
 
   private continueFn() {
     const [tableKind, tableItems] = this.types;
@@ -154,36 +154,43 @@ export class GroupIncTypeBrowser extends LitElement {
     this.types = ["TYPES", []];
   }
 
-  render() {
-    const canContinue = this.canContinue();
-    let table: TemplateResult<1>;
+  private table() {
     // preconstruct the table to appease typescript exhaustive typechecking
     const [tableKind, tableItems] = this.types;
     switch (tableKind) {
       case "TYPES":
-        table = html`${map(
-          tableItems,
-          (t, i) => html`<div
-            class=${this.selectedIdx == i ? "picked" : ""}
-            @click=${() => (this.selectedIdx = i)}
-          >
-            ${t.typename}
-          </div>`
-        )}`;
-        break;
+        return html` ${this.typeCategory != "NONE"
+            ? html`<h2>Types</h2>`
+            : html``}
+          <div class="table">
+            ${map(
+              tableItems,
+              (t, i) => html`<div
+                class=${this.selectedIdx == i ? "picked" : ""}
+                @click=${() => (this.selectedIdx = i)}
+              >
+                ${t.typename}
+              </div>`
+            )}
+          </div>`;
       case "CORE_MODULES":
-        table = html`${map(
-          tableItems,
-          (t, i) => html`<div
-            class=${this.selectedIdx == i ? "picked" : ""}
-            @click=${() => (this.selectedIdx = i)}
-          >
-            ${t.name}
-          </div>`
-        )}`;
-        break;
+        return html`<h2>Modules</h2>
+          <div class="table">
+            ${map(
+              tableItems,
+              (t, i) => html`<div
+                class=${this.selectedIdx == i ? "picked" : ""}
+                @click=${() => (this.selectedIdx = i)}
+              >
+                ${t.name}
+              </div>`
+            )}
+          </div>`;
     }
+  }
 
+  render() {
+    const canContinue = this.canContinue();
     return html`<h1>
         Pick a ${this.kind.toLocaleLowerCase()} to extend
         <span @click=${this.remove} class="material-symbols-outlined"
@@ -195,7 +202,7 @@ export class GroupIncTypeBrowser extends LitElement {
           @click=${this.pickCoreType}
           class=${this.typeCategory == "CORE" ? "picked" : ""}
         >
-          Core Types
+          NWB Core Types
         </div>
         ${this.parent.typesEnvironment.length > 0
           ? html`<div
@@ -212,7 +219,7 @@ export class GroupIncTypeBrowser extends LitElement {
           No Base Type
         </div>
       </div>
-      <div class="table">${table}</div>
+      ${this.table()}
       <div
         @click=${canContinue ? this.continueFn : () => {}}
         class=${canContinue ? "enabled" : ""}
@@ -225,21 +232,30 @@ export class GroupIncTypeBrowser extends LitElement {
     symbols,
     css`
       :host {
-        background: var(--color-background);
-        border: 1px solid var(--color-border);
+        position: absolute;
+        background: var(--color-background-alt);
+        border: 2px solid var(--color-border-alt);
+        border-radius: 2em;
         display: flex;
         flex-direction: column;
-        padding: 1em 2em;
+        padding-bottom: 2em;
       }
 
-      :host > div {
+      :host > * {
         display: flex;
         flex-direction: row;
         justify-content: center;
       }
 
       h1 {
-        padding: 0;
+        box-sizing: border-box;
+        background: var(--color-background);
+        padding: 1em 2em;
+        border-bottom: 1px solid var(--color-border-alt);
+      }
+
+      h1,
+      h2 {
         margin: 0;
         display: flex;
         flex-direction: row;
@@ -263,6 +279,8 @@ export class GroupIncTypeBrowser extends LitElement {
         color: var(--clickable);
         cursor: pointer;
         border-radius: 0.5em;
+        background: var(--color-background);
+        border: 1px solid var(--color-border-alt);
       }
 
       .core-or-mine > div.picked,
@@ -287,6 +305,7 @@ export class GroupIncTypeBrowser extends LitElement {
         min-width: 5em;
         border: 2px solid var(--color-border-alt);
         margin: 0.2em;
+        background: var(--color-background);
       }
 
       :host > div:last-child {
