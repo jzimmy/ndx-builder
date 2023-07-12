@@ -37,6 +37,8 @@ export class PlaygroundElems extends LitElement {
 
   render() {
     return html`
+      <link-dec></link-dec>
+      <attribute-dec></attribute-dec>
       <inc-group-dec></inc-group-dec>
       <anon-group-dec></anon-group-dec>
       <inc-dataset-dec></inc-dataset-dec>
