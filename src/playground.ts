@@ -2,8 +2,9 @@ import { LitElement, html, css, PropertyValueMap } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { symbols } from "./styles";
 import { classMap } from "lit/directives/class-map.js";
-import { TypeDef } from "./nwb/spec";
 import { map } from "lit/directives/map.js";
+import "./typedef";
+import "./inc-typedec";
 
 function assertUnreachable(_: never): never {
   throw new Error("Didn't expect to get here");
@@ -36,6 +37,14 @@ export class PlaygroundElems extends LitElement {
 
   render() {
     return html`
+      <inc-group-dec></inc-group-dec>
+      <anon-group-dec></anon-group-dec>
+      <inc-dataset-dec></inc-dataset-dec>
+      <anon-dataset-dec></anon-dataset-dec>
+      <inc-dataset-dec></inc-dataset-dec>
+      <group-typedef></group-typedef>
+      <dataset-typedef></dataset-typedef>
+      <type-elem></type-elem>
       <mytypes-bar></mytypes-bar>
       <inctype-browser></inctype-browser>
       <light-button>Light Button</light-button>
@@ -235,7 +244,6 @@ export class NdxInput extends LitElement {
         top: 50%;
         transform: translateY(-50%);
         right: var(--in-margin);
-        color: var(--color-border-alt);
       }
 
       #errmsg {
@@ -520,6 +528,7 @@ export class LightButton extends LitElement {
         transition: 0.2s;
         cursor: pointer;
         display: flex;
+        justify-content: center;
       }
 
       :host([disabled]) {
@@ -582,332 +591,6 @@ export class AddTypedefButton extends LitElement {
         top: 0;
         left: 0;
         transform: translate(0.5em, -0.8em);
-      }
-    `,
-  ];
-}
-
-@customElement("type-def")
-export class GroupTypedef extends LitElement {
-  @state()
-  minimize = true;
-
-  fill(_typedef: TypeDef) {}
-
-  private body() {
-    return html`
-      <div class=${classMap({ body: true, minimize: this.minimize })}>
-        <div class="body-section">
-            <div class="row">
-                <span class="material-symbols-outlined">folder</span>
-                <ndx-input .label=${"New type name"} id="typename"><ndx-input>
-            </div>
-            <ndx-textarea></ndx-textarea>
-            <div class="row">
-                <div>extends</div>
-                <light-button>Pick a type</light-button>
-            </div>
-        </div>
-        ${this.requiredFields()}
-        ${this.optionalFields()}
-      </div>
-    `;
-  }
-
-  private requiredFields() {
-    return html``;
-  }
-
-  private optionalFields() {
-    return html`
-    <div class=${classMap({
-      "body-section": true,
-      minimize: this.minimize,
-    })}
-        >
-        <div>Optional properties:</div>
-        <ndx-input info="The default name will be applied when you declare an instance of this type" label="Default instance name"></ndx-input>
-        <label class="checkbox" for="fixed-name">Fixed name
-            <input name="fixed-name" type="checkbox"></input>
-            <hover-icon>If checked, the name of the instance will be fixed and cannot be changed.</hover-icon>
-        </label>
-    </div>
-    `;
-  }
-
-  private subtree(enabled: boolean) {
-    const disabled = !enabled;
-    return html`
-      <subtree-branch ?disabled=${disabled} id="groups">
-        <span slot="icon" class="material-symbols-outlined large">folder</span>
-      </subtree-branch>
-      <subtree-branch ?disabled=${disabled} id="datasets">
-        <span slot="icon" class="material-symbols-outlined large">dataset</span>
-      </subtree-branch>
-      <subtree-branch ?disabled=${disabled} id="attributes">
-        <span slot="icon" class="material-symbols-outlined large"
-          >edit_note</span
-        >
-      </subtree-branch>
-      <subtree-branch ?disabled=${disabled} id="links" lastBranch="true">
-        <span slot="icon" class="material-symbols-outlined large">link</span>
-      </subtree-branch>
-    `;
-  }
-
-  render() {
-    return html`
-      <div class="row">
-        <span
-          class="material-symbols-outlined"
-          @click=${() => (this.minimize = !this.minimize)}
-          >${this.minimize ? "expand_content" : "minimize"}</span
-        >
-        <span class="material-symbols-outlined">close</span>
-      </div>
-      ${this.body()} ${this.subtree(true)}
-    `;
-  }
-
-  static styles = [
-    symbols,
-    css`
-      :host {
-        padding: 0.5em;
-      }
-
-      :host * {
-        transition: 0.2s;
-      }
-
-      .row {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-      }
-
-      :host > .row:first-child > span:first-child {
-        margin-left: auto;
-      }
-
-      :host > .row:first-child {
-        margin-bottom: 0.5em;
-        margin-right: 0.5em;
-      }
-
-      :host > .row:first-child > span {
-        cursor: pointer;
-        user-select: none;
-        margin: 0 0.3em;
-      }
-
-      :host > .row:first-child > span:hover {
-        color: var(--clickable-hover);
-        background: var(--background-light-hover);
-        padding: 0.05em;
-        border-radius: 0.2em;
-      }
-
-      .body {
-        display: flex;
-        border: 1px solid var(--color-border);
-        padding: 1em;
-        border-radius: 0.8em;
-        box-shadow: 0 0 20px 5px #eee;
-      }
-
-      .body-section {
-        display: flex;
-        flex-direction: column;
-        border-left: 1px solid var(--color-border-alt);
-        padding: 0.5em;
-      }
-
-      .body-section:first-child {
-        border-left: none;
-        padding: 0;
-      }
-
-      .body-section.minimize {
-        display: none;
-      }
-
-      .body-section > .row > span {
-        font-size: 40px;
-        margin-left: 0.2em;
-      }
-
-      .body-section > .row > #typename {
-        flex: 1 1 auto;
-        font-size: 1.2em;
-        width: 100%;
-        font-weight: 600;
-      }
-
-      .body-section > ndx-textarea {
-        flex: 1 1 auto;
-        font-size: 1em;
-        width: 100%;
-      }
-
-      .body-section > .row:last-child {
-        margin-left: auto;
-      }
-
-      .body-section > .row:last-child > light-button {
-        margin: 0.3em 0.5em;
-      }
-
-      .body-section:not(:first-child) > div:first-child {
-        margin-left: 0.5em;
-      }
-
-      .checkbox {
-        margin-left: 1em;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-      }
-
-      .checkbox > input {
-        margin-top: auto;
-        margin-bottom: 0.4em;
-        margin-left: 0.5em;
-        border: 1px solid var(--color-border-alt);
-      }
-
-      .checkbox > input:checked {
-        background: var(--clickable);
-      }
-
-      .checkbox > input:checked:hover {
-        background: var(--clickable-hover);
-      }
-
-      label {
-        color: var(--color-border);
-      }
-
-      label > hover-icon {
-        margin-left: 0.3em;
-      }
-    `,
-  ];
-}
-
-@customElement("subtree-branch")
-export class SubtreeBranch extends LitElement {
-  @property({ type: Boolean })
-  lastBranch = false;
-
-  @property()
-  elems = [];
-
-  @property({ type: Boolean, reflect: true })
-  disabled = false;
-
-  render() {
-    return html`
-      <div class="branchline">
-        <div class="elbow">
-          <span class="icon">
-            <slot name="icon"></slot>
-          </span>
-        </div>
-        ${this.lastBranch ? `` : html` <div class="vert"></div>`}
-      </div>
-      ${map(
-        this.elems,
-        (elem) =>
-          html`
-            <div class="branchelement">${elem}</div>
-            <div class="branchelement"><div class="horizontal"></div></div>
-          `
-      )}
-      <div class="branchelement">
-        <light-button ?disabled=${this.disabled}>
-          <span class="material-symbols-outlined" style="font-size:1.3em"
-            >add</span
-          >
-        </light-button>
-      </div>
-    `;
-  }
-
-  static styles = [
-    symbols,
-    css`
-      :host {
-        display: flex;
-        flex-direction: row;
-        --upper-break: 3em;
-        padding-left: 4em;
-      }
-
-      :host([disabled]) {
-        opacity: 0.4;
-      }
-
-      :host > div {
-        display: flex;
-        flex-direction: column;
-      }
-
-      :host > * {
-        margin-right: 0.5em;
-      }
-
-      .branchline {
-        display: flex;
-        flex-direction: column;
-      }
-
-      .branchline > .elbow {
-        min-height: var(--upper-break);
-        width: 4em;
-        border-bottom: 2px solid var(--color-border);
-        border-left: 2px solid var(--color-border);
-        display: flex;
-      }
-
-      .branchline > .vert {
-        height: 100%;
-        border-left: 2px solid var(--color-border);
-      }
-
-      .branchelement > .horizontal {
-        padding-top: 1em;
-        width: 2em;
-        border-bottom: 2px solid var(--color-border);
-      }
-
-      .branchelement {
-        margin-top: calc(var(--upper-break) - 1em);
-      }
-
-      /* add button */
-      .branchelement:last-child {
-        margin-top: calc(var(--upper-break) - 0.8em);
-        margin-bottom: auto;
-        cursor: pointer;
-        opacity: 0.8;
-      }
-
-      .branchelement:last-child > light-button {
-        padding: 0.1em 0.3em;
-      }
-
-      .typedec {
-        height: 200px;
-        background: lightblue;
-      }
-
-      .icon {
-        margin-top: auto;
-        margin-left: auto;
-        margin-right: 0.5em;
-        margin-bottom: 0.3em;
-        cursor: default;
       }
     `,
   ];
