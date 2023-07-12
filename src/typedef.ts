@@ -670,14 +670,6 @@ export class SubtreeBranch extends LitElement {
       ::slotted([slot="elems"]) {
         padding-right: 2em;
       }
-
-      /* after pseudo elem */
-      ::slotted([slot="elems"]) {
-        content="hi";
-        width: 200px;
-        height: 200px;
-        background: red;
-      }
     `,
   ];
 }
