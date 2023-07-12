@@ -13,7 +13,6 @@ import {
   LinkDec,
 } from "./nwb/spec";
 import { styleMap } from "lit/directives/style-map.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 
 abstract class TypedecElement extends TypeElement {
   protected abstract icon: string;
@@ -22,9 +21,6 @@ abstract class TypedecElement extends TypeElement {
   static styles = [
     TypedefElement.styles,
     css`
-      :host {
-      }
-
       .body-section > .row:first-child {
         margin-bottom: 0.3em;
       }
@@ -419,4 +415,25 @@ export class AttributeDecElement extends LeafDecElement {
       </div>
     `;
   }
+
+  static styles = [
+    super.styles,
+    // css`
+    //   :host {
+    //     border: 2px solid red;
+    //     position: relative;
+    //     padding-right: 3em;
+    //   }
+
+    //   :host::after {
+    //     content: "";
+    //     position: absolute;
+    //     background: var(--color-border);
+    //     top: 50%;
+    //     right: 0;
+    //     height: 2px;
+    //     width: 40px;
+    //   }
+    // `,
+  ];
 }

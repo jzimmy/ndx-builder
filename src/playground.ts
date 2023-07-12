@@ -4,7 +4,7 @@ import { symbols } from "./styles";
 import { classMap } from "lit/directives/class-map.js";
 import { map } from "lit/directives/map.js";
 import "./typedef";
-import "./inc-typedec";
+import "./decs";
 
 function assertUnreachable(_: never): never {
   throw new Error("Didn't expect to get here");
