@@ -22,4 +22,8 @@ export const symbols = css`
     direction: ltr;
     vertical-align: middle;
   }
+
+  .material-symbols-outlined.large {
+    font-size: 40px;
+  }
 `;

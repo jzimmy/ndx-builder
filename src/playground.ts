@@ -5,6 +5,7 @@ import { classMap } from "lit/directives/class-map.js";
 import { map } from "lit/directives/map.js";
 import "./typedef";
 import "./decs";
+import "./experiments";
 
 function assertUnreachable(_: never): never {
   throw new Error("Didn't expect to get here");
@@ -37,6 +38,8 @@ export class PlaygroundElems extends LitElement {
 
   render() {
     return html`
+      <attrib-dec-elem></attrib-dec-elem>
+      <link-dec-elem></link-dec-elem>
       <link-dec></link-dec>
       <attribute-dec></attribute-dec>
       <inc-group-dec></inc-group-dec>
