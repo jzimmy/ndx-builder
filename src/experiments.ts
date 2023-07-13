@@ -1,292 +1,187 @@
-import {
-  LitElement,
-  html,
-  css,
-  CSSResultGroup,
-  TemplateResult,
-  PropertyValueMap,
-} from "lit";
-import {
-  customElement,
-  property,
-  query,
-  queryAssignedElements,
-  state,
-} from "lit/decorators.js";
+// todo implement onDelete for all
+import { html, TemplateResult } from "lit";
+import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
-import { symbols } from "./styles";
-
-@customElement("type-elem-skeleton")
-export class TypeElem extends LitElement {
-  @property({ type: Boolean, reflect: true })
-  minimize: boolean = true;
-
-  @state()
-  protected subtreeEnabled = false;
-
-  @property({ type: Function })
-  onDelete = (target: EventTarget | null) => {
-    throw new Error(`On delete not implemented. ${target}`);
-  };
-
-  @queryAssignedElements({ slot: "body" })
-  body!: HTMLElement[];
-
-  render() {
-    return html`
-      <div id="main">
-        <div class="row">
-          <span
-            class="material-symbols-outlined"
-            @click=${() => (this.minimize = !this.minimize)}
-            >${this.minimize ? "expand_content" : "minimize"}</span
-          >
-          <span
-            class="material-symbols-outlined"
-            @click=${(e: Event) => {
-              this.remove();
-              this.onDelete(e.target);
-            }}
-            >close</span
-          >
-        </div>
-        <slot name="body"></slot>
-      </div>
-      <slot
-        name="subtree"
-        class=${classMap({ disabled: !this.subtreeEnabled })}
-      ></slot>
-    `;
-  }
-
-  static styles = [
-    symbols,
-    css`
-      :host {
-        padding: 0.5em;
-      }
-
-      :host * {
-        transition: 0.2s;
-      }
-
-      .row {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-      }
-
-      .row > span:first-child {
-        margin-left: auto;
-      }
-
-      .row {
-        margin-bottom: 0.5em;
-        margin-right: 0.5em;
-      }
-
-      .row > span {
-        cursor: pointer;
-        user-select: none;
-        margin: 0 0.3em;
-      }
-
-      .row > span:hover {
-        color: var(--clickable-hover);
-        background: var(--background-light-hover);
-        padding: 0.05em;
-        border-radius: 0.2em;
-      }
-    `,
-  ] as CSSResultGroup;
-}
-
-@customElement("type-elem")
-export class TypedefElem extends LitElement {
-  render() {
-    return html`
-      <type-elem-skeleton>
-        <div id="body" slot="body">
-          <div>
-            <div class="row">
-              <slot class="icon" name="icon"></slot>
-              <slot name="keyword"></slot>
-              <slot name="topinput"></slot>
-            </div>
-            <slot name="first-fields"></slot>
-          </div>
-          <slot name="advanced-fields"></slot>
-        </div>
-        <slot name="subtree" slot="subtree"></slot>
-      </type-elem-skeleton>
-    `;
-  }
-
-  static styles = css`
-    #body {
-      display: flex;
-      border: 1px solid var(--color-border);
-      border-radius: 0.5em;
-      padding: 0.5em;
-      box-shadow: 0 0 20px 5px #eee;
-    }
-
-    .row {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      padding: 0.5em;
-    }
-
-    ::slotted([slot="keyword"]) {
-      font-size: 1.3em;
-      margin: 0 0.5em;
-    }
-
-    ::slotted([slot="topinput"]) {
-      font-size: 1.1em;
-    }
-
-    ::slotted([slot="first-fields"]) {
-      margin: 0 0.5em;
-    }
-
-    ::slotted([slot="advanced-fields"]) {
-      margin-left: 0.5em;
-      padding-left: 0.5em;
-      border-left: 1px solid var(--color-border-alt);
-    }
-
-    type-elem-skeleton[minimize] ::slotted([slot="advanced-fields"]) {
-      display: none;
-    }
-  `;
-}
-
-export abstract class BasicTypeElem extends LitElement {
-  protected renderSubtree(): TemplateResult<1> {
-    return html``;
-  }
-  protected abstract renderAdvancedFields(): TemplateResult<1> | null;
-  protected renderOptionalFields(): TemplateResult<1> | null {
-    return null;
-  }
-
-  private _renderFields(fields: TemplateResult<1> | null) {
-    return fields
-      ? html`
-          <div slot="advanced-fields">
-            <div>Properties:</div>
-            ${fields}
-          </div>
-        `
-      : html``;
-  }
-
-  protected abstract renderTopInput(): TemplateResult<1>;
-
-  keyword: "of" | "to" | "extends" | null = null;
-
-  render() {
-    return html`<type-elem slot="body">
-        <span slot="icon" class="material-symbols-outlined large">link</span>
-        ${this.renderTopInput()}
-        <div slot="first-fields">
-          <ndx-textarea></ndx-textarea>
-        </div>
-        ${this._renderFields(this.renderAdvancedFields())}
-        ${this._renderFields(this.renderOptionalFields())}
-      </type-elem>
-      <span slot="subtree">${this.renderSubtree()}</span>`;
-  }
-}
+import { BasicTypeElem } from "./type-elem";
+import "./type-elem";
 
 @customElement("link-dec-elem")
-export class LinkDecElem extends LitElement {
-  @state()
-  namedNotQuantity = false;
-
+export class LinkDecElem extends BasicTypeElem {
+  protected icon: string = "link";
   render() {
     return html`
-      <type-elem>
-        <span slot="icon" class="material-symbols-outlined large">link</span>
-        <span slot="keyword">to</span>
+      <type-elem .noProperties=${false} .noOptions=${true}
+        >${this.renderIcon()}
+        <div id="keyword" slot="topinput">to</div>
         <light-button slot="topinput">Pick a target</light-button>
-        <div slot="first-fields">
-          <ndx-textarea></ndx-textarea>
-        </div>
-        <div slot="advanced-fields">
-          <div>Properties:</div>
-          <label
-            ><input
-              @input=${() => (this.namedNotQuantity = !this.namedNotQuantity)}
-              .checked=${this.namedNotQuantity}
-              type="checkbox"
-            />Named instance</label
-          >
-          ${this.namedNotQuantity
-            ? html` <ndx-input label="Instance name"></ndx-input> `
-            : html`<ndx-input label="Quantity"></ndx-input>`}
-        </div>
+        <ndx-textarea slot="first-fields"></ndx-textarea>
+        <name-or-quantity slot="properties"></name-or-quantity>
       </type-elem>
     `;
   }
-
-  static styles = [
-    symbols,
-    css`
-      div[slot="advanced-fields"] > div:first-child {
-        padding: 0.5em;
-        padding-bottom: 0;
-      }
-    `,
-  ];
 }
 
 @customElement("attrib-dec-elem")
-export class AttribDecElem extends LitElement {
-  @state()
-  namedNotQuantity = false;
-
+export class AttribDecElem extends BasicTypeElem {
+  protected icon: string = "edit_note";
   render() {
     return html`
-      <type-elem>
-        <span slot="icon" class="material-symbols-outlined large"
-          >edit_note</span
-        >
+      <type-elem .noProperties=${false} .noOptions=${true}
+        >${this.renderIcon()}
         <ndx-input slot="topinput" label="Attribute name"></ndx-input>
-        <div slot="first-fields">
-          <ndx-textarea></ndx-textarea>
-        </div>
-        <div slot="advanced-fields">
-          <div>Properties:</div>
-          <label
-            ><input
-              @input=${() => (this.namedNotQuantity = !this.namedNotQuantity)}
-              .checked=${this.namedNotQuantity}
-              type="checkbox"
-            />Named instance</label
-          >
-          ${this.namedNotQuantity
-            ? html` <ndx-input label="Instance name"></ndx-input> `
-            : html`<ndx-input label="Quantity"></ndx-input>`}
-        </div>
+        <ndx-textarea slot="first-fields"></ndx-textarea>
+        <nd-array slot="properties"></nd-array>
       </type-elem>
     `;
   }
+}
 
-  static styles = [
-    symbols,
-    css`
-      div[slot="advanced-fields"] > div:first-child {
-        padding: 0.5em;
-        padding-bottom: 0;
-      }
+export abstract class GroupDecElem extends BasicTypeElem {
+  @property()
+  abstract incType: { name: string };
+  protected icon: string = "folder";
+  protected topInput(): TemplateResult<1> {
+    return html`
+      ${this.renderIcon()}
+      <div id="keyword" slot="topinput">of</div>
+      <light-button
+        slot="topinput"
+        class=${classMap({ selected: this.incType.name != "Pick a type" })}
+        >${this.incType.name}</light-button
+      >
+    `;
+  }
+}
 
-      label,
-      label > input[type="checkbox"] {
-        margin: 0 0.5em;
-      }
-    `,
-  ];
+export abstract class DatasetDecElem extends BasicTypeElem {
+  @property()
+  abstract incType: { name: string };
+  protected icon: string = "dataset";
+  protected topInput(): TemplateResult<1> {
+    return html`
+      ${this.renderIcon()}
+      <div id="keyword" slot="topinput">of</div>
+      <light-button
+        slot="topinput"
+        class=${classMap({ selected: this.incType.name != "Pick a type" })}
+        >${this.incType.name}</light-button
+      >
+    `;
+  }
+}
+
+@customElement("group-anondec-elem")
+export class AnonGroupDecElem extends GroupDecElem {
+  incType: { name: string } = { name: "None" };
+  render() {
+    return html`
+      <type-elem .noProperties=${false} .noOptions=${true}>
+        ${this.topInput()}
+        <ndx-textarea slot="first-fields"></ndx-textarea>
+        <name-or-quantity slot="properties"></name-or-quantity>
+        <group-subtree slot="subtree"></group-subtree>
+      </type-elem>
+    `;
+  }
+}
+
+@customElement("group-incdec-elem")
+export class IncGroupDecElem extends GroupDecElem {
+  incType: { name: string } = { name: "Pick a type" };
+  render() {
+    return html`
+      <type-elem .noProperties=${true} .noOptions=${true}>
+        ${this.topInput()}
+        <ndx-textarea slot="first-fields"></ndx-textarea>
+      </type-elem>
+    `;
+  }
+}
+
+@customElement("dataset-anondec-elem")
+export class AnonDatasetDecElem extends DatasetDecElem {
+  incType: { name: string } = { name: "None" };
+  render() {
+    return html`
+      <type-elem .noProperties=${false} .noOptions=${true}>
+        ${this.topInput()}
+        <ndx-input slot="first-fields" label="Instance name"></ndx-input>
+        <ndx-textarea slot="first-fields"></ndx-textarea>
+        <nd-array slot="properties"></nd-array>
+        <dataset-subtree slot="subtree"></dataset-subtree>
+      </type-elem>
+    `;
+  }
+}
+
+@customElement("dataset-incdec-elem")
+export class IncDatasetDecElem extends DatasetDecElem {
+  incType: { name: string } = { name: "Pick a type" };
+  render() {
+    return html`
+      <type-elem .noProperties=${false} .noOptions=${true}>
+        ${this.topInput()}
+        <ndx-textarea slot="first-fields"></ndx-textarea>
+        <name-or-quantity slot="properties"></name-or-quantity>
+      </type-elem>
+    `;
+  }
+}
+
+abstract class TypeDefElem extends BasicTypeElem {
+  protected topInput(): TemplateResult<1> {
+    return html`
+      ${this.renderIcon()}
+      <ndx-input slot="topinput" label="New type name"></ndx-input>
+      <ndx-textarea slot="first-fields"></ndx-textarea>
+    `;
+  }
+
+  abstract openTypePicker(): void;
+
+  protected bottomInput(): TemplateResult<1> {
+    return html`<div id="keyword" slot="bottominput">extends</div>
+      <light-button @click=${this.openTypePicker} slot="bottominput"
+        >Pick a type</light-button
+      >`;
+  }
+}
+
+@customElement("group-def-elem")
+export class GroupTypeDefElem extends TypeDefElem {
+  openTypePicker(): void {
+    throw new Error("Method not implemented.");
+  }
+
+  protected icon: string = "folder";
+  render() {
+    return html`
+      <type-elem .noProperties=${true} .noOptions=${false}>
+        ${this.topInput()}
+        <default-name slot="options"></default-name>
+        ${this.bottomInput()}
+        <group-subtree slot="subtree"></group-subtree>
+      </type-elem>
+    `;
+  }
+}
+
+@customElement("dataset-def-elem")
+export class DatasetTypeDefElem extends TypeDefElem {
+  openTypePicker(): void {
+    throw new Error("Method not implemented.");
+  }
+
+  protected icon: string = "dataset";
+  render() {
+    return html`
+      <type-elem .noProperties=${false} .noOptions=${false}>
+        ${this.topInput()}
+        <nd-array slot="properties"></nd-array>
+        <default-name slot="options"></default-name>
+        ${this.bottomInput()}
+        <dataset-subtree slot="subtree"></dataset-subtree>
+      </type-elem>
+    `;
+  }
 }

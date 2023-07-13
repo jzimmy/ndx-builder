@@ -3,7 +3,6 @@ import { customElement, property, state } from "lit/decorators.js";
 import { AttributeDec, TypeDef } from "./nwb/spec";
 import { classMap } from "lit/directives/class-map.js";
 import { symbols } from "./styles";
-import { map } from "lit/directives/map.js";
 
 export abstract class TypeElement extends LitElement {
   @state()
@@ -317,8 +316,7 @@ export class DatasetTypedef extends TypedefElement {
     `;
   }
 
-  protected subtree(enabled: boolean) {
-    const disabled = !enabled;
+  protected subtree() {
     return html`
       <subtree-branch
         ?disabled=${false}

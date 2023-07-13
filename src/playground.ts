@@ -6,6 +6,8 @@ import { map } from "lit/directives/map.js";
 import "./typedef";
 import "./decs";
 import "./experiments";
+import "./forms";
+import { when } from "lit/directives/when.js";
 
 function assertUnreachable(_: never): never {
   throw new Error("Didn't expect to get here");
@@ -38,6 +40,12 @@ export class PlaygroundElems extends LitElement {
 
   render() {
     return html`
+      <dataset-def-elem></dataset-def-elem>
+      <group-def-elem></group-def-elem>
+      <dataset-incdec-elem></dataset-incdec-elem>
+      <dataset-anondec-elem></dataset-anondec-elem>
+      <group-incdec-elem></group-incdec-elem>
+      <group-anondec-elem></group-anondec-elem>
       <attrib-dec-elem></attrib-dec-elem>
       <link-dec-elem></link-dec-elem>
       <link-dec></link-dec>
@@ -629,7 +637,7 @@ export class InctypeBrowser extends LitElement {
   @property({ type: String })
   kind: "GROUP" | "DATASET" = "GROUP";
 
-  @state()
+  @property({ reflect: true })
   category: "core" | "mine" | "none" = "core";
 
   @state()
@@ -673,7 +681,7 @@ export class InctypeBrowser extends LitElement {
       case "mine":
         return this.mineMenu();
       case "none":
-        return html``;
+        return this.noneMenu();
     }
   }
 
@@ -731,11 +739,21 @@ export class InctypeBrowser extends LitElement {
     `;
   }
 
+  private noneMenu() {
+    return html`
+      <div class="typelist">
+        <div class="dummy selected">None</div>
+      </div>
+    `;
+  }
+
   render() {
     return html`
       <span 
         @click=${this.remove}
-        class="close material-symbols-outlined">close</span>
+        class="close material-symbols-outlined">
+        close
+      </span>
       <h2>Pick a base ${this.kind.toLocaleLowerCase()} type to extend</h2>
       <div>
         <h3 class=${classMap({ selected: this.category == "core" })}
@@ -801,6 +819,7 @@ export class InctypeBrowser extends LitElement {
         right: 50%;
         transform: translate(1150%, 75%);
         cursor: pointer;
+        border: 2px solid red;
       }
 
       h2 {
@@ -922,13 +941,17 @@ export class InctypeBrowser extends LitElement {
 
       :host > div:last-child {
         display: flex;
-        padding: 1em 2em;
+        padding: 0 2em;
         width: 100%;
         box-sizing: border-box;
       }
 
       :host > div:last-child > dark-button {
         margin-left: auto;
+      }
+
+      .dummy {
+        width: 80px;
       }
     `,
   ];
