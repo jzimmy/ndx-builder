@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import "./type-elem";
 import "./experiments";
 import "./forms";
@@ -10,7 +10,7 @@ import { DatasetTypeDefElem, GroupTypeDefElem } from "./experiments";
 @customElement("ndx-main")
 export class NdxMain extends LitElement {
   @state()
-  appState: "NEW" | "GROUP" | "DATASET" | "PICK" = "NEW";
+  appState: "NEW" | "GROUP" | "DATASET" = "DATASET";
 
   @property()
   currTypedef?: GroupTypeDefElem | DatasetTypeDefElem;
@@ -18,8 +18,20 @@ export class NdxMain extends LitElement {
   @property()
   myTypes: (GroupTypeDefElem | DatasetTypeDefElem | string)[] = [];
 
+  @query("group-def-elem")
+  groupDef!: GroupTypeDefElem;
+
+  @query("dataset-def-elem")
+  datasetDef!: DatasetTypeDefElem;
+
+  saveBar() {
+    return html` <div class="save-bar"></div> `;
+  }
+
   render() {
-    return html`<h1>Create Extended NWB Types</h1>
+    return html`<h1>
+        Create Extended NWB Types<a href="">New to NWB extensions?</a>
+      </h1>
       <div>
         ${this.myTypes.length > 0 ? html`<mytypes-bar></mytypes-bar>` : html``}
         ${choose(
@@ -28,19 +40,32 @@ export class NdxMain extends LitElement {
             [
               "GROUP",
               () =>
-                html`<group-def-elem
-                  class="typedef"
-                  .onDelete=${() => (this.appState = "NEW")}
-                ></group-def-elem>`,
+                html`
+                  <group-def-elem
+                    class="typedef"
+                    .onDelete=${() => (this.appState = "NEW")}
+                  ></group-def-elem>
+                  <dark-button
+                    .disabled=${this.datasetDef ? this.datasetDef.valid : true}
+                    class="save"
+                    >Save</dark-button
+                  >
+                `,
             ],
             [
               "DATASET",
-              () => html`<dataset-def-elem
-                class="typedef"
-                .onDelete=${() => (this.appState = "NEW")}
-              ></dataset-def-elem>`,
+              () => html`
+                <dataset-def-elem
+                  class="typedef"
+                  .onDelete=${() => (this.appState = "NEW")}
+                ></dataset-def-elem>
+                <dark-button
+                  .disabled=${this.datasetDef ? this.datasetDef.valid : true}
+                  class="save"
+                  >Save</dark-button
+                >
+              `,
             ],
-            ["PICK", () => html`<inctype-browser></inctype-browser>`],
           ],
           () => html`
             <div class="create">
@@ -70,6 +95,21 @@ export class NdxMain extends LitElement {
       align-items: center;
     }
 
+    :host > h1 {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    :host > h1 > a {
+      position: absolute;
+      right: 5%;
+      font-size: 0.5em;
+      color: var(--clickable);
+    }
+
     :host > div {
       display: flex;
       width: 100%;
@@ -82,6 +122,17 @@ export class NdxMain extends LitElement {
 
     :host > div > *:not(mytypes-bar) {
       margin: auto;
+      position: relative;
+    }
+
+    group-def-elem,
+    dataset-def-elem {
+    }
+
+    :host .save {
+      position: absolute;
+      top: 80%;
+      left: 80%;
     }
 
     :host > div > div.create {
@@ -95,7 +146,8 @@ export class NdxMain extends LitElement {
 
     :host > div > .typedef {
       margin-top: 1em;
-      overflow: scroll;
+      padding: 0 5em;
+      padding-bottom: 4em;
     }
 
     :host > div > inctype-browser {

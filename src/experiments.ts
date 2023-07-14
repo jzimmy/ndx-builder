@@ -1,12 +1,15 @@
 // todo implement onDelete for all
 import { html, TemplateResult } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { BasicTypeElem } from "./type-elem";
 import "./type-elem";
 
 @customElement("link-dec-elem")
 export class LinkDecElem extends BasicTypeElem {
+  get valid(): boolean {
+    return false;
+  }
   protected icon: string = "link";
   render() {
     return html`
@@ -23,6 +26,9 @@ export class LinkDecElem extends BasicTypeElem {
 
 @customElement("attrib-dec-elem")
 export class AttribDecElem extends BasicTypeElem {
+  get valid(): boolean {
+    return false;
+  }
   protected icon: string = "edit_note";
   render() {
     return html`
@@ -72,6 +78,9 @@ export abstract class DatasetDecElem extends BasicTypeElem {
 
 @customElement("group-anondec-elem")
 export class AnonGroupDecElem extends GroupDecElem {
+  get valid(): boolean {
+    return false;
+  }
   incType: { name: string } = { name: "None" };
   render() {
     return html`
@@ -87,6 +96,9 @@ export class AnonGroupDecElem extends GroupDecElem {
 
 @customElement("group-incdec-elem")
 export class IncGroupDecElem extends GroupDecElem {
+  get valid(): boolean {
+    return false;
+  }
   incType: { name: string } = { name: "Pick a type" };
   render() {
     return html`
@@ -100,6 +112,9 @@ export class IncGroupDecElem extends GroupDecElem {
 
 @customElement("dataset-anondec-elem")
 export class AnonDatasetDecElem extends DatasetDecElem {
+  get valid(): boolean {
+    return false;
+  }
   incType: { name: string } = { name: "None" };
   render() {
     return html`
@@ -116,6 +131,9 @@ export class AnonDatasetDecElem extends DatasetDecElem {
 
 @customElement("dataset-incdec-elem")
 export class IncDatasetDecElem extends DatasetDecElem {
+  get valid(): boolean {
+    return false;
+  }
   incType: { name: string } = { name: "Pick a type" };
   render() {
     return html`
@@ -129,6 +147,9 @@ export class IncDatasetDecElem extends DatasetDecElem {
 }
 
 abstract class TypeDefElem extends BasicTypeElem {
+  @property()
+  incType: { name: string } = { name: "Pick a type" };
+
   protected topInput(): TemplateResult<1> {
     return html`
       ${this.renderIcon()}
@@ -137,20 +158,21 @@ abstract class TypeDefElem extends BasicTypeElem {
     `;
   }
 
-  abstract openTypePicker(): void;
-
   protected bottomInput(): TemplateResult<1> {
     return html`<div id="keyword" slot="bottominput">extends</div>
-      <light-button @click=${this.openTypePicker} slot="bottominput"
-        >Pick a type</light-button
+      <light-button
+        @click=${this.toggleForm}
+        slot="bottominput"
+        class=${classMap({ selected: this.incType.name != "Pick a type" })}
+        >${this.incType.name}</light-button
       >`;
   }
 }
 
 @customElement("group-def-elem")
 export class GroupTypeDefElem extends TypeDefElem {
-  openTypePicker(): void {
-    throw new Error("Method not implemented.");
+  get valid(): boolean {
+    return false;
   }
 
   protected icon: string = "folder";
@@ -161,6 +183,14 @@ export class GroupTypeDefElem extends TypeDefElem {
         <default-name slot="options"></default-name>
         ${this.bottomInput()}
         <group-subtree slot="subtree"></group-subtree>
+        <inctype-browser
+          slot="form"
+          .continuation=${(type: string) => {
+            this.toggleForm();
+            this.incType = { ...this.incType, name: type };
+          }}
+        ></inctype-browser>
+        <light-button slot="save">Save</light-button>
       </type-elem>
     `;
   }
@@ -168,11 +198,14 @@ export class GroupTypeDefElem extends TypeDefElem {
 
 @customElement("dataset-def-elem")
 export class DatasetTypeDefElem extends TypeDefElem {
-  openTypePicker(): void {
-    throw new Error("Method not implemented.");
+  get valid(): boolean {
+    return false;
   }
 
   protected icon: string = "dataset";
+  @state()
+  currentForm: number = 0;
+
   render() {
     return html`
       <type-elem .noProperties=${false} .noOptions=${false}>
@@ -181,6 +214,23 @@ export class DatasetTypeDefElem extends TypeDefElem {
         <default-name slot="options"></default-name>
         ${this.bottomInput()}
         <dataset-subtree slot="subtree"></dataset-subtree>
+        <inctype-browser
+          slot=${this.currentForm == 0 ? "form" : "none"}
+          class=${classMap({ selected: this.incType.name != "Pick a type" })}
+          .continuation=${(type: string) => {
+            this.incType = { ...this.incType, name: type };
+            this.currentForm = this.currentForm + 1;
+          }}
+        ></inctype-browser>
+        <default-name-form
+          slot=${this.currentForm == 1 ? "form" : "none"}
+          .continuation=${(type: string) => {
+            this.toggleForm();
+            console.log("hello got type", type);
+            this.incType = { ...this.incType, name: type };
+          }}
+        ></default-name-form>
+        <light-button slot="save">Save</light-button>
       </type-elem>
     `;
   }

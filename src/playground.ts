@@ -7,7 +7,6 @@ import "./typedef";
 import "./decs";
 import "./experiments";
 import "./forms";
-import { when } from "lit/directives/when.js";
 
 function assertUnreachable(_: never): never {
   throw new Error("Didn't expect to get here");
@@ -40,6 +39,7 @@ export class PlaygroundElems extends LitElement {
 
   render() {
     return html`
+      <ndx-form-manager></ndx-form-manager>
       <dataset-def-elem></dataset-def-elem>
       <group-def-elem></group-def-elem>
       <dataset-incdec-elem></dataset-incdec-elem>
@@ -542,6 +542,7 @@ export class LightButton extends LitElement {
         cursor: pointer;
         display: flex;
         justify-content: center;
+        background: var(--background-light-button);
       }
 
       :host([disabled]) {

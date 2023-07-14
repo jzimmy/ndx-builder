@@ -56,6 +56,9 @@ export class TypeElemSkeleton extends LitElement {
   static styles = [
     symbols,
     css`
+      :host {
+        position: relative;
+      }
       :host * {
         transition: 0.2s;
       }
@@ -83,7 +86,7 @@ export class TypeElemSkeleton extends LitElement {
 
       .row > span:hover {
         color: var(--clickable-hover);
-        background: var(--background-light-hover);
+        background: var(--background-light-button);
         padding: 0.05em;
         border-radius: 0.2em;
       }
@@ -111,7 +114,11 @@ export class TypeElem extends LitElement {
     throw new Error(`On delete not implemented. ${target}`);
   }
 
+  @property({ type: Boolean, reflect: true })
+  openForm: boolean = false;
+
   render() {
+    if (this.openForm) return html`<slot name="form"></slot>`;
     return html`
       <type-elem-skeleton .onDelete=${this.onDelete}>
         <div id="body" slot="body">
@@ -153,6 +160,10 @@ export class TypeElem extends LitElement {
       flex-direction: row;
       align-items: center;
       margin-left: 0.5em;
+    }
+
+    .row:last-child {
+      margin: 0 0.5em;
     }
 
     ::slotted([slot="keyword"]) {
@@ -197,6 +208,15 @@ export class TypeElem extends LitElement {
     :host([noOptions]) .options {
       display: none;
     }
+
+    :host([openForm]) ::slotted(*) {
+      display: none;
+    }
+
+    :host([openForm]) ::slotted([slot="form"]) {
+      display: flex;
+      justify-content: center;
+    }
   `;
 }
 
@@ -204,10 +224,16 @@ export class TypeElem extends LitElement {
  * This class has little semantic purpose beyond reducing boilerplate.
  */
 export abstract class BasicTypeElem extends LitElement {
+  abstract get valid(): boolean;
+
   protected abstract icon: string;
   protected subtreeDisabled = true;
   protected onDelete(target?: EventTarget): void {
     throw new Error(`On delete not implemented. ${target}`);
+  }
+
+  protected onSave(): void {
+    throw new Error(`On save not implemented.`);
   }
 
   protected renderIcon() {
@@ -217,13 +243,16 @@ export abstract class BasicTypeElem extends LitElement {
   }
 
   @query("type-elem")
-  protected typeElem!: TypeElem;
+  typeElem!: TypeElem;
+
+  protected toggleForm() {
+    this.typeElem.openForm = !this.typeElem.openForm;
+  }
 
   protected firstUpdated(
     _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
   ): void {
     if (!this.typeElem) return;
-
     this.typeElem.onDelete = this.onDelete;
   }
 
@@ -258,6 +287,10 @@ export abstract class BasicTypeElem extends LitElement {
 
       [slot="bottominput"]:last-child {
         margin-right: 0.5em;
+      }
+
+      ndx-input[slot="topinput"] {
+        font-weight: bold;
       }
     `,
   ];
@@ -314,6 +347,10 @@ export class SubtreeBranchh extends LitElement {
         opacity: 0.4;
       }
 
+      :host([disabled]) .branchline > div {
+        border-color: var(--color-border-alt);
+      }
+
       :host > div {
         display: flex;
         flex-direction: column;
@@ -363,9 +400,10 @@ export class SubtreeBranchh extends LitElement {
         padding: 0.1em 0.3em;
       }
 
+      /* TODO: figure this out???? */
       .typedec {
         height: 200px;
-        background: lightblue;
+        background: red;
       }
 
       .icon {
