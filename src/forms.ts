@@ -137,8 +137,8 @@ abstract class ContinuationParent extends LitElement {
 }
 
 abstract class ContinuationElem<T> extends LitElement {
-  abstract nextButtonAction(): void;
-  abstract backButtonAction(): void;
+  abstract nextButtonCallback(): void;
+  abstract backButtonCallback(): void;
   abstract updateValue: (oldT: T) => T;
 }
 
@@ -153,12 +153,12 @@ function composeForm<T>(
   for (const f of forms.reverse()) {
     const newsucc = (value: T) => {
       parent.draw(f);
-      f.backButtonAction = () => succ(value);
+      f.backButtonCallback = () => succ(value);
       const newT = f.updateValue(value);
       succ(newT);
     };
     const succ = newsucc;
-    f.nextButtonAction = () => succ(initial);
+    f.nextButtonCallback = () => succ(initial);
   }
 
   return () => succ(initial);
