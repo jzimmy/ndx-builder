@@ -400,6 +400,10 @@ export class SubtreeBranchh extends LitElement {
         padding: 0.1em 0.3em;
       }
 
+      :host([disabled]) .branchelement:last-child > light-button {
+        background: var(--background-color-alt);
+      }
+
       /* TODO: figure this out???? */
       .typedec {
         height: 200px;

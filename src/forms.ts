@@ -1,4 +1,4 @@
-import { LitElement, html, css, CSSResultGroup, TemplateResult } from "lit";
+import { LitElement, html, css, CSSResultGroup } from "lit";
 import {
   customElement,
   state,
@@ -6,7 +6,75 @@ import {
   property,
   queryAssignedElements,
 } from "lit/decorators.js";
-import { symbols } from "./styles";
+
+// form manager
+abstract class ComposedFormManager extends LitElement {
+  abstract nextButtonCallback(): void;
+  abstract backButtonCallback(): void;
+  abstract closeButtonCallback(): void;
+  abstract draw(elem: LitElement): void;
+}
+
+abstract class ComposedFormElem<T> extends LitElement {
+  abstract show: (value: T) => typeof this;
+  // Ensure this function is idempotent and commutative with sequential form elems
+  abstract transform: (oldT: T) => T;
+  abstract next: ComposedFormElem<T> | null;
+}
+
+// This test is not exhaustive, but it illustrates the idea behind form transforms
+// should pass for any input!
+export function testFormIdempotenceAndCommutativity<T>(
+  input: T,
+  transforms: ((_: T) => T)[]
+) {
+  const composedFormResult = transforms.reduce((acc, f) => f(acc), input);
+  const reverseComposedDoubleTransformFormResult = [...transforms]
+    .reverse()
+    .reduce((acc, f) => f(f(acc)), input);
+  return composedFormResult == reverseComposedDoubleTransformFormResult;
+}
+
+/**
+ * Given a form manager, form elements and initial value
+ * it will create a function with two callbacks that will form abandoning and completion
+ * of the form
+ */
+export function composeForm<T>(
+  parent: ComposedFormManager,
+  initial: T,
+  forms: ComposedFormElem<T>[]
+): (onAbandon: () => void, onComplete: (val: T) => void) => void {
+  function compose(
+    forms: ComposedFormElem<T>[],
+    value: T,
+    back: () => void,
+    complete: (_: T) => void
+  ) {
+    if (forms.length === 0) {
+      complete(value);
+    } else {
+      const [form, ...rest] = forms;
+      parent.draw(form.show(value));
+      parent.backButtonCallback = back;
+      parent.nextButtonCallback = () =>
+        compose(
+          rest,
+          form.transform(value),
+          () => compose(forms, form.transform(value), back, complete),
+          complete
+        );
+    }
+  }
+
+  return (abandon: () => void, complete: (val: T) => void) => {
+    parent.closeButtonCallback = () => {
+      abandon();
+      parent.closeButtonCallback = () => {};
+    };
+    compose(forms, initial, abandon, complete);
+  };
+}
 
 @customElement("default-name")
 export class DefaultNameElem extends LitElement {
@@ -130,36 +198,4 @@ export abstract class BasicFormElem<T> extends LitElement {
       <slot name="fields"></slot>
     `;
   }
-}
-
-abstract class ContinuationParent extends LitElement {
-  abstract draw(elem: LitElement): void;
-}
-
-abstract class ContinuationElem<T> extends LitElement {
-  abstract nextButtonCallback(): void;
-  abstract backButtonCallback(): void;
-  abstract updateValue: (oldT: T) => T;
-}
-
-function composeForm<T>(
-  parent: ContinuationParent,
-  initial: T,
-  fail: () => void,
-  succ: (val: T) => void,
-  forms: ContinuationElem<T>[]
-): () => void {
-  f.backButtonAction = fail;
-  for (const f of forms.reverse()) {
-    const newsucc = (value: T) => {
-      parent.draw(f);
-      f.backButtonCallback = () => succ(value);
-      const newT = f.updateValue(value);
-      succ(newT);
-    };
-    const succ = newsucc;
-    f.nextButtonCallback = () => succ(initial);
-  }
-
-  return () => succ(initial);
 }
