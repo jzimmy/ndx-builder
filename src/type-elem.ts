@@ -7,7 +7,7 @@ import {
   DatasetDecElem,
   GroupDecElem,
   LinkDecElem,
-} from "./experiments";
+} from "./types";
 
 /* Wrapper element for a type elem, contains the minimize,
  * close button and slots for the body and subtree.
@@ -115,10 +115,10 @@ export class TypeElem extends LitElement {
   }
 
   @property({ type: Boolean, reflect: true })
-  openForm: boolean = false;
+  formOpen: boolean = true;
 
   render() {
-    if (this.openForm) return html`<slot name="form"></slot>`;
+    if (this.formOpen) return html`<slot name="form"></slot>`;
     return html`
       <type-elem-skeleton .onDelete=${this.onDelete}>
         <div id="body" slot="body">
@@ -245,8 +245,9 @@ export abstract class BasicTypeElem extends LitElement {
   @query("type-elem")
   typeElem!: TypeElem;
 
-  protected toggleForm() {
-    this.typeElem.openForm = !this.typeElem.openForm;
+  protected toggleForm(setOpen?: boolean) {
+    this.typeElem.formOpen =
+      setOpen !== undefined ? setOpen : !this.typeElem.formOpen;
   }
 
   protected firstUpdated(

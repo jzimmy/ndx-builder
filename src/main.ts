@@ -1,11 +1,11 @@
 import { LitElement, html, css } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import "./type-elem";
-import "./experiments";
+import "./types";
 import "./forms";
 import "./playground";
 import { choose } from "lit/directives/choose.js";
-import { DatasetTypeDefElem, GroupTypeDefElem } from "./experiments";
+import { DatasetTypeDefElem, GroupTypeDefElem } from "./types";
 
 @customElement("ndx-main")
 export class NdxMain extends LitElement {

@@ -6,24 +6,27 @@ import {
   property,
   queryAssignedElements,
 } from "lit/decorators.js";
+import { symbols } from "./styles";
 
 // form manager
-abstract class ComposedFormManager extends LitElement {
+abstract class ComposedFormManager {
+  abstract title: string;
   abstract nextButtonCallback(): void;
   abstract backButtonCallback(): void;
   abstract closeButtonCallback(): void;
-  abstract draw(elem: LitElement): void;
+  abstract draw(elem: Element): void;
 }
 
-abstract class ComposedFormElem<T> extends LitElement {
-  abstract show: (value: T) => typeof this;
+abstract class ComposedFormElem<T> {
+  abstract title: string;
+  abstract onready(): boolean;
+  abstract show: (value: T) => Element;
   // Ensure this function is idempotent and commutative with sequential form elems
   abstract transform: (oldT: T) => T;
-  abstract next: ComposedFormElem<T> | null;
 }
 
-// This test is not exhaustive, but it illustrates the idea behind form transforms
-// should pass for any input!
+// This test is not exhaustive, but it illustrates the idea behind form transforms.
+// It should pass for any input!
 export function testFormIdempotenceAndCommutativity<T>(
   input: T,
   transforms: ((_: T) => T)[]
@@ -37,8 +40,8 @@ export function testFormIdempotenceAndCommutativity<T>(
 
 /**
  * Given a form manager, form elements and initial value
- * it will create a function with two callbacks that will form abandoning and completion
- * of the form
+ * it will create a function to start the form
+ * the returned function parameters are the callbacks for when the form is abandoned or completed
  */
 export function composeForm<T>(
   parent: ComposedFormManager,
@@ -55,15 +58,17 @@ export function composeForm<T>(
       complete(value);
     } else {
       const [form, ...rest] = forms;
+      parent.title = form.title;
       parent.draw(form.show(value));
       parent.backButtonCallback = back;
-      parent.nextButtonCallback = () =>
+      parent.nextButtonCallback = () => {
         compose(
           rest,
           form.transform(value),
           () => compose(forms, form.transform(value), back, complete),
           complete
         );
+      };
     }
   }
 
@@ -74,6 +79,73 @@ export function composeForm<T>(
     };
     compose(forms, initial, abandon, complete);
   };
+}
+
+@customElement("ndx-form-manager")
+abstract class NdxFormManager
+  extends LitElement
+  implements ComposedFormManager
+{
+  nextButtonCallback(): void {
+    throw new Error("Method not implemented.");
+  }
+  backButtonCallback(): void {
+    throw new Error("Method not implemented.");
+  }
+  closeButtonCallback(): void {
+    throw new Error("Method not implemented.");
+  }
+  draw(elem: Element): void {
+    throw new Error("Method not implemented.");
+  }
+
+  @property()
+  ready: boolean = false;
+
+  render() {
+    return html`<div id="titlerow">
+        <h2>${this.title}</h2>
+        <span class="material-symbols-outlined">close</span>
+      </div>
+      <div id="formbody"></div>
+      <div id="bottomrow">
+        <dark-button>Continue</dark-button>
+      </div>`;
+  }
+
+  static styles = [
+    symbols,
+    css`
+      :host {
+        display: flex;
+        flex-direction: column;
+        border: 1px solid red;
+        position: relative;
+      }
+
+      #titlerow,
+      #bottomrow {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        position: relative;
+        min-width: 600px;
+        border: 1px solid blue;
+      }
+
+      #titlerow > span {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(8em, -50%);
+        cursor: pointer;
+      }
+
+      dark-button {
+        transform: translate(13em, 0);
+      }
+    `,
+  ] as CSSResultGroup;
 }
 
 @customElement("default-name")

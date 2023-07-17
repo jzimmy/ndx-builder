@@ -1,9 +1,10 @@
 // todo implement onDelete for all
 import { html, TemplateResult } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { BasicTypeElem } from "./type-elem";
 import "./type-elem";
+import "./forms";
 
 @customElement("link-dec-elem")
 export class LinkDecElem extends BasicTypeElem {
@@ -185,10 +186,8 @@ export class GroupTypeDefElem extends TypeDefElem {
         <group-subtree slot="subtree"></group-subtree>
         <inctype-browser
           slot="form"
-          .continuation=${(type: string) => {
-            this.toggleForm();
-            this.incType = { ...this.incType, name: type };
-          }}
+          .continuation=${(type: string) =>
+            (this.incType = { ...this.incType, name: type })}
         ></inctype-browser>
         <light-button slot="save">Save</light-button>
       </type-elem>
@@ -203,8 +202,6 @@ export class DatasetTypeDefElem extends TypeDefElem {
   }
 
   protected icon: string = "dataset";
-  @state()
-  currentForm: number = 0;
 
   render() {
     return html`
@@ -214,22 +211,13 @@ export class DatasetTypeDefElem extends TypeDefElem {
         <default-name slot="options"></default-name>
         ${this.bottomInput()}
         <dataset-subtree slot="subtree"></dataset-subtree>
-        <inctype-browser
-          slot=${this.currentForm == 0 ? "form" : "none"}
-          class=${classMap({ selected: this.incType.name != "Pick a type" })}
-          .continuation=${(type: string) => {
-            this.incType = { ...this.incType, name: type };
-            this.currentForm = this.currentForm + 1;
-          }}
-        ></inctype-browser>
-        <default-name-form
-          slot=${this.currentForm == 1 ? "form" : "none"}
-          .continuation=${(type: string) => {
-            this.toggleForm();
-            console.log("hello got type", type);
-            this.incType = { ...this.incType, name: type };
-          }}
-        ></default-name-form>
+        <ndx-form-manager slot="form"></ndx-form-manager>
+
+        <!-- <inctype-browser
+          slot="form"
+          .continuation=${(type: string) =>
+          (this.incType = { ...this.incType, name: type })}
+        ></inctype-browser> -->
         <light-button slot="save">Save</light-button>
       </type-elem>
     `;

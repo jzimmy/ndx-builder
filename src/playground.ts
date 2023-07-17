@@ -3,9 +3,7 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { symbols } from "./styles";
 import { classMap } from "lit/directives/class-map.js";
 import { map } from "lit/directives/map.js";
-import "./typedef";
-import "./decs";
-import "./experiments";
+import "./types";
 import "./forms";
 
 function assertUnreachable(_: never): never {
