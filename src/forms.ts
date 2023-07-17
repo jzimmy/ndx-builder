@@ -7,20 +7,31 @@ import {
   queryAssignedElements,
 } from "lit/decorators.js";
 import { symbols } from "./styles";
+import { DarkButton, NdxInput } from "./playground";
+import { Defaultable } from "./nwb/spec";
 
 // form manager
 abstract class ComposedFormManager {
-  abstract title: string;
+  abstract titleText: string;
+  abstract ready: boolean;
+  abstract setReady(set: boolean): void;
   abstract nextButtonCallback(): void;
   abstract backButtonCallback(): void;
   abstract closeButtonCallback(): void;
+  // render the element in the form body slot
   abstract draw(elem: Element): void;
 }
 
 abstract class ComposedFormElem<T> {
+  // set title
   abstract title: string;
-  abstract onready(): boolean;
+  // all fields are valid
+  abstract isValid: () => boolean;
+  // used by the form manager to set visual behaviour
+  abstract onvalidate: (isGood: boolean) => void;
+  // show the form (if lit element, return self)
   abstract show: (value: T) => Element;
+  // Applies the modifications requested by the form
   // Ensure this function is idempotent and commutative with sequential form elems
   abstract transform: (oldT: T) => T;
 }
@@ -57,15 +68,18 @@ export function composeForm<T>(
     if (forms.length === 0) {
       complete(value);
     } else {
-      const [form, ...rest] = forms;
-      parent.title = form.title;
-      parent.draw(form.show(value));
+      const [nextform, ...rest] = forms;
+      parent.titleText = nextform.title;
+      parent.draw(nextform.show(value));
+      nextform.onvalidate = () => {
+        parent.setReady(nextform.isValid());
+      };
       parent.backButtonCallback = back;
       parent.nextButtonCallback = () => {
         compose(
           rest,
-          form.transform(value),
-          () => compose(forms, form.transform(value), back, complete),
+          nextform.transform(value),
+          () => compose(forms, nextform.transform(value), back, complete),
           complete
         );
       };
@@ -81,11 +95,19 @@ export function composeForm<T>(
   };
 }
 
+// CATASTROPHIC FAILURE IF SLOTTED CHILDREN DON'T IMPLEMENT ComposedFormElem
 @customElement("ndx-form-manager")
-abstract class NdxFormManager
+abstract class NdxFormManager<T>
   extends LitElement
   implements ComposedFormManager
 {
+  titleText: string = "";
+  ready: boolean = false;
+
+  @query("dark-button")
+  continueButton!: DarkButton;
+
+  // these functions will be set at triggertime
   nextButtonCallback(): void {
     throw new Error("Method not implemented.");
   }
@@ -95,19 +117,27 @@ abstract class NdxFormManager
   closeButtonCallback(): void {
     throw new Error("Method not implemented.");
   }
+
   draw(elem: Element): void {
     throw new Error("Method not implemented.");
   }
 
   @property()
-  ready: boolean = false;
+  setReady(set: boolean) {
+    this.continueButton.disabled = !set;
+    this.requestUpdate();
+  }
+
+  trigger(_onAbandon: () => void, _onComplete: (res: T) => void) {}
 
   render() {
     return html`<div id="titlerow">
-        <h2>${this.title}</h2>
+        <h2>${this.titleText}</h2>
         <span class="material-symbols-outlined">close</span>
       </div>
-      <div id="formbody"></div>
+      <div id="formbody">
+        <slot name="dangerouslyImplementsComposedFormElem"></slot>
+      </div>
       <div id="bottomrow">
         <dark-button>Continue</dark-button>
       </div>`;
@@ -148,8 +178,37 @@ abstract class NdxFormManager
   ] as CSSResultGroup;
 }
 
+interface NamedNdxElem {
+  name?: Defaultable<string>;
+}
+
 @customElement("default-name")
-export class DefaultNameElem extends LitElement {
+export class DefaultNameElem<T extends NamedNdxElem>
+  extends LitElement
+  implements ComposedFormElem<T>
+{
+  isValid: () => boolean = () => {
+    return this.nameInput.value != null;
+  };
+  onvalidate: (isGood: boolean) => void = () => {
+    return;
+  };
+
+  show: (value: T) => Element = (value: T) => {
+    this.nameInput.value = value.name?.[0] || "";
+    return this;
+  };
+
+  transform: (oldT: T) => T = (oldT) => {
+    if (this.nameInput.value == null) {
+      return { ...oldT };
+    }
+    return { ...oldT, name: [this.nameInput.value, false] };
+  };
+
+  @query("ndx-input")
+  nameInput!: NdxInput;
+
   render() {
     return html`
         <ndx-input info="The default name will be applied when you declare an instance of this type" label="Default instance name"></ndx-input>

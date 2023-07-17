@@ -141,6 +141,10 @@ export class NdxInput extends LitElement {
     return s;
   }
 
+  set value(v: string | null) {
+    this.input.value = v || "";
+  }
+
   protected firstUpdated(
     _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
   ): void {
