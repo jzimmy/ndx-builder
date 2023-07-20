@@ -5,6 +5,7 @@ import { classMap } from "lit/directives/class-map.js";
 import { map } from "lit/directives/map.js";
 import "./types";
 import "./forms";
+import "./basic-elems";
 
 function assertUnreachable(_: never): never {
   throw new Error("Didn't expect to get here");
@@ -57,7 +58,7 @@ export class PlaygroundElems extends LitElement {
       <dataset-typedef></dataset-typedef>
       <type-elem></type-elem>
       <mytypes-bar></mytypes-bar>
-      <inctype-browser></inctype-browser>
+      <inctype-browserr></inctype-browserr>
       <light-button>Light Button</light-button>
       <ndx-input
         .info=${"This is the name of the type"}
@@ -487,7 +488,7 @@ export class HoverInfo extends LitElement {
   ];
 }
 
-@customElement("dark-button")
+@customElement("dark-buttonn")
 export class DarkButton extends LitElement {
   @property({ type: Boolean, reflect: true })
   disabled = false;
@@ -523,7 +524,7 @@ export class DarkButton extends LitElement {
   ];
 }
 
-@customElement("light-button")
+@customElement("light-buttonn")
 export class LightButton extends LitElement {
   @property({ type: Boolean, reflect: true })
   disabled = false;
@@ -612,16 +613,16 @@ export class AddTypedefButton extends LitElement {
   ];
 }
 
-@customElement("inctype-browser")
+@customElement("inctype-browserr")
 export class InctypeBrowser extends LitElement {
   private _continuation() {
     const incType = () => {
       switch (this.category) {
-        case "core":
+        case "Core":
           return this.modules[this.selectedModule][this.selectedType];
-        case "mine":
+        case "Typedef":
           return this.myTypes[this.selectedType][1];
-        case "none":
+        case "None":
           return "None";
         default:
           assertUnreachable(this.category);
@@ -641,7 +642,7 @@ export class InctypeBrowser extends LitElement {
   kind: "GROUP" | "DATASET" = "GROUP";
 
   @property({ reflect: true })
-  category: "core" | "mine" | "none" = "core";
+  category: "Core" | "Typedef" | "None" = "Core";
 
   @state()
   selectedModule: number = 0;
@@ -679,11 +680,11 @@ export class InctypeBrowser extends LitElement {
 
   private menu() {
     switch (this.category) {
-      case "core":
+      case "Core":
         return this.coreMenu();
-      case "mine":
+      case "Typedef":
         return this.mineMenu();
-      case "none":
+      case "None":
         return this.noneMenu();
     }
   }
@@ -759,9 +760,9 @@ export class InctypeBrowser extends LitElement {
       </span>
       <h2>Pick a base ${this.kind.toLocaleLowerCase()} type to extend</h2>
       <div>
-        <h3 class=${classMap({ selected: this.category == "core" })}
+        <h3 class=${classMap({ selected: this.category == "Core" })}
             @click=${() => {
-              this.category = "core";
+              this.category = "Core";
               this.selectedType = -1;
             }}
         >
@@ -771,9 +772,9 @@ export class InctypeBrowser extends LitElement {
           this.myTypes.length > 0
             ? html`
                 <h3
-                  class=${classMap({ selected: this.category == "mine" })}
+                  class=${classMap({ selected: this.category == "Typedef" })}
                   @click=${() => {
-                    this.category = "mine";
+                    this.category = "Typedef";
                     this.selectedType = -1;
                   }}
                 >
@@ -782,9 +783,9 @@ export class InctypeBrowser extends LitElement {
               `
             : html``
         }
-        <h3 class=${classMap({ selected: this.category == "none" })}
+        <h3 class=${classMap({ selected: this.category == "None" })}
             @click=${() => {
-              this.category = "none";
+              this.category = "None";
             }}
         >
           No Base
@@ -794,7 +795,7 @@ export class InctypeBrowser extends LitElement {
       ${this.menu()}
       <div>
         <dark-button ?disabled=${
-          this.category != "none" && this.selectedType == -1
+          this.category != "None" && this.selectedType == -1
         } @click=${this._continuation}>Continue</dark-button>
       </div>
     `;

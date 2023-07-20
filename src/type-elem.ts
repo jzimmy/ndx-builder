@@ -115,7 +115,7 @@ export class TypeElem extends LitElement {
   }
 
   @property({ type: Boolean, reflect: true })
-  formOpen: boolean = true;
+  formOpen: boolean = false;
 
   render() {
     if (this.formOpen) return html`<slot name="form"></slot>`;
@@ -226,6 +226,8 @@ export class TypeElem extends LitElement {
 export abstract class BasicTypeElem extends LitElement {
   abstract get valid(): boolean;
 
+  protected formParent?: GroupDecElem | DatasetDecElem;
+
   protected abstract icon: string;
   protected subtreeDisabled = true;
   protected onDelete(target?: EventTarget): void {
@@ -246,7 +248,8 @@ export abstract class BasicTypeElem extends LitElement {
   typeElem!: TypeElem;
 
   protected toggleForm(setOpen?: boolean) {
-    this.typeElem.formOpen =
+    if (!this.formParent) return;
+    this.formParent.typeElem.formOpen =
       setOpen !== undefined ? setOpen : !this.typeElem.formOpen;
   }
 

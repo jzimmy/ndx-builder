@@ -59,16 +59,12 @@ export type Quantity =
   | ["+", null]
   | ["Num", number];
 
-export enum CoreGroupType {
-  Example,
-  New,
-  // ...
-}
+export type CoreGroupType = "Example" | "None";
 
 export enum CoreDatasetType {
   Example,
   New,
-  // ...
+  None,
 }
 
 export enum PrimitiveDtype {

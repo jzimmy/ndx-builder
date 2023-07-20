@@ -3,6 +3,7 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import "./type-elem";
 import "./types";
 import "./forms";
+import "./basic-elems";
 import "./playground";
 import { choose } from "lit/directives/choose.js";
 import { DatasetTypeDefElem, GroupTypeDefElem } from "./types";
@@ -10,7 +11,7 @@ import { DatasetTypeDefElem, GroupTypeDefElem } from "./types";
 @customElement("ndx-main")
 export class NdxMain extends LitElement {
   @state()
-  appState: "NEW" | "GROUP" | "DATASET" = "DATASET";
+  appState: "NEW" | "GROUP" | "DATASET" = "GROUP";
 
   @property()
   currTypedef?: GroupTypeDefElem | DatasetTypeDefElem;
