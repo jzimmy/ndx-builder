@@ -229,7 +229,7 @@ export abstract class BasicTypeElem extends LitElement {
   protected formParent?: GroupDecElem | DatasetDecElem;
 
   protected abstract icon: string;
-  protected subtreeDisabled = true;
+  protected subtreeDisabled = false;
   protected onDelete(target?: EventTarget): void {
     throw new Error(`On delete not implemented. ${target}`);
   }
@@ -351,7 +351,7 @@ export class SubtreeBranchh extends LitElement {
         opacity: 0.4;
       }
 
-      :host([disabled]) .branchline > div {
+      :host .branchline > div {
         border-color: var(--color-border-alt);
       }
 

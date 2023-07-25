@@ -666,16 +666,14 @@ export class InctypeBrowser extends LitElement {
 
   // pynwb core module names
   modules = [
-    "core",
-    "device",
-    "ecephys",
-    "file",
-    "misc",
-    "ophys",
-    "processing",
-    "time_series",
-    "behavior",
-    "ecephys",
+    "Lab Information",
+    "Extracellular Electrophysiology",
+    "Intracellular Electrophysiology",
+    "Optophysiology",
+    "Optogenetics",
+    "Retinotopy",
+    "General Imaging",
+    "Behavior",
   ];
 
   private menu() {
@@ -690,6 +688,18 @@ export class InctypeBrowser extends LitElement {
   }
 
   private coreMenu() {
+    const types = [
+      "ElectrodeGroup",
+      "ElectricalSeries",
+      "SpikeEventSeries",
+      "EventDetection",
+      "EventWaveform",
+      "Clustering",
+      "ClusterWaveform",
+      "LFP",
+      "FilteredEphys",
+      "FeatureExtraction",
+    ];
     return html`
       <div class="coremenu-grid">
         <div class="modulemenu">
@@ -698,7 +708,10 @@ export class InctypeBrowser extends LitElement {
             this.modules,
             (module, i) =>
               html`<div
-                class=${classMap({ selected: i == this.selectedModule })}
+                class=${classMap({
+                  selected: i == this.selectedModule,
+                  module: true,
+                })}
                 @click=${() => {
                   this.selectedModule = i;
                   this.selectedType = -1;
@@ -710,7 +723,7 @@ export class InctypeBrowser extends LitElement {
         </div>
         <div class="typelist">
           ${map(
-            this.modules.slice(0, this.modules[this.selectedModule].length),
+            types,
             (module, i) =>
               html`<div
                 class=${classMap({ selected: i == this.selectedType })}
@@ -823,7 +836,6 @@ export class InctypeBrowser extends LitElement {
         right: 50%;
         transform: translate(1150%, 75%);
         cursor: pointer;
-        border: 2px solid red;
       }
 
       h2 {
@@ -846,6 +858,10 @@ export class InctypeBrowser extends LitElement {
         padding: 0.3em 0.5em;
         text-align: center;
         cursor: pointer;
+      }
+
+      .module {
+        max-width: 150px;
       }
 
       :host > div > h3:hover {
@@ -917,19 +933,20 @@ export class InctypeBrowser extends LitElement {
 
       .typelist {
         box-sizing: border-box;
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        display: flex;
         margin-bottom: auto;
-        width: 400px;
+        width: 600px;
+        flex-wrap: wrap;
         padding: 2em;
       }
 
       .typelist > div {
         padding: 0.3em 0.5em;
         border-radius: 0.2em;
-        height: 1.5em;
         cursor: pointer;
         margin: 0.4em;
+        display: flex;
+        min-width: 100px;
         border: 1px solid var(--color-border-alt);
       }
 
@@ -940,7 +957,9 @@ export class InctypeBrowser extends LitElement {
 
       .typelist > div.selected {
         border: 2px solid var(--clickable);
-        color: var(--clickable);
+        color: var(--clickable-hover);
+        text-decoration: none;
+        font-weight: bold;
       }
 
       :host > div:last-child {

@@ -263,6 +263,8 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
     links: [],
   };
 
+  incType = { name: "SpikeTimeSeries" };
+
   protected icon: string = "folder";
   render() {
     return html`
@@ -270,7 +272,7 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
         ${this.topInput()}
         <default-name slot="options"></default-name>
         ${this.bottomInput()}
-        <group-subtree slot="subtree"></group-subtree>
+        <group-subtree .disabled=${false} slot="subtree"></group-subtree>
         ${this.forms()}
         <light-button slot="save">Save</light-button>
       </type-elem>
