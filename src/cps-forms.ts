@@ -71,18 +71,21 @@ type TriggerFormFn<T> = (
   onComplete: (res: T) => void
 ) => void;
 
-// algorithmic laws (written with lisp syntax)
+// algorithmic laws
 
-/* compose ([], _, v, back, next) = next(v, back)
- * compose ([f, ...fs], (i - 1), v, back, next) =
+/*
+ *
+ *
+ *  compose ([], _, v, back, next) = next(v, back)
+ *  compose ([f, ...fs], (i - 1), v, back, next) =
  *      show (f, v, i, back, (v', back') => compose (fs, i + 1, v', back', next)
  *
- * show (f, v, i, back, next) =
- *    f.fill(v, i)
- *    next(f(v), () => show (f, f(v), i, back, next)) // if next is hit
- * show (f, v, i, back, next) =
- *    f.fill(v, i)
- *    back() // if back is hit
+ *  show (f, v, i, back, next) =
+ *      f.fill(v, i)
+ *      next(f(v), () => show (f, f(v), i, back, next)) // if next is hit
+ *  show (f, v, i, back, next) =
+ *      f.fill(v, i)
+ *      back() // if back is hit
  */
 
 export function composeForm<T>(
@@ -135,8 +138,8 @@ export function composeForm<T>(
       form.setVisible(false);
       const newval = { ...form.transform(value) };
       next(newval, () =>
-        show(form, newval, currProgress, back, (_value: T, _back) => {
-          console.log("hello: ", newval);
+        show(form, newval, currProgress, back, (_: T, _back) => {
+          form.fill(newval);
           next(newval, _back);
         })
       );
