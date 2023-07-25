@@ -61,7 +61,7 @@ abstract class NdxFormPageElem<T> extends LitElement {
 
   drawProgressBar = (_progressSteps: string[], _curr: number) => {};
   onValidateCallback = (_ready: boolean) => {};
-  protected _selfValidate() {
+  _selfValidate() {
     this.onValidateCallback(this.isValid());
   }
 }
@@ -79,8 +79,8 @@ type TriggerFormFn<T> = (
  *
  * show (f, v, i, back, next) =
  *    f.fill(v, i)
- *    next(v, () => show (f, v, i, back, next)) // if next is hit
- * show (f, v, i, back, next)
+ *    next(f(v), () => show (f, f(v), i, back, next)) // if next is hit
+ * show (f, v, i, back, next) =
  *    f.fill(v, i)
  *    back() // if back is hit
  */
@@ -101,43 +101,44 @@ export function composeForm<T>(
   ) {
     if (forms.length === 0) {
       complete(value, back);
-      return;
-    }
-
-    console.log(
-      `on form ${currProgress} current value ${JSON.stringify(value)}`
-    );
-
-    const [currForm, ...restForms] = forms;
-    currForm.fill(value);
-    currForm.setVisible(true);
-
-    if (currForm.progressTitle !== undefined) {
-      currForm.drawProgressBar(progressTitles, currProgress);
     } else {
-      currForm.drawProgressBar([], -1);
+      const [currForm, ...restForms] = forms;
+      show(currForm, value, currProgress, back, (_val, _back) => {
+        compose(restForms, currProgress + 1, _val, _back, complete);
+      });
+    }
+  }
+
+  function show(
+    form: NdxFormPageElem<T>,
+    value: T,
+    currProgress: number,
+    back: () => void,
+    next: (_val: T, _back: () => void) => void
+  ): void {
+    form.fill(value);
+    form._selfValidate();
+    form.setVisible(true);
+
+    if (form.progressTitle !== undefined) {
+      form.drawProgressBar(progressTitles, currProgress);
+    } else {
+      form.drawProgressBar([], -1);
     }
 
-    currForm.onBackCallback = () => {
-      currForm.setVisible(false);
+    form.onBackCallback = () => {
+      form.setVisible(false);
       back();
     };
 
-    currForm.onNextCallback = () => {
-      currForm.setVisible(false);
-      compose(
-        restForms,
-        currProgress + 1,
-        currForm.transform(value),
-        () =>
-          compose(
-            forms,
-            currProgress,
-            currForm.transform(value),
-            back,
-            complete
-          ),
-        complete
+    form.onNextCallback = () => {
+      form.setVisible(false);
+      const newval = { ...form.transform(value) };
+      next(newval, () =>
+        show(form, newval, currProgress, back, (_value: T, _back) => {
+          console.log("hello: ", newval);
+          next(newval, _back);
+        })
       );
     };
   }
