@@ -61,11 +61,7 @@ export type Quantity =
 
 export type CoreGroupType = "Example" | "None";
 
-export enum CoreDatasetType {
-  Example,
-  New,
-  None,
-}
+export type CoreDatasetType = "Example" | "None";
 
 export enum PrimitiveDtype {
   i8,

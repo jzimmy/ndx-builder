@@ -1,5 +1,5 @@
 // todo implement onDelete for all
-import { html, PropertyValueMap, TemplateResult } from "lit";
+import { css, html, LitElement, PropertyValueMap, TemplateResult } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { BasicTypeElem } from "./type-elem";
@@ -14,6 +14,7 @@ import {
   TypeDef,
 } from "./nwb/spec";
 import { ComposedFormElem, composeForm, NdxFormManager } from "./form-elem";
+import { symbols } from "./styles";
 
 @customElement("link-dec-elem")
 export class LinkDecElem extends BasicTypeElem {
@@ -325,4 +326,80 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
       </type-elem>
     `;
   }
+}
+
+/// SUBTREES
+
+@customElement("group-subtree")
+export class GroupSubtree extends LitElement {
+  @property({ type: Boolean })
+  disabled = true;
+
+  @property()
+  attribs: AttribDecElem[] = [];
+  @property()
+  datasets: DatasetDecElem[] = [];
+  @property()
+  groups: GroupDecElem[] = [];
+  @property()
+  links: LinkDecElem[] = [];
+
+  render() {
+    return html`<subtree-branchh
+        ?disabled=${this.disabled}
+        slot="subtree"
+        id="groups"
+      >
+        <span slot="icon" class="material-symbols-outlined">folder</span>
+      </subtree-branchh>
+      <subtree-branchh ?disabled=${this.disabled} slot="subtree" id="datasets">
+        <span slot="icon" class="material-symbols-outlined">dataset</span>
+      </subtree-branchh>
+      <subtree-branchh
+        ?disabled=${this.disabled}
+        slot="subtree"
+        id="attributes"
+      >
+        <span slot="icon" class="material-symbols-outlined">edit_note</span>
+      </subtree-branchh>
+      <subtree-branchh
+        ?disabled=${this.disabled}
+        slot="subtree"
+        lastBranch="true"
+        id="links"
+      >
+        <span slot="icon" class="material-symbols-outlined">link</span>
+      </subtree-branchh>`;
+  }
+
+  static styles = [
+    symbols,
+    css`
+      span.material-symbols-outlined {
+        font-size: 30px;
+      }
+    `,
+  ];
+}
+
+@customElement("dataset-subtree")
+export class DatasetSubtree extends LitElement {
+  @property({ type: Boolean })
+  disabled = true;
+
+  @property()
+  attribs: AttribDecElem[] = [];
+
+  render() {
+    return html`<subtree-branchh
+      ?disabled=${this.disabled}
+      slot="subtree"
+      lastBranch="true"
+      id="attributes"
+    >
+      <span slot="icon" class="material-symbols-outlined">edit_note</span>
+    </subtree-branchh>`;
+  }
+
+  static styles = symbols;
 }

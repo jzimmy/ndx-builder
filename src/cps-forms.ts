@@ -6,15 +6,24 @@ import { symbols } from "./styles";
 import {
   AttributeDec,
   DatasetDec,
+  DatasetType,
+  DatasetTypeDef,
   Defaultable,
+  Dtype,
   GroupDec,
   GroupType,
   GroupTypeDef,
   LinkDec,
+  PrimitiveDtype,
 } from "./nwb/spec";
+import { when } from "lit/directives/when.js";
 
-interface HasIncType {
+interface HasGroupIncType {
   neurodataTypeInc: GroupType;
+}
+
+interface HasDatasetIncType {
+  neurodataTypeInc: DatasetType;
 }
 
 interface HasNameAndDescription {
@@ -24,7 +33,7 @@ interface HasNameAndDescription {
 
 interface HasAxes {
   shape: [number, string][];
-  dtype: string;
+  dtype: Dtype;
 }
 
 interface HasDefaultName {
@@ -43,12 +52,15 @@ interface HasGroupSubComponents {
 }
 
 abstract class NdxFormPageElem<T> extends LitElement {
-  abstract ready: boolean;
-  abstract progressTitle?: string;
-  abstract isValid(): boolean;
+  abstract drawProgressBar(titles: string[], curr: number): void;
+  // IMPORTANT! This function must be idempotent and commutative
+  // meaning that any transform f and g
+  // f(f(x)) = f(x) and f(g(x)) = g(f(x)) for all x
   abstract transform: (data: T) => T;
   abstract fill(data: T): this;
-  abstract setVisible(show: boolean): void;
+  abstract clear(): this;
+  abstract setSlotToCurrFormAndFocus(show: boolean): void;
+  abstract _selfValidate(): void;
   onCloseCallback: () => void = () => {
     throw new Error("Method not implemented.");
   };
@@ -58,12 +70,6 @@ abstract class NdxFormPageElem<T> extends LitElement {
   onBackCallback: () => void = () => {
     throw new Error("Method not implemented.");
   };
-
-  drawProgressBar = (_progressSteps: string[], _curr: number) => {};
-  onValidateCallback = (_ready: boolean) => {};
-  _selfValidate() {
-    this.onValidateCallback(this.isValid());
-  }
 }
 
 type TriggerFormFn<T> = (
@@ -71,86 +77,87 @@ type TriggerFormFn<T> = (
   onComplete: (res: T) => void
 ) => void;
 
-// algorithmic laws
-
-/*
+/*  Algorithmic laws for composeForm
+ *  Note: composeForm is curried
+ *  composeForm(v, fs)(onAbandon, onComplete) = compose (fs, 0, v, onAbandon, onComplete)
  *
- *
- *  compose ([], _, v, back, next) = next(v, back)
- *  compose ([f, ...fs], (i - 1), v, back, next) =
- *      show (f, v, i, back, (v', back') => compose (fs, i + 1, v', back', next)
- *
- *  show (f, v, i, back, next) =
- *      f.fill(v, i)
- *      next(f(v), () => show (f, f(v), i, back, next)) // if next is hit
- *  show (f, v, i, back, next) =
- *      f.fill(v, i)
+ *  compose ([], _, v, back, complete) = complete(v, back)
+ *  compose ([f, ...fs], (i - 1), v, back, complete) where back button is hit =
  *      back() // if back is hit
+ *  compose ([f, ...fs], (i - 1), v, back, complete) where next button is hit =
+ *      compose(fs, i, v, () => compose ([f, ...fs], (i - 1), f(v), back, complete),
+ *                        complete)
  */
 
 export function composeForm<T>(
   intialData: T,
-  forms: NdxFormPageElem<T>[]
+  formsTitlePairs: [NdxFormPageElem<T>, string | null][]
 ): TriggerFormFn<T> {
-  const progressTitles = forms.flatMap((f) =>
-    f.progressTitle !== undefined ? f.progressTitle : []
+  // unzip pair
+  const [forms, progressTitles] = formsTitlePairs.reduce(
+    ([fs, ts], [f, t]) => [
+      [...fs, f],
+      [...ts, t],
+    ],
+    [[], []] as [NdxFormPageElem<T>[], (string | null)[]]
   );
+
   function compose(
     forms: NdxFormPageElem<T>[],
     currProgress: number,
     value: T,
     back: () => void,
-    complete: (_: T, res: () => void) => void
+    complete: (_: T) => void
   ) {
     if (forms.length === 0) {
-      complete(value, back);
+      complete(value);
     } else {
       const [currForm, ...restForms] = forms;
-      show(currForm, value, currProgress, back, (_val, _back) => {
-        compose(restForms, currProgress + 1, _val, _back, complete);
-      });
+      currForm._selfValidate();
+      currForm.setSlotToCurrFormAndFocus(true);
+      currForm.fill(value);
+
+      if (progressTitles[currProgress]) {
+        currForm.drawProgressBar(
+          progressTitles.flatMap((s) => (s ? [s] : [])),
+          currProgress
+        );
+      }
+
+      const nextProgress =
+        currProgress + (progressTitles[currProgress] ? 1 : 0);
+
+      currForm.onBackCallback = () => {
+        currForm.setSlotToCurrFormAndFocus(false);
+        back();
+      };
+
+      currForm.onNextCallback = () => {
+        currForm.setSlotToCurrFormAndFocus(false);
+        compose(
+          restForms,
+          nextProgress,
+          currForm.transform(value),
+          () =>
+            compose(
+              forms,
+              currProgress,
+              currForm.transform(value),
+              back,
+              complete
+            ),
+          complete
+        );
+      };
     }
-  }
-
-  function show(
-    form: NdxFormPageElem<T>,
-    value: T,
-    currProgress: number,
-    back: () => void,
-    next: (_val: T, _back: () => void) => void
-  ): void {
-    form.fill(value);
-    form._selfValidate();
-    form.setVisible(true);
-
-    if (form.progressTitle !== undefined) {
-      form.drawProgressBar(progressTitles, currProgress);
-    } else {
-      form.drawProgressBar([], -1);
-    }
-
-    form.onBackCallback = () => {
-      form.setVisible(false);
-      back();
-    };
-
-    form.onNextCallback = () => {
-      form.setVisible(false);
-      const newval = { ...form.transform(value) };
-      next(newval, () =>
-        show(form, newval, currProgress, back, (_: T, _back) => {
-          form.fill(newval);
-          next(newval, _back);
-        })
-      );
-    };
   }
 
   return (
     onAbandonCallback: () => void,
     onCompleteCallback: (res: T) => void
   ) => {
-    forms.map((f) => f.setVisible(false));
+    forms.map((f) => f.clear());
+    forms.map((f) => f.setSlotToCurrFormAndFocus(false));
     forms.map((f) => (f.onCloseCallback = onAbandonCallback));
     compose(forms, 0, intialData, onAbandonCallback, onCompleteCallback);
   };
@@ -166,9 +173,10 @@ abstract class BasicFormPage<T> extends NdxFormPageElem<T> {
   ready: boolean = false;
   abstract isValid(): boolean;
   abstract body(): TemplateResult<1>;
+  abstract get firstInput(): HTMLElement;
 
   @state()
-  progressSteps: string[] = ["Step 1", "Step 2", "Step 3"];
+  progressSteps: string[] = [];
 
   @state()
   currProgress: number = -1;
@@ -182,12 +190,17 @@ abstract class BasicFormPage<T> extends NdxFormPageElem<T> {
     this.continueButton.disabled = !ready;
   };
 
-  setVisible(show: boolean): void {
+  setSlotToCurrFormAndFocus(show: boolean): void {
     this.slot = show ? "currForm" : "";
+    this.firstInput.focus();
   }
 
   @query("input[type=button]")
   continueButton!: HTMLInputElement;
+
+  _selfValidate() {
+    this.onValidateCallback(this.isValid());
+  }
 
   render() {
     return html`
@@ -291,10 +304,7 @@ abstract class BasicFormPage<T> extends NdxFormPageElem<T> {
   ] as CSSResultGroup;
 }
 
-@customElement("inctype-form")
-export class InctypeFormpageElem<
-  T extends HasIncType
-> extends BasicFormPage<T> {
+abstract class InctypeFormpageElem<T> extends BasicFormPage<T> {
   progressTitle?: string | undefined = "Pick base type";
   formTitle: string = "Choose a base type to extend";
 
@@ -304,6 +314,14 @@ export class InctypeFormpageElem<
   isValid(): boolean {
     return this.inctypeNameInput.value !== "";
   }
+
+  clear(): this {
+    this.inctypeNameInput.value = "";
+    return this;
+  }
+
+  @query("input[name=inctype-name]")
+  firstInput!: HTMLElement;
 
   body(): TemplateResult<1> {
     return html`
@@ -317,34 +335,67 @@ export class InctypeFormpageElem<
     `;
   }
 
-  transform: (_: T) => T = (data: T) => {
-    return { ...data, neurodataTypeInc: ["Core", this.inctypeNameInput.value] };
+  static styles = [super.styles, css``];
+}
+
+@customElement("group-inctype-form")
+export class GroupInctypeFormpageElem<
+  T extends HasGroupIncType
+> extends InctypeFormpageElem<T> {
+  transform = (data: T) => {
+    return {
+      ...data,
+      neurodataTypeInc: ["Core", this.inctypeNameInput.value] as GroupType,
+    };
   };
 
   fill(data: T): this {
-    const [kind, incType] = data.neurodataTypeInc as GroupType;
-    let incName = "";
+    const [kind, incType] = data.neurodataTypeInc;
     switch (kind) {
       case "Core":
-        incName = incType;
+        this.inctypeNameInput.value = incType;
         break;
       case "Typedef":
-        incName = incType.neurodataTypeDef;
+        this.inctypeNameInput.value = incType.neurodataTypeDef;
         break;
       default:
         assertNever(kind);
     }
-    this.inctypeNameInput.value = incName;
     return this;
   }
+}
 
-  static styles = [super.styles, css``];
+@customElement("dataset-inctype-form")
+export class DatasetInctypeFormpageElem<
+  T extends HasDatasetIncType
+> extends InctypeFormpageElem<T> {
+  transform = (data: T) => {
+    return { ...data, neurodataTypeInc: ["Core", this.inctypeNameInput.value] };
+  };
+  fill(data: T): this {
+    const [kind, incType] = data.neurodataTypeInc;
+    switch (kind) {
+      case "Core":
+        this.inctypeNameInput.value = incType;
+        break;
+      case "Typedef":
+        this.inctypeNameInput.value = incType.neurodataTypeDef;
+        break;
+      default:
+        assertNever(kind);
+    }
+    return this;
+  }
 }
 
 @customElement("tyname-form")
 export class TypenameFormpageElem<
   T extends HasNameAndDescription
 > extends BasicFormPage<T> {
+  get firstInput(): HTMLElement {
+    return this.typenameInput;
+  }
+
   progressTitle?: string | undefined = "Name and description";
   formTitle: string = "Define your new type";
 
@@ -358,6 +409,12 @@ export class TypenameFormpageElem<
     return (
       this.typenameInput.value !== "" && this.descriptionInput.value !== ""
     );
+  }
+
+  clear(): this {
+    this.typenameInput.value = "";
+    this.descriptionInput.value = "";
+    return this;
   }
 
   body(): TemplateResult<1> {
@@ -378,8 +435,12 @@ export class TypenameFormpageElem<
   };
 
   fill(data: T): this {
-    this.typenameInput.value = data.neurodataTypeDef;
-    this.descriptionInput.value = data.doc;
+    if (data.neurodataTypeDef) {
+      this.typenameInput.value = data.neurodataTypeDef;
+    }
+    if (data.doc) {
+      this.descriptionInput.value = data.doc;
+    }
     return this;
   }
 
@@ -388,6 +449,10 @@ export class TypenameFormpageElem<
 
 @customElement("axes-form")
 export class AxesFormpageElem<T extends HasAxes> extends BasicFormPage<T> {
+  get firstInput(): HTMLElement {
+    return this.axesShapeInput;
+  }
+
   progressTitle?: string | undefined = "Data shape";
   formTitle: string = "Define the axes of the data in this type";
 
@@ -399,6 +464,13 @@ export class AxesFormpageElem<T extends HasAxes> extends BasicFormPage<T> {
 
   @query("select[name=dtype]")
   dtypeInput!: HTMLSelectElement;
+
+  clear(): this {
+    this.axesShapeInput.value = "";
+    this.axesLabelsInput.value = "";
+    this.dtypeInput.value = "uint8";
+    return this;
+  }
 
   isValid(): boolean {
     return true;
@@ -426,7 +498,7 @@ export class AxesFormpageElem<T extends HasAxes> extends BasicFormPage<T> {
     `;
   }
 
-  transform = (data: T) => {
+  transform: (data: T) => typeof data = (data: T) => {
     let dims = this.axesShapeInput.value.split(",").map((s) => parseInt(s));
     let labels = this.axesLabelsInput.value.split(",").map((s) => s.trim());
     let dtype = this.dtypeInput.value;
@@ -434,7 +506,7 @@ export class AxesFormpageElem<T extends HasAxes> extends BasicFormPage<T> {
     return {
       ...data,
       shape: shape,
-      dtype: dtype,
+      dtype: ["PRIMITIVE", PrimitiveDtype.i8],
     };
   };
 
@@ -442,9 +514,15 @@ export class AxesFormpageElem<T extends HasAxes> extends BasicFormPage<T> {
     let dims = data.shape.map(([dim, _]) => dim);
     let labels = data.shape.map(([_, label]) => label);
     let dtype = data.dtype;
-    this.axesShapeInput.value = dims.join(", ");
-    this.axesLabelsInput.value = labels.join(", ");
-    this.dtypeInput.value = dtype;
+    if (dims.length) {
+      this.axesShapeInput.value = dims.join(", ");
+    }
+    if (labels.length) {
+      this.axesLabelsInput.value = labels.join(", ");
+    }
+    if (dtype !== undefined) {
+      this.dtypeInput.value = "uint8";
+    }
     return this;
   }
 
@@ -455,6 +533,10 @@ export class AxesFormpageElem<T extends HasAxes> extends BasicFormPage<T> {
 export class DefaultNameFormpageElem<
   T extends HasDefaultName
 > extends BasicFormPage<T> {
+  get firstInput(): HTMLElement {
+    return this.defaultNameInput;
+  }
+
   progressTitle?: string | undefined = "Optional fields";
   formTitle: string = "Define the name of the default instance";
 
@@ -463,6 +545,12 @@ export class DefaultNameFormpageElem<
 
   @query("input[name=fixed-name]")
   fixedNameInput!: HTMLInputElement;
+
+  clear(): this {
+    this.defaultNameInput.value = "";
+    this.fixedNameInput.checked = false;
+    return this;
+  }
 
   isValid(): boolean {
     return (
@@ -513,6 +601,7 @@ export class DefaultNameFormpageElem<
 
   static styles = [super.styles, css``];
 }
+
 function assertNever(_: never): never {
   throw new Error("Function not implemented.");
 }
@@ -522,35 +611,75 @@ export class FormParentElem extends LitElement {
   @property({ type: Boolean, reflect: true })
   formOpen = false;
 
+  private static defaultGroupTypedef: GroupTypeDef = {
+    neurodataTypeDef: "",
+    neurodataTypeInc: ["Core", "None"],
+    doc: "",
+    groups: [],
+    datasets: [],
+    attributes: [],
+    links: [],
+  };
+  private static defaultDatasetTypedef: DatasetTypeDef = {
+    neurodataTypeDef: "",
+    neurodataTypeInc: ["Core", "None"],
+    doc: "",
+    attributes: [],
+    shape: [],
+    dtype: ["PRIMITIVE", PrimitiveDtype.i8],
+  };
+  private static groupForms: [NdxFormPageElem<GroupTypeDef>, string | null][] =
+    [
+      [new GroupInctypeFormpageElem(), "Pick base type"],
+      [new TypenameFormpageElem(), "Name and description"],
+      [new DefaultNameFormpageElem(), "Optional fields"],
+    ];
+  private static datasetForms: [
+    NdxFormPageElem<DatasetTypeDef>,
+    string | null
+  ][] = [
+    [new DatasetInctypeFormpageElem(), "Pick base type"],
+    [new TypenameFormpageElem(), "Name and description"],
+    [new AxesFormpageElem(), null],
+    [new DefaultNameFormpageElem(), "Optional fields"],
+  ];
+  private static groupBuilderForm = composeForm<GroupTypeDef>(
+    FormParentElem.defaultGroupTypedef,
+    FormParentElem.groupForms
+  );
+  private static datasetBuilderForm = composeForm<DatasetTypeDef>(
+    FormParentElem.defaultDatasetTypedef,
+    FormParentElem.datasetForms
+  );
+
   constructor() {
     super();
-    const defaultGroupTypedef: GroupTypeDef = {
-      neurodataTypeDef: "",
-      neurodataTypeInc: ["Core", "None"],
-      doc: "",
-      groups: [],
-      datasets: [],
-      attributes: [],
-      links: [],
-    };
-
-    const forms: NdxFormPageElem<GroupTypeDef>[] = [
-      new InctypeFormpageElem(),
-      new TypenameFormpageElem(),
-      new DefaultNameFormpageElem(),
-    ];
-
-    forms.map((f) => this.appendChild(f));
-
-    const groupBuilderForm = composeForm<GroupTypeDef>(
-      defaultGroupTypedef,
-      forms
-    );
-
+    FormParentElem.groupForms.forEach((f) => this.appendChild(f[0]));
+    FormParentElem.datasetForms.forEach((f) => this.appendChild(f[0]));
     this.triggerGroupBuilder = () => {
-      groupBuilderForm(
+      FormParentElem.datasetForms.forEach((f) => f[0].clear());
+      FormParentElem.datasetForms.forEach((f) =>
+        f[0].setSlotToCurrFormAndFocus(false)
+      );
+      this.formOpen = true;
+      FormParentElem.groupBuilderForm(
         () => {
-          console.log("called abandon");
+          this.formOpen = false;
+        },
+        (value) => {
+          console.log(value);
+          this.formOpen = false;
+        }
+      );
+    };
+    this.triggerDatasetBuilder = () => {
+      FormParentElem.groupForms.forEach((f) => f[0].clear());
+      FormParentElem.groupForms.forEach((f) =>
+        f[0].setSlotToCurrFormAndFocus(false)
+      );
+      this.formOpen = true;
+      FormParentElem.datasetBuilderForm(
+        () => {
           this.formOpen = false;
         },
         (value) => {
@@ -561,27 +690,35 @@ export class FormParentElem extends LitElement {
     };
   }
 
-  triggerGroupBuilder: () => void;
+  private triggerGroupBuilder: () => void;
+  private triggerDatasetBuilder: () => void;
 
   render() {
     return html`
-      <input
-        type="button"
-        value="new_group"
-        @click=${this.triggerGroupBuilder}
-      />
-      <input type="button" value="new_dataset" />
-      <slot name="currForm"></slot>
+      ${when(
+        !this.formOpen,
+        () => html`
+          <input
+            type="button"
+            value="new_group"
+            @click=${this.triggerGroupBuilder}
+          />
+          <input
+            type="button"
+            value="new_dataset"
+            @click=${this.triggerDatasetBuilder}
+          />
+        `
+      )}
+      <form>
+        ${when(this.formOpen, () => html` <slot name="currForm"></slot> `)}
+      </form>
     `;
   }
 
   static styles = [
     css`
       :host {
-      }
-
-      :host[formOpen] input {
-        display: none;
       }
     `,
   ];
