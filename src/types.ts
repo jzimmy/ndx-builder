@@ -307,7 +307,7 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
   default: DatasetTypeDef = {
     neurodataTypeDef: "",
     dtype: ["PRIMITIVE", PrimitiveDtype.f32],
-    neurodataTypeInc: ["Core", CoreDatasetType.None],
+    neurodataTypeInc: ["Core", "None"],
     doc: "",
     attributes: [],
     shape: [],
