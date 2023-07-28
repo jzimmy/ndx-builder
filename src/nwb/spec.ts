@@ -50,16 +50,21 @@
  *
  */
 
+// [_, true] means default
+export type Defaultable<T> = [T, boolean];
+
 export type Namespace = {
   name: string;
   doc: string;
+  version: [number, number, number];
   authors: [string, string];
   groups: GroupTypeDef[];
   datasets: DatasetTypeDef[];
 };
 
-// [_, true] means default
-export type Defaultable<T> = [T, boolean];
+export type NeuroDataTypeDef =
+  | ["GROUP", GroupTypeDef]
+  | ["DATASET", DatasetTypeDef];
 
 export type Quantity =
   | ["?", null]

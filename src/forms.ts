@@ -1,583 +1,445 @@
-import { LitElement, html, css, CSSResultGroup, PropertyValueMap } from "lit";
+import { customElement, query, state } from "lit/decorators.js";
+import { CPSForm, assertNever } from "./HOFS";
+import { TemplateResult, html, css, CSSResultGroup } from "lit";
 import {
-  customElement,
-  state,
-  query,
-  property,
-  queryAssignedElements,
-} from "lit/decorators.js";
-import { symbols } from "./styles";
-import { NdxInput } from "./playground";
-import { Defaultable, GroupTypeDef } from "./nwb/spec";
-import { map } from "lit/directives/map.js";
+  HasGroupIncType,
+  HasDatasetIncType,
+  HasInstanceNameAndDescription,
+  HasTypeNameAndDescription,
+  HasDefaultName,
+  HasAxes,
+} from "./form-elem";
+import { GroupType } from "./nwb/spec";
 import { classMap } from "lit/directives/class-map.js";
-import { choose } from "lit/directives/choose.js";
-import { ComposedFormElem } from "./form-elem";
+import { map } from "lit/directives/map.js";
+import { symbols } from "./styles";
 
-interface NamedNdxElem {
-  name?: Defaultable<string>;
-}
-
-interface ShapedNdxElem {
-  dataType: string;
-  axes: [number, string][];
-}
-
-// appears inside the visualization
-@customElement("default-name")
-export class DefaultNameElem extends LitElement {
-  get value() {
-    if (!this.nameInput.value) {
-      return null;
-    }
-    return [this.nameInput.value, true];
-  }
-
-  @query("ndx-input")
-  nameInput!: NdxInput;
-
-  render() {
-    return html`
-        <ndx-input info="The default name will be applied when you declare an instance of this type" label="Default instance name"></ndx-input>
-        <label class="checkbox" for="fixed-name">
-            <input name="fixed-name" type="checkbox"></input>Fixed name
-            <hover-icon>If checked, the name of the instance will be fixed and cannot be changed.</hover-icon>
-        </label>
-    `;
-  }
-
-  static styles = css`
-    label {
-      display: flex;
-      align-items: center;
-    }
-
-    label > hover-icon {
-      margin: 0 0.3em;
-    }
-
-    label,
-    label > input[type="checkbox"] {
-      margin: 0 0.5em;
-    }
-  ` as CSSResultGroup;
-}
-
-@customElement("nd-array")
-export class NdArrayElem extends LitElement {
-  render() {
-    return html`
-      <ndx-input label="Data type"></ndx-input>
-      <ndx-input label="Axes shape"></ndx-input>
-      <ndx-input label="Axes dimension"></ndx-input>
-    `;
-  }
-}
-
-@customElement("name-or-quantity")
-export class NameOrQuantityElem extends LitElement {
-  @state()
-  namedNotQuantity = false;
-
-  @query("#name")
-  nameInput!: HTMLInputElement;
-
-  @query("#quantity")
-  quantityInput!: HTMLInputElement;
-
-  get value() {
-    return this.namedNotQuantity
-      ? this.nameInput.value
-      : this.quantityInput.value;
-  }
-
-  render() {
-    return html`
-      <label
-        ><input
-          @input=${() => (this.namedNotQuantity = !this.namedNotQuantity)}
-          .checked=${this.namedNotQuantity}
-          type="checkbox"
-        />Named instance</label
-      >
-      ${this.namedNotQuantity
-        ? html` <ndx-input id="name" label="Instance name"></ndx-input> `
-        : html`<ndx-input id="quantity" label="Quantity"></ndx-input>`}
-    `;
-  }
-
-  static styles = css`
-    label,
-    label > input[type="checkbox"] {
-      margin: 0 0.5em;
-    }
-  `;
-}
-
-export abstract class BasicFormElem<T> extends LitElement {
-  @property()
-  currentForm = 0;
-
-  @queryAssignedElements()
-  forms!: HTMLElement[];
-
-  abstract addFields: (value: T) => T;
-
-  render() {
-    return html`
-      <h1>${this.forms[this.currentForm].title}</h1>
-      <slot name="fields"></slot>
-    `;
-  }
-}
-
-// appears as a page in a multiform
-@customElement("default-name-formpage")
-export class DefaultNameFormpageElem<
-  T extends NamedNdxElem
-> extends ComposedFormElem<T> {
-  title = "Add a default name to instances of this type";
-  isValid: () => boolean = () => {
-    return this.nameInput.value != null;
-  };
-
-  showWithValues: (value: T) => Element = (_value) => {
-    return this;
-  };
-
-  transform: (oldT: T) => T = (oldT: T) => {
-    if (this.nameInput.value == "") {
-      return { ...oldT, name: undefined };
-    }
-    return {
-      ...oldT,
-      name: [
-        this.nameInput.value,
-        this.fixedNameCheckbox.checked,
-      ] as Defaultable<string>,
-    };
-  };
-
-  @query("ndx-input")
-  nameInput!: NdxInput;
-
-  @query("input[type='checkbox']")
-  fixedNameCheckbox!: HTMLInputElement;
-
-  render() {
-    return html`
-        <h1>Instance names</h1>
-        <h3>Optional</h3>
-        <div>The default name will ...</div>
-        <ndx-input info="The default name will be applied when you declare an instance of this type" label="Default instance name"></ndx-input>
-        <div>When another types uses this type do this</div>
-        <label class="checkbox" for="fixed-name">
-            <input name="fixed-name" type="checkbox"></input>Fixed name
-            <hover-icon>If checked, the name of the instance will be fixed and cannot be changed.</hover-icon>
-        </label>
-    `;
-  }
-
-  static styles = [
-    DefaultNameElem.styles,
-    css`
-      :host {
-        display: flex;
-        flex-direction: column;
-        color: var(--color-text);
-      }
-
-      h1 {
-        text-align: center;
-      }
-    `,
-  ];
-}
-
-@customElement("nd-array-formpage")
-export class NDArrayFormpageElem<
-  T extends ShapedNdxElem
-> extends ComposedFormElem<T> {
-  @property()
-  title = "Define the shape of the axes";
-
-  isValid: () => boolean = () => {
-    return this.axes != null && this.dtype != null;
-  };
-
-  showWithValues: (value: T) => Element = (value) => {
-    this.axes = value.axes;
-    this.dtype = value.dataType;
-    return this;
-  };
-
-  transform: (oldT: T) => T = (oldT: T) => {
-    return {
-      ...oldT,
-      dataType: this.dtypeInput.value,
-      axes: this.axes,
-    };
-  };
+// Developer responsibilities:
+// define isValid() method
+// define body() method
+// add this._selfValidate to all inputs
+export abstract class BasicFormPage<T> extends CPSForm<T> {
+  abstract formTitle: string;
+  ready: boolean = false;
+  abstract isValid(): boolean;
+  abstract body(): TemplateResult<1>;
+  abstract get firstInput(): HTMLElement;
 
   @state()
-  dtype: string = "float32";
+  progressSteps: string[] = [];
 
   @state()
-  axes: [number, string][] = [];
+  currProgress: number = -1;
 
-  @query("#dtype")
-  dtypeInput!: NdxInput;
+  drawProgressBar = (progressSteps: string[], curr: number) => {
+    this.progressSteps = progressSteps;
+    this.currProgress = curr;
+  };
 
-  @query("#shape")
-  shapeInput!: NdxInput;
+  onValidateCallback = (ready: boolean) => {
+    this.continueButton.disabled = !ready;
+  };
 
-  @query("#labels")
-  labelsInput!: NdxInput;
+  showAndFocus(show: boolean): void {
+    this.slot = show ? "currForm" : "";
+    this.firstInput.focus();
+  }
+
+  @query("input[type=button]")
+  continueButton!: HTMLInputElement;
+
+  _selfValidate() {
+    this.onValidateCallback(this.isValid());
+  }
 
   render() {
     return html`
-      <div>Enter the type of data being stored</div>
-      <ndx-input id="dtype" label="Data type"></ndx-input>
-      <div>Enter the sizes of the axes</div>
-      <ndx-input id="shape" label="Axes shape"></ndx-input>
-      <div>Enter the axes labels</div>
-      <ndx-input id="labels" label="Axes dimension"></ndx-input>
-    `;
-  }
-}
-
-// TODO REMOVE ME
-// Demo group type
-
-@customElement("group-inctype-browser")
-export class GroupInctypeBrowser extends ComposedFormElem<GroupTypeDef> {
-  title: string = "Pick a base type to extend";
-  isValid: () => boolean = () => {
-    return this.category == "None" || this.selectedType != -1;
-  };
-
-  showWithValues = (_: GroupTypeDef) => this;
-  transform = (oldT: GroupTypeDef) => {
-    return {
-      ...oldT,
-      neurodataTypeInc: ["Core", "None"],
-    } as GroupTypeDef;
-  };
-
-  @property({ reflect: true })
-  private _category: "Core" | "Typedef" | "None" = "Core";
-  get category() {
-    return this._category;
-  }
-  set category(val: "Core" | "Typedef" | "None") {
-    this._category = val;
-    if (val != "None") this.selectedType = -1;
-  }
-
-  @state()
-  selectedModule: number = 0;
-
-  @state()
-  private _selectedType: number = -1;
-  get selectedType() {
-    return this._selectedType;
-  }
-  set selectedType(val: number) {
-    this._selectedType = val;
-    this.validate();
-  }
-
-  // 8 dummy entries
-  @property()
-  myTypes: string[] = [
-    "mytype1",
-    "mytype2",
-    "mytype3",
-    "mytype5",
-    "mytype7",
-    "mytype8",
-  ];
-  //   myTypes: ["GROUP" | "DATASET", string][] = [];
-
-  // pynwb core module names
-  modules = [
-    "core",
-    "device",
-    "ecephys",
-    "file",
-    "misc",
-    "ophys",
-    "processing",
-    "time_series",
-    "behavior",
-    "ecephys",
-  ];
-
-  private coreMenu() {
-    return html`
-      <div class="coremenu-grid">
-        <div class="modulemenu">
-          <h3>Modules</h3>
-          ${map(
-            this.modules,
-            (module, i) =>
-              html`<div
-                class=${classMap({ selected: i == this.selectedModule })}
-                @click=${() => {
-                  this.selectedModule = i;
-                  this.selectedType = -1;
-                }}
-              >
-                ${module}
-              </div>`
-          )}
-        </div>
-        <div class="typelist">
-          ${map(
-            this.modules.slice(0, this.modules[this.selectedModule].length),
-            (module, i) =>
-              html`<div
-                class=${classMap({ selected: i == this.selectedType })}
-                @click=${() => (this.selectedType = i)}
-              >
-                ${module}
-              </div>`
-          )}
-        </div>
+      <div class="progress-bar">
+        <span class="material-symbols-outlined back_arrow" @click=${this.back}
+          >arrow_back</span
+        >
+        ${map(
+          this.progressSteps,
+          (step, i) =>
+            html`<h3
+              class=${classMap({
+                active: i == this.currProgress,
+                completed: i < this.currProgress,
+              })}
+            >
+              ${step}
+            </h3>`
+        )}
+        <span class="material-symbols-outlined close_button" @click=${this.quit}
+          >close</span
+        >
       </div>
-    `;
-  }
-
-  private mineMenu() {
-    return html`
-      <div class="coremenu-grid">
-        <div class="typelist">
-          ${map(
-            this.myTypes,
-            (type, i) =>
-              html`<div
-                class=${classMap({ selected: i == this.selectedType })}
-                @click=${() => (this.selectedType = i)}
-              >
-                ${type}
-              </div>`
-          )}
-        </div>
-      </div>
-    `;
-  }
-
-  private noneMenu() {
-    return html`
-      <div class="typelist">
-        <div class="dummy selected">None</div>
-      </div>
-    `;
-  }
-
-  protected firstUpdated(
-    _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
-  ): void {
-    super.firstUpdated(_changedProperties);
-  }
-
-  private changeCategory(category: "Core" | "Typedef" | "None") {
-    this.category = category;
-    if (category != "None") this.selectedType = -1;
-  }
-
-  render() {
-    return html`
       <div>
-        <h3 class=${classMap({ selected: this.category == "Core" })}
-            @click=${() => this.changeCategory("Core")}
-        >
-          Core Types
-        </h3>
-        ${
-          this.myTypes.length > 0
-            ? html`
-                <h3
-                  class=${classMap({ selected: this.category == "Typedef" })}
-                  @click=${() => this.changeCategory("Typedef")}
-                >
-                  My Types
-                </h3>
-              `
-            : html``
-        }
-        <h3 class=${classMap({ selected: this.category == "None" })}
-            @click=${() => this.changeCategory("None")}
-        >
-          No Base
-        </h3>
-        <hr></hr>
+        <h2>${this.formTitle}</h2>
       </div>
-      ${choose(this.category, [
-        ["Core", () => this.coreMenu()],
-        ["Typedef", () => this.mineMenu()],
-        ["None", () => this.noneMenu()],
-      ])}
+      <div class="body">${this.body()}</div>
+      <div>
+        <input
+          type="button"
+          .disabled=${!this.ready}
+          value="Continue"
+          @click=${() => {
+            if (!this.isValid()) {
+              this.onValidateCallback(false);
+            } else {
+              this.next();
+            }
+          }}
+        />
+      </div>
     `;
   }
 
   static styles = [
     symbols,
     css`
+      * {
+        border: 1px solid red;
+      }
+
       :host {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        box-sizing: border-box;
-        min-width: 500px;
-        position: relative;
+        margin: auto;
       }
 
-      :host * {
-        transition: 0.2s;
-      }
-
-      :host > span {
-        position: absolute;
-        top: 0;
-        right: 50%;
-        transform: translate(1150%, 75%);
-        cursor: pointer;
-        border: 2px solid red;
-      }
-
-      h2 {
-        margin: 0.5em;
-      }
-
-      :host > div {
+      :host > div:not(.body) {
         display: flex;
         flex-direction: row;
-        justify-content: center;
-        padding: auto;
-        position: relative;
-        width: 100%;
-        transition: 0.3s;
+        align-items: center;
       }
 
-      :host > div > h3 {
-        margin: 0.5em 1em;
-        min-width: 80px;
-        padding: 0.3em 0.5em;
-        text-align: center;
-        cursor: pointer;
-      }
-
-      :host > div > h3:hover {
-        color: var(--clickable);
-      }
-
-      hr {
-        position: absolute;
-        top: 70%;
-        width: 80%;
-        transition: 0.3s;
-      }
-
-      .selected {
-        text-decoration: underline;
-      }
-
-      :host > div > h3:not(:hover).selected {
-        color: var(--clickable);
-      }
-
-      .coremenu-grid {
-        padding: 1em;
-        width: 100%;
-        box-sizing: border-box;
-        display: flex;
-        justify-content: center;
-      }
-
-      .modulemenu {
-        margin-right: 0.5em;
-        position: relative;
-        padding-right: 1em;
-        border-right: 1px solid var(--color-border-alt);
-      }
-
-      .modulemenu > h3 {
-        text-align: center;
-        position: sticky;
-        top: 0;
-        margin: 0;
-        padding: 0;
-        background: var(--color-background-alt);
-        border-bottom: 1px solid var(--color-border-alt);
-      }
-
-      .modulemenu > div {
-        padding: 0.6em 0.5em;
-        padding-bottom: 0.1em;
-        border-bottom: 1px solid var(--color-border-alt);
-        margin: 0 0.3em;
-        cursor: pointer;
-      }
-
-      .modulemenu > div:hover {
-        color: var(--clickable);
-        border-bottom: 1px solid var(--clickable);
-      }
-
-      .modulemenu > div.selected {
-        color: var(--clickable-hover);
-        border-bottom: 2px solid var(--clickable-hover);
-        text-decoration: none;
-      }
-
-      .modulemenu + .typelist {
-        margin-right: auto;
-      }
-
-      .typelist {
-        box-sizing: border-box;
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-        margin-bottom: auto;
-        width: 400px;
-        padding: 2em;
-      }
-
-      .typelist > div {
-        padding: 0.3em 0.5em;
-        border-radius: 0.2em;
-        height: 1.5em;
-        cursor: pointer;
-        margin: 0.4em;
-        border: 1px solid var(--color-border-alt);
-      }
-
-      .typelist > div:hover {
-        color: var(--clickable);
-        border: 1px solid var(--clickable);
-      }
-
-      .typelist > div.selected {
-        border: 2px solid var(--clickable);
-        color: var(--clickable);
-      }
-
-      :host > div:last-child {
-        display: flex;
-        padding: 0 2em;
-        width: 100%;
-        box-sizing: border-box;
-      }
-
-      :host > div:last-child > dark-button {
+      :host > div:last-child > input[type="button"] {
         margin-left: auto;
       }
 
-      .dummy {
-        width: 80px;
-        margin: 1em;
+      .progress-bar {
+        width: 100%;
+      }
+
+      .progress-bar > span:first-child {
+        margin-right: auto;
+      }
+
+      .progress-bar > span:last-child {
+        margin-left: auto;
+      }
+
+      .progress-bar > h3 {
+        padding: 0 0.5em;
+        text-decoration: underline;
+      }
+
+      .progress-bar > h3:not(.completed):not(.active) {
+        opacity: 0.5;
+        text-decoration: none;
+      }
+
+      .progress-bar > h3.active {
+        color: var(--clickable);
+      }
+
+      .body {
+        display: flex;
+        flex-direction: column;
       }
     `,
-  ];
+  ] as CSSResultGroup;
+}
+
+abstract class InctypeFormpageElem<T> extends BasicFormPage<T> {
+  formTitle: string = "Choose a base type to extend";
+
+  isValid(): boolean {
+    return this.inctypeNameInput.value !== "";
+  }
+
+  clear(): this {
+    this.inctypeNameInput.value = "";
+    return this;
+  }
+
+  @query("input[name=inctype-name]")
+  inctypeNameInput!: HTMLInputElement;
+
+  @query("input[name=inctype-name]")
+  firstInput!: HTMLElement;
+
+  body(): TemplateResult<1> {
+    return html`
+      <label for="inctype-name">IncType name</label>
+      <input
+        name="inctype-name"
+        @input=${this._selfValidate}
+        placeholder="ExampleIncType"
+        value=${""}
+      />
+    `;
+  }
+
+  static styles = [super.styles, css``];
+}
+
+@customElement("group-inctype-form")
+export class GroupInctypeFormpageElem<
+  T extends HasGroupIncType
+> extends InctypeFormpageElem<T> {
+  transform = (data: T) => {
+    return {
+      ...data,
+      neurodataTypeInc: ["Core", this.inctypeNameInput.value] as GroupType,
+    };
+  };
+
+  fill(data: T): this {
+    const [kind, incType] = data.neurodataTypeInc;
+    switch (kind) {
+      case "Core":
+        this.inctypeNameInput.value = incType;
+        break;
+      case "Typedef":
+        this.inctypeNameInput.value = incType.neurodataTypeDef;
+        break;
+      default:
+        assertNever(kind);
+    }
+    return this;
+  }
+}
+
+@customElement("dataset-inctype-form")
+export class DatasetInctypeFormpageElem<
+  T extends HasDatasetIncType
+> extends InctypeFormpageElem<T> {
+  transform = (data: T) => {
+    return { ...data, neurodataTypeInc: ["Core", this.inctypeNameInput.value] };
+  };
+  fill(data: T): this {
+    const [kind, incType] = data.neurodataTypeInc;
+    switch (kind) {
+      case "Core":
+        this.inctypeNameInput.value = incType;
+        break;
+      case "Typedef":
+        this.inctypeNameInput.value = incType.neurodataTypeDef;
+        break;
+      default:
+        assertNever(kind);
+    }
+    return this;
+  }
+}
+
+@customElement("tydef-form")
+export class TypenameFormpageElem<
+  T extends HasTypeNameAndDescription & HasDefaultName
+> extends BasicFormPage<T> {
+  get firstInput(): HTMLElement {
+    return this.typenameInput;
+  }
+
+  formTitle: string = "Define your new type";
+
+  @query("input[name=typename]")
+  typenameInput!: HTMLInputElement;
+
+  @query("textarea[name=description]")
+  descriptionInput!: HTMLTextAreaElement;
+
+  @query("input[name=defaultname]")
+  defaultnameInput!: HTMLInputElement;
+
+  @query("input[name=fixed]")
+  fixedInput!: HTMLInputElement;
+
+  isValid(): boolean {
+    return (
+      this.typenameInput.value !== "" && this.descriptionInput.value !== ""
+    );
+  }
+
+  clear(): this {
+    this.typenameInput.value = "";
+    this.descriptionInput.value = "";
+    return this;
+  }
+
+  body(): TemplateResult<1> {
+    return html`
+      <label for="typename">New type name</label>
+      <input name="typename" @input=${this._selfValidate} placeholder="" />
+      <label for="description">Description</label>
+      <textarea name="description" @input=${this._selfValidate}></textarea>
+      <h3>Optional</h3>
+      <label for="defaultname">Default instance name</label>
+      <input name="defaultname" @input=${this._selfValidate} placeholder="" />
+      <label for="fixed">Allow instance name override</label>
+      <input type="checkbox" name="fixed" />
+    `;
+  }
+
+  transform: (_: T) => T = (data: T) => {
+    return {
+      ...data,
+      neurodataTypeDef: this.typenameInput.value,
+      doc: this.descriptionInput.value,
+    };
+  };
+
+  fill(data: T): this {
+    if (data.neurodataTypeDef) {
+      this.typenameInput.value = data.neurodataTypeDef;
+    }
+    if (data.doc) {
+      this.descriptionInput.value = data.doc;
+    }
+    if (data.name) {
+      let [name, fixed] = data.name;
+      this.defaultnameInput.value = name;
+      this.fixedInput.checked = fixed;
+    }
+    return this;
+  }
+
+  static styles = [super.styles, css``];
+}
+
+@customElement("decname-form")
+export class NameDecFormpageElem<
+  T extends HasInstanceNameAndDescription
+> extends BasicFormPage<T> {
+  get firstInput(): HTMLElement {
+    return this.nameInput;
+  }
+
+  formTitle: string = "Define your new type";
+
+  @query("input[name=typename]")
+  nameInput!: HTMLInputElement;
+
+  @query("textarea[name=description]")
+  descriptionInput!: HTMLTextAreaElement;
+
+  isValid(): boolean {
+    return this.nameInput.value !== "" && this.descriptionInput.value !== "";
+  }
+
+  clear(): this {
+    this.nameInput.value = "";
+    this.descriptionInput.value = "";
+    return this;
+  }
+
+  body(): TemplateResult<1> {
+    return html`
+      <label for="typename">New type name</label>
+      <input name="typename" @input=${this._selfValidate} placeholder="" />
+      <label for="description">Description</label>
+      <textarea name="description" @input=${this._selfValidate}></textarea>
+    `;
+  }
+
+  transform: (_: T) => T = (data: T) => {
+    return {
+      ...data,
+      neurodataTypeDef: this.nameInput.value,
+      doc: this.descriptionInput.value,
+    };
+  };
+
+  fill(data: T): this {
+    if (data.name) {
+      this.nameInput.value = data.name;
+    }
+    if (data.doc) {
+      this.descriptionInput.value = data.doc;
+    }
+    return this;
+  }
+
+  static styles = [super.styles, css``];
+}
+
+@customElement("axes-form")
+export class AxesFormpageElem<T extends HasAxes> extends BasicFormPage<T> {
+  get firstInput(): HTMLElement {
+    return this.axesShapeInput;
+  }
+
+  formTitle: string = "Define the axes of the data in this type";
+
+  @query("input[name=axes-shape]")
+  axesShapeInput!: HTMLInputElement;
+
+  @query("input[name=axes-labels]")
+  axesLabelsInput!: HTMLInputElement;
+
+  @query("select[name=dtype]")
+  dtypeInput!: HTMLSelectElement;
+
+  clear(): this {
+    this.axesShapeInput.value = "";
+    this.axesLabelsInput.value = "";
+    this.dtypeInput.value = "uint8";
+    return this;
+  }
+
+  isValid(): boolean {
+    return true;
+  }
+
+  body(): TemplateResult<1> {
+    return html`
+      <label for="axes-shape">Axes Shape</label>
+      <input
+        name="axes-shape"
+        @input=${this._selfValidate}
+        placeholder="[3, 1, N]"
+      />
+      <label for="axes-labels">New type name</label>
+      <input
+        name="axes-labels"
+        @input=${this._selfValidate}
+        placeholder="['location', 'index', 'voltages']"
+      />
+      <label for="dtype">Stores data type</label>
+      <select name="dtype" @input=${this._selfValidate}>
+        <option>uint8</option>
+        <option>float32</option>
+      </select>
+    `;
+  }
+
+  transform: (data: T) => typeof data = (data: T) => {
+    let dims = this.axesShapeInput.value.split(",").map((s) => parseInt(s));
+    let labels = this.axesLabelsInput.value.split(",").map((s) => s.trim());
+    let dtype = this.dtypeInput.value;
+    let shape = dims.map((dim, i) => [dim, labels[i]] as [number, string]);
+    return {
+      ...data,
+      shape: shape,
+      dtype: ["PRIMITIVE", "i8"],
+    };
+  };
+
+  fill(data: T): this {
+    let dims = data.shape.map(([dim, _]) => dim);
+    let labels = data.shape.map(([_, label]) => label);
+    let dtype = data.dtype;
+    if (dims.length) {
+      this.axesShapeInput.value = dims.join(", ");
+    }
+    if (labels.length) {
+      this.axesLabelsInput.value = labels.join(", ");
+    }
+    if (dtype !== undefined) {
+      this.dtypeInput.value = "uint8";
+    }
+    return this;
+  }
+
+  static styles = [super.styles, css``];
 }

@@ -149,7 +149,7 @@ export class NdxInput extends LitElement {
   protected firstUpdated(
     _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
   ): void {
-    this.addEventListener("click", () => this.input.focus());
+    this.addEventListener("click", () => this.input.showAndFocus());
   }
 
   render() {
@@ -321,7 +321,7 @@ export class NdxTextarea extends LitElement {
   protected firstUpdated(
     _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
   ): void {
-    this.addEventListener("click", () => this.textarea.focus());
+    this.addEventListener("click", () => this.textarea.showAndFocus());
   }
 
   static styles = css`

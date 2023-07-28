@@ -1,244 +1,173 @@
-import { LitElement, html, css, CSSResultGroup } from "lit";
+import { LitElement, html, css, CSSResultGroup, TemplateResult } from "lit";
 import { customElement, state, property, query } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
-import { DarkButton } from "./playground";
 import { symbols } from "./styles";
+import { map } from "lit/directives/map.js";
+import { when } from "lit/directives/when.js";
+import { CPSForm } from "./HOFS";
+import {
+  GroupType,
+  DatasetType,
+  Dtype,
+  Defaultable,
+  GroupTypeDef,
+  DatasetTypeDef,
+  GroupDec,
+} from "./nwb/spec";
+import {
+  AxesFormpageElem,
+  DatasetInctypeFormpageElem,
+  GroupInctypeFormpageElem,
+  TypenameFormpageElem,
+} from "./forms";
 
-// form manager
-abstract class ComposedFormManager extends LitElement {
-  abstract titleText: string;
-  abstract ready: boolean;
-  abstract hideBackButton(set: boolean): void;
-  // these functions will be set at triggertime
-  nextButtonCallback: () => void = () => {
-    throw new Error("Method not implemented.");
-  };
-  backButtonCallback: () => void = () => {
-    throw new Error("Method not implemented.");
-  };
-  closeButtonCallback: () => void = () => {
-    throw new Error("Method not implemented.");
-  };
-  // render the element in the form body slot
-  abstract renderForm(elem: Element, title: string): void;
+export interface HasGroupIncType {
+  neurodataTypeInc: GroupType;
 }
 
-export abstract class ComposedFormElem<T> extends LitElement {
-  // set title
-  abstract title: string;
-  // all fields are valid
-  abstract isValid: () => boolean;
-  // used by the form manager to set visual behaviour
-  validate = () => {
-    return;
-  };
-  abstract showWithValues: (value: T) => Element;
-  // Applies the modifications requested by the form
-  // Ensure this function is idempotent and commutative with sequential form elems
-  abstract transform: (oldT: T) => T;
+export interface HasDatasetIncType {
+  neurodataTypeInc: DatasetType;
 }
 
-// This function is for documentation purposes only. The build system will remove it anyway.
-//
-// This test is not exhaustive, but it illustrates the idea behind form transforms.
-// It should pass for any input!
-// @ts-ignore
-function __testFormIdempotenceAndCommutativity<T>(
-  input: T,
-  transforms: ((_: T) => T)[]
-) {
-  const composedFormResult = transforms.reduce((acc, f) => f(acc), input);
-  const reverseComposedDoubleTransformFormResult = [...transforms]
-    .reverse()
-    .reduce((acc, f) => f(f(acc)), input);
-  return composedFormResult == reverseComposedDoubleTransformFormResult;
+export interface HasTypeNameAndDescription {
+  neurodataTypeDef: string;
+  doc: string;
 }
 
-type TriggerFunction<T> = (
+export interface HasInstanceNameAndDescription {
+  name: string;
+  doc: string;
+}
+
+export interface HasAxes {
+  shape: [number, string][];
+  dtype: Dtype;
+}
+
+export interface HasDefaultName {
+  name?: Defaultable<string>;
+}
+
+export interface HasRequired {
+  required: boolean;
+}
+
+export type TriggerFormFn<T> = (
   onAbandon: () => void,
-  onComplete: (val: T) => void
+  onComplete: (res: T) => void
 ) => void;
 
-/**
- * Given a form manager, form elements and initial value
- * it will return a new function to trigger the form.
- * The trigger function parameters are the callbacks for when the form is abandoned or completed
- */
-export function composeForm<T>(
-  parent: ComposedFormManager,
-  initial: T,
-  forms: ComposedFormElem<T>[]
-): TriggerFunction<T> {
-  function composeInner(
-    currentFormIdx: number,
-    value: T,
-    onBackCallback: () => void,
-    onCompleteCallback: (_: T) => void
-  ) {
-    if (forms.length === currentFormIdx) {
-      onCompleteCallback(value);
-    } else {
-      const thisForm = forms[currentFormIdx];
-      parent.hideBackButton(currentFormIdx == 0);
-      parent.renderForm(thisForm.showWithValues(value), thisForm.title);
-      thisForm.validate = () => {
-        parent.ready = thisForm.isValid();
-      };
-      parent.backButtonCallback = onBackCallback;
-      // when next button is hit, recursively show the rest of the forms
-      parent.nextButtonCallback = () => {
-        composeInner(
-          currentFormIdx + 1,
-          thisForm.transform(value),
-          // In the next form, the back button should backtrack to this form.
-          // Therefore composeInner has same arguments as the function definition,
-          // (except for the value, which maintains the progress made by this form)
-          () =>
-            composeInner(
-              currentFormIdx,
-              thisForm.transform(value),
-              onBackCallback,
-              onCompleteCallback
-            ),
-          onCompleteCallback
-        );
-      };
-    }
-  }
+export const Initializers = {
+  groupTypeDef: {
+    neurodataTypeDef: "",
+    neurodataTypeInc: ["Core", "None"],
+    doc: "",
+    groups: [],
+    datasets: [],
+    attributes: [],
+    links: [],
+  } as GroupTypeDef,
+  datasetTypeDef: {
+    neurodataTypeDef: "",
+    neurodataTypeInc: ["Core", "None"],
+    doc: "",
+    attributes: [],
+    shape: [],
+    dtype: ["PRIMITIVE", "f32"],
+  } as DatasetTypeDef,
+};
 
-  return (onAbandon: () => void, onComplete: (val: T) => void) => {
-    parent.closeButtonCallback = () => {
-      onAbandon();
-      parent.closeButtonCallback = () => {};
+// form manager
+@customElement("form-parent")
+export class NdxFormParent extends LitElement {
+  @property({ type: Boolean, reflect: true })
+  formOpen = false;
+
+  constructor() {
+    super();
+
+    let groupBuilderForm = new GroupInctypeFormpageElem<GroupTypeDef>()
+      .then(new TypenameFormpageElem())
+      .with_parent(this);
+
+    let datasetBuilderForm = new DatasetInctypeFormpageElem<DatasetTypeDef>()
+      .then(new TypenameFormpageElem())
+      .then(new AxesFormpageElem())
+      .with_parent(this);
+
+    this.triggerGroupBuilder = () => {
+      this.formOpen = true;
+      groupBuilderForm.trigger(
+        Initializers.groupTypeDef,
+        () => {
+          this.formOpen = false;
+          console.log("quit groupbuilder");
+        },
+        (res) => {
+          this.formOpen = false;
+          console.log("Built group", res);
+        }
+      );
     };
-    composeInner(0, initial, onAbandon, onComplete);
-  };
-}
 
-// CATASTROPHIC FAILURE IF SLOTTED CHILDREN DON'T IMPLEMENT ComposedFormElem
-@customElement("ndx-form-manager")
-export class NdxFormManager extends ComposedFormManager {
-  hideBackButton(set: boolean): void {
-    this.backButtonHidden = set;
+    this.triggerDatasetBuilder = () => {
+      this.formOpen = true;
+      datasetBuilderForm.trigger(
+        Initializers.datasetTypeDef,
+        () => {
+          this.formOpen = false;
+          console.log("quit datasetbuilder");
+        },
+        (res) => {
+          this.formOpen = false;
+          console.log("Built dataset", res);
+        }
+      );
+    };
   }
 
-  @state()
-  private backButtonHidden = false;
-
-  @property()
-  ready: boolean = false;
-
-  @state()
-  titleText: string = "hmmm this is a test";
-
-  @query("dark-button")
-  continueButton!: DarkButton;
-
-  renderForm(elem: Element, title: string): void {
-    this.titleText = title;
-    const lastChild = this.lastChild;
-    if (lastChild) this.removeChild(lastChild);
-
-    this.appendChild(elem);
-    elem.slot = "dangerouslyImplementsComposedFormElem";
-  }
-
-  @property()
-  onclose: () => void = () => {
-    throw new Error("onclose not been set, probably didn't use composeForm");
-  };
+  private triggerGroupBuilder: () => void;
+  private triggerDatasetBuilder: () => void;
 
   render() {
-    return html`<div>
-        <span
-          class="material-symbols-outlined"
-          @click=${this.closeButtonCallback}
-          >close</span
-        >
-      </div>
-      <div>
-        <div id="titlerow">
-          <span
-            class=${classMap({
-              "material-symbols-outlined": true,
-              hidden: this.backButtonHidden,
-            })}
-            @click=${this.backButtonCallback}
-            >arrow_back</span
-          >
-          <h2>${this.titleText}</h2>
-        </div>
-        <div id="formbody">
-          <slot name="dangerouslyImplementsComposedFormElem"></slot>
-        </div>
-        <div id="bottomrow">
-          <dark-button
-            .disabled=${!this.ready}
-            @click=${this.nextButtonCallback}
-            >Continue</dark-button
-          >
-        </div>
-      </div> `;
+    return html`
+      ${when(
+        !this.formOpen,
+        () => html`
+          <input
+            type="button"
+            value="new_group"
+            @click=${this.triggerGroupBuilder}
+          />
+          <input
+            type="button"
+            value="new_dataset"
+            @click=${this.triggerDatasetBuilder}
+          />
+        `
+      )}
+      <form>
+        ${when(this.formOpen, () => html` <slot name="currForm"></slot> `)}
+      </form>
+    `;
   }
 
   static styles = [
-    symbols,
     css`
       :host {
-        display: flex;
-        flex-direction: column;
-        position: relative;
-      }
-
-      :host div {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-      }
-
-      :host > div:last-child {
-        border-radius: 0.5em;
-        padding: 1em;
-        flex-direction: column;
-        background: var(--color-background-alt);
-        z-index: 1;
-        border: 1px solid var(--color-border);
-        box-shadow: 0 0 20px 5px #eee;
-      }
-
-      #titlerow,
-      #bottomrow {
-        justify-content: center;
-        position: relative;
-        min-width: 600px;
-      }
-
-      #titlerow > h1 {
-        margin: 0 auto;
-      }
-
-      span.material-symbols-outlined {
-        padding: 0.5em;
-        font-size: 2em;
-        cursor: pointer;
-      }
-
-      span.material-symbols-outlined.hidden {
-        display: none;
-      }
-
-      :host > div:first-child span {
-        margin-left: auto;
-      }
-
-      dark-button {
-        margin-left: auto;
-        margin-right: 1em;
-      }
-
-      ::slotted(*) {
-        transition: 0.3s;
       }
     `,
-  ] as CSSResultGroup;
+  ];
 }
+
+// export const Pages = {
+//   groupTypeDef: [
+//     new GroupInctypeFormpageElem(),
+//     new TypenameFormpageElem(),
+//   ] as CPSForm<GroupTypeDef>[],
+//   datasetTypeDef: [
+//     new GroupInctypeFormpageElem(),
+//     new TypenameFormpageElem(),
+//     new AxesFormpageElem(),
+//   ] as CPSForm<DatasetTypeDef>[],
+// };

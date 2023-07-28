@@ -2,12 +2,19 @@
  * Higher Order HTML Forms????
  */
 
+import { LitElement } from "lit";
+
 // Hacky no override typescript function descriptor, like java `final`
 declare const __special_no_override_unique_symbol: unique symbol;
 type NoOverride = {
   [__special_no_override_unique_symbol]: typeof __special_no_override_unique_symbol;
 };
 
+export function assertNever(_: never): never {
+  throw new Error("Function not implemented.");
+}
+
+// ProgressState is used to manage the step bar titles
 type ProgressState = {
   states: string[];
   currState: number | -1;
@@ -30,7 +37,10 @@ function increment_if(b: any, p: ProgressState) {
 //    .then(anotherForm)
 //    .branch(x => x.empty(), trueForm, falseForm)
 //    .trigger(0, () => console.log("i quit"), val => console.log(val));
-abstract class CPSForm<T> {
+export abstract class CPSForm<T> extends LitElement {
+  static start<U>(firstForm: CPSForm<U>): CPSForm<U> {
+    return firstForm;
+  }
   // show the current form based on the value and progress state
   abstract fill(val: T, progress: ProgressState): void;
 
@@ -45,7 +55,7 @@ abstract class CPSForm<T> {
   abstract clear(): void;
 
   // show or hide the form and (usually) focus on the first input
-  abstract focus(visible: boolean): void;
+  abstract showAndFocus(visible: boolean): void;
 
   // use these in your implementated UI of CPSForm
 
@@ -62,24 +72,36 @@ abstract class CPSForm<T> {
     this.onQuit();
   }
 
+  with_parent(parent: HTMLElement): this {
+    this.parent = parent;
+    return this;
+  }
+
   // start form with initial value and callbacks
   trigger(
     val: T,
     onAbandon: () => void,
-    onComplete: () => void
+    onComplete: (v: T) => void
   ): void & NoOverride {
+    console.log("TRIGGERED");
+    this.allFormsElems.forEach((elem) => this.parent?.appendChild(elem));
     this.onQuit = () => {
+      this.allFormsElems.forEach((elem) => this.parent?.removeChild(elem));
       this.clearAndHide();
       onAbandon();
     };
-    this.run(
-      val,
-      {
-        states: this.titles,
-        currState: 0,
-      },
-      onAbandon,
-      onComplete
+    setTimeout(
+      () =>
+        this.run(
+          val,
+          {
+            states: this.titles,
+            currState: 0,
+          },
+          onAbandon,
+          onComplete
+        ),
+      10
     );
   }
 
@@ -96,10 +118,12 @@ abstract class CPSForm<T> {
 
   // TODO: come up with a good title system
   private titles: string[] = [];
+  private allFormsElems: Array<HTMLElement> = [this];
+  private parent?: HTMLElement;
 
   private clearAndHide() {
     this.clear();
-    this.focus(false);
+    this.showAndFocus(false);
   }
 
   // shows the form, and the current progress state
@@ -109,25 +133,46 @@ abstract class CPSForm<T> {
     back: () => void,
     next: (val: T) => void
   ) => {
+    this.showAndFocus(true);
     this.fill(val, progress);
-    this.focus(true);
-    this.onNext = () => next(this.transform(val));
-    this.onBack = back;
+    this.onNext = () => {
+      this.showAndFocus(false);
+      next(this.transform(val));
+    };
+    this.onBack = () => {
+      this.showAndFocus(false);
+      back();
+    };
   };
 
   // use to chain forms together
   then(nextform: CPSForm<T>, progressTitle?: string): this {
+    this.allFormsElems = [...this.allFormsElems, nextform.allFormsElems].flat();
     if (progressTitle) this.titles.push(progressTitle);
-    this.run = (val, prog, back, next) => {
+
+    // javascript weirdness with references
+    const this_run = this.run;
+    this.run = (
+      val: T,
+      prog: ProgressState,
+      back: () => void,
+      next: (_: T) => void
+    ) => {
+      // add onQuit to the next form
       nextform.onQuit = () => {
         nextform.clearAndHide();
         this.onQuit();
       };
-      this.run(val, prog, back, (val: T) => {
+
+      // run this form, but make the next form run after this one
+      this_run(val, prog, back, (val: T) => {
+        console.log("CALLED NEXT to", nextform);
         nextform.run(
-          this.transform(val),
+          val,
           increment_if(progressTitle, prog),
-          () => this.run(val, prog, back, next),
+          () => {
+            this_run(val, prog, back, next);
+          },
           next
         );
       });
@@ -151,6 +196,11 @@ abstract class CPSForm<T> {
     falseForm: CPSForm<T>,
     progressTitle: string
   ): this {
+    this.allFormsElems = [
+      ...this.allFormsElems,
+      trueForm.allFormsElems,
+      falseForm.allFormsElems,
+    ].flat();
     if (progressTitle) this.titles.push(progressTitle);
     this.run = (val, prog, back, next) => {
       // both forms should clear on quit
@@ -180,6 +230,7 @@ abstract class CPSForm<T> {
     from: (val: U) => T,
     nextform: CPSForm<U>
   ): this {
+    this.allFormsElems = [...this.allFormsElems, nextform].flat();
     this.run = (val, prog, back, next) => {
       // clear on quit
       nextform.onQuit = () => {
