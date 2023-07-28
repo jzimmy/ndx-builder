@@ -92,7 +92,8 @@ export abstract class CPSForm<T> extends LitElement {
     };
     setTimeout(
       () =>
-        this.run(
+        this.show(
+          this,
           val,
           {
             states: this.titles,
@@ -126,6 +127,26 @@ export abstract class CPSForm<T> extends LitElement {
     this.showAndFocus(false);
   }
 
+  private static show =
+    <T>(form: CPSForm<T>) =>
+    (
+      val: T,
+      progress: ProgressState,
+      back: () => void,
+      next: (val: T) => void
+    ) => {
+      form.showAndFocus(true);
+      form.fill(val, progress);
+      form.onNext = () => {
+        form.showAndFocus(false);
+        next(form.transform(val));
+      };
+      form.onBack = () => {
+        form.showAndFocus(false);
+        back();
+      };
+    };
+
   // shows the form, and the current progress state
   private run = (
     val: T,
@@ -133,16 +154,7 @@ export abstract class CPSForm<T> extends LitElement {
     back: () => void,
     next: (val: T) => void
   ) => {
-    this.showAndFocus(true);
-    this.fill(val, progress);
-    this.onNext = () => {
-      this.showAndFocus(false);
-      next(this.transform(val));
-    };
-    this.onBack = () => {
-      this.showAndFocus(false);
-      back();
-    };
+    CPSForm.show(this)(val, progress, back, next);
   };
 
   // use to chain forms together
@@ -151,7 +163,7 @@ export abstract class CPSForm<T> extends LitElement {
     if (progressTitle) this.titles.push(progressTitle);
 
     // javascript weirdness with references
-    const this_run = this.run;
+    const run = this.run;
     this.run = (
       val: T,
       prog: ProgressState,
@@ -165,13 +177,14 @@ export abstract class CPSForm<T> extends LitElement {
       };
 
       // run this form, but make the next form run after this one
-      this_run(val, prog, back, (val: T) => {
+      run(val, prog, back, (val: T) => {
         console.log("CALLED NEXT to", nextform);
-        nextform.run(
+        CPSForm.show(nextform)(
           val,
           increment_if(progressTitle, prog),
           () => {
-            this_run(val, prog, back, next);
+            console.log("CALLED BACK to", form);
+            show(form, val, prog, back, next);
           },
           next
         );
