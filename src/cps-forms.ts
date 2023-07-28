@@ -1,5 +1,5 @@
 import { CSSResultGroup, LitElement, TemplateResult, css, html } from "lit";
-import { customElement, property, query, state } from "lit/decorators.js";
+import { customElement, query, state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { map } from "lit/directives/map.js";
 import { symbols } from "./styles";
@@ -14,9 +14,7 @@ import {
   GroupType,
   GroupTypeDef,
   LinkDec,
-  PrimitiveDtype,
 } from "./nwb/spec";
-import { when } from "lit/directives/when.js";
 
 interface HasGroupIncType {
   neurodataTypeInc: GroupType;
@@ -49,16 +47,22 @@ interface HasRequired {
   required: boolean;
 }
 
+// append as children of an element that has a slot named "currForm"
 export abstract class NdxFormPageElem<T> extends LitElement {
   abstract drawProgressBar(titles: string[], curr: number): void;
   // IMPORTANT! This function must be idempotent and commutative
   // meaning that any transform f and g
   // f(f(x)) = f(x) and f(g(x)) = g(f(x)) for all x
   abstract transform: (data: T) => T;
+  // fill out current form with the data provided, note that the current form may still
+  // have values from the last time it was shown, it is up to the implementer of `fill`
+  // to decide whether they should be cleared
   abstract fill(data: T): this;
+  // restore form to default state, both visually and internally
   abstract clear(): this;
+  // show the current form, in this case using the appropriate slot
   abstract setSlotToCurrFormAndFocus(show: boolean): void;
-  abstract _selfValidate(): void;
+
   // these methods will be overwritten in the compose phase
   onCloseCallback: () => void = () => {
     throw new Error("Method not implemented.");
@@ -69,6 +73,9 @@ export abstract class NdxFormPageElem<T> extends LitElement {
   onBackCallback: () => void = () => {
     throw new Error("Method not implemented.");
   };
+
+  // optional good practice
+  abstract _selfValidate(): void;
 }
 
 function clearAndHideForm<F, A>([f, _]: [NdxFormPageElem<F>, A]) {
@@ -588,7 +595,7 @@ export class AxesFormpageElem<T extends HasAxes> extends BasicFormPage<T> {
     return {
       ...data,
       shape: shape,
-      dtype: ["PRIMITIVE", PrimitiveDtype.i8],
+      dtype: ["PRIMITIVE", "i8"],
     };
   };
 
@@ -736,11 +743,11 @@ export class GroupDefVizFormpageElem extends VizFormpageElem<GroupTypeDef> {
   links: LinkDec[] = [];
 
   triggerAttributeForm: () => void;
-  constructor() {
+  constructor(attributeBuilderForm: TriggerFormFn<AttributeDec>) {
     super();
     this.triggerAttributeForm = () => {
       this.setSlotToCurrFormAndFocus(false);
-      NdxForms.attributeBuilderForm(
+      attributeBuilderForm(
         () => {
           this.setSlotToCurrFormAndFocus(true);
         },
@@ -769,16 +776,17 @@ export class GroupDefVizFormpageElem extends VizFormpageElem<GroupTypeDef> {
 @customElement("datasetdef-viz")
 export class DatasetDefVizFormpageElem extends VizFormpageElem<DatasetTypeDef> {
   attribs: AttributeDec[] = [];
+
   transform = (data: DatasetTypeDef) => {
-    return data;
+    return { ...data, attributes: this.attribs };
   };
 
   triggerAttributeForm: () => void;
-  constructor() {
+  constructor(attributeBuilderForm: TriggerFormFn<AttributeDec>) {
     super();
     this.triggerAttributeForm = () => {
       this.setSlotToCurrFormAndFocus(false);
-      NdxForms.attributeBuilderForm(
+      attributeBuilderForm(
         () => {
           this.setSlotToCurrFormAndFocus(true);
         },
@@ -801,154 +809,4 @@ export class DatasetDefVizFormpageElem extends VizFormpageElem<DatasetTypeDef> {
 
 function assertNever(_: never): never {
   throw new Error("Function not implemented.");
-}
-
-@customElement("form-parent")
-export class NdxFormParent extends LitElement {
-  @property({ type: Boolean, reflect: true })
-  formOpen = false;
-
-  constructor() {
-    super();
-    NdxForms.groupForms.forEach((f) => this.appendChild(f[0]));
-    NdxForms.datasetForms.forEach((f) => this.appendChild(f[0]));
-    NdxForms.attributeForms.forEach((f) => this.appendChild(f[0]));
-    this.triggerGroupBuilder = () => {
-      NdxForms.datasetForms.forEach((f) => f[0].clear());
-      NdxForms.datasetForms.forEach((f) =>
-        f[0].setSlotToCurrFormAndFocus(false)
-      );
-      this.formOpen = true;
-      NdxForms.groupBuilderForm(
-        () => {
-          this.formOpen = false;
-        },
-        (value) => {
-          console.log(value);
-          this.formOpen = false;
-        }
-      );
-    };
-    this.triggerDatasetBuilder = () => {
-      NdxForms.groupForms.forEach((f) => f[0].clear());
-      NdxForms.groupForms.forEach((f) => f[0].setSlotToCurrFormAndFocus(false));
-      this.formOpen = true;
-      NdxForms.datasetBuilderForm(
-        () => {
-          this.formOpen = false;
-        },
-        (value) => {
-          console.log(value);
-          this.formOpen = false;
-        }
-      );
-    };
-  }
-
-  private triggerGroupBuilder: () => void;
-  private triggerDatasetBuilder: () => void;
-
-  render() {
-    return html`
-      ${when(
-        !this.formOpen,
-        () => html`
-          <input
-            type="button"
-            value="new_group"
-            @click=${this.triggerGroupBuilder}
-          />
-          <input
-            type="button"
-            value="new_dataset"
-            @click=${this.triggerDatasetBuilder}
-          />
-        `
-      )}
-      <form>
-        ${when(this.formOpen, () => html` <slot name="currForm"></slot> `)}
-      </form>
-    `;
-  }
-
-  static styles = [
-    css`
-      :host {
-      }
-    `,
-  ];
-}
-
-export class NdxForms {
-  static defaultGroupTypedef: GroupTypeDef = {
-    neurodataTypeDef: "",
-    neurodataTypeInc: ["Core", "None"],
-    doc: "",
-    groups: [],
-    datasets: [],
-    attributes: [],
-    links: [],
-  };
-
-  static groupForms: [NdxFormPageElem<GroupTypeDef>, string | null][] = [
-    [new GroupInctypeFormpageElem(), "Pick base type"],
-    [new TypenameFormpageElem(), "Name and description"],
-    [new DefaultNameFormpageElem(), "Optional fields"],
-    [new GroupDefVizFormpageElem(), null],
-  ];
-
-  static groupBuilderForm = composeForm<GroupTypeDef>(
-    NdxForms.defaultGroupTypedef,
-    NdxForms.groupForms
-  );
-
-  static defaultDatasetTypedef: DatasetTypeDef = {
-    neurodataTypeDef: "",
-    neurodataTypeInc: ["Core", "None"],
-    doc: "",
-    attributes: [],
-    shape: [],
-    dtype: ["PRIMITIVE", PrimitiveDtype.i8],
-  };
-
-  static datasetForms: [NdxFormPageElem<DatasetTypeDef>, string | null][] = [
-    [new DatasetInctypeFormpageElem(), "Pick base type"],
-    [new TypenameFormpageElem(), "Name and description"],
-    [new AxesFormpageElem(), "Define axes"],
-    [new DefaultNameFormpageElem(), "Optional fields"],
-    [new DatasetDefVizFormpageElem(), null],
-  ];
-
-  static datasetBuilderForm = composeForm<DatasetTypeDef>(
-    NdxForms.defaultDatasetTypedef,
-    NdxForms.datasetForms
-  );
-
-  static defaultAttribute: AttributeDec = {
-    name: "",
-    doc: "",
-    dtype: ["PRIMITIVE", PrimitiveDtype.u8],
-    shape: [],
-    required: false,
-  };
-
-  static attributeForms: [NdxFormPageElem<AttributeDec>, string][] = [
-    [new NameDecFormpageElem(), "Name and description"],
-    [new AxesFormpageElem(), "Attribute shape"],
-  ];
-
-  static attributeBuilderForm = composeForm<AttributeDec>(
-    NdxForms.defaultAttribute,
-    NdxForms.attributeForms
-  );
-
-  static defaultLink: LinkDec = {
-    doc: "",
-    targetType: ["Core", "None"],
-    quantityOrName: "",
-  };
-
-  static linkForms: [NdxFormPageElem<LinkDec>, string][] = [
-    // [new DatasetInctypeFormpageElem(), ""],
-  ];
 }

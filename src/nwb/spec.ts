@@ -50,6 +50,14 @@
  *
  */
 
+export type Namespace = {
+  name: string;
+  doc: string;
+  authors: [string, string];
+  groups: GroupTypeDef[];
+  datasets: DatasetTypeDef[];
+};
+
 // [_, true] means default
 export type Defaultable<T> = [T, boolean];
 
@@ -59,24 +67,24 @@ export type Quantity =
   | ["+", null]
   | ["Num", number];
 
+// TODO, fetch from NWB
 export type CoreGroupType = "Example" | "None";
-
 export type CoreDatasetType = "Example" | "None";
 
-export enum PrimitiveDtype {
-  i8,
-  i16,
-  i32,
-  i64,
-  u8,
-  u16,
-  u32,
-  u64,
-  f32,
-  f64,
-  Text,
-  IsoDatetime,
-}
+export type PrimitiveDtype =
+  | "i8"
+  | "i16"
+  | "i32"
+  | "i64"
+  | "u8"
+  | "u16"
+  | "u32"
+  | "u64"
+  | "f32"
+  | "f64"
+  | "Text"
+  | "IsoDatetime";
+
 export type Dtype =
   | ["PRIMITIVE", PrimitiveDtype]
   | ["REFSPEC", GroupType | DatasetType]
