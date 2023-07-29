@@ -3,6 +3,7 @@
  */
 
 import { LitElement } from "lit";
+import { TriggerFormFn } from "./form-elem";
 
 // Hacky no override typescript function descriptor, like java `final`
 declare const __special_no_override_unique_symbol: unique symbol;
@@ -25,6 +26,126 @@ function increment_if(b: any, p: ProgressState) {
   return {
     ...p,
     currState: p.currState + 1,
+  };
+}
+
+/*
+ * Algorithmic laws for FormChain
+ *
+ * formchain_new(form, state)(val, back, next) => show(form, state, val, back, next)
+ * formchain_then(formchain_new(form, state), form')(val, back, next) =>
+ *   formchain_new(form, state)(
+ *      val,
+ *      back,
+ *     (val) =>
+ * , next))
+ *
+ *
+ *
+ *
+ * show(form)(val, state, back, next) => {
+ *  form.showAndFocus(true)
+ *  form.fill(val, state)
+ *  form.onBack = () => {form.showAndFocus(false); back()}
+ *  form.onNext = () => {form.showAndFocus(false); next(form.transform(val))}
+ */
+
+type FormChainNode<T> = {
+  back: () => FormChainNode<T>;
+  next: (val: T) => FormChainNode<T>;
+  title: string;
+};
+
+export class FormChain<T> {
+  private static run =
+    <T>(form: CPSForm<T>) =>
+    (val: T, state: ProgressState, back: () => void, next: (v: T) => void) => {
+      form.showAndFocus(true);
+      form.fill(val, state);
+      form.onNext = () => {
+        form.showAndFocus(false);
+        next(form.transform(val));
+      };
+      form.onBack = () => {
+        form.showAndFocus(false);
+        back();
+      };
+    };
+
+  private trigger: (
+    init: T,
+    onAbandon: () => void,
+    onComplete: (v: T) => void
+  ) => void;
+
+  state: ProgressState;
+  parent?: HTMLElement;
+  allForms: HTMLElement[];
+  currForm: CPSForm<T>;
+
+  constructor(firstform: CPSForm<T>, progressTitle?: string) {
+    const prog: ProgressState = {
+      states: progressTitle ? [progressTitle] : [],
+      currState: 0,
+    };
+    this.state = prog;
+    this.allForms = [firstform];
+    this.currForm = firstform;
+    this.trigger = (v, b, n) => FormChain.run(firstform)(v, this.state, b, n);
+  }
+
+  withParent(
+    parent: HTMLElement
+  ): (initial: T, onAbandon: () => void, onComplete: (v: T) => void) => void {
+    this.parent = parent;
+    return (initial: T, onAbandon: () => void, onComplete: (v: T) => void) => {
+      this.currForm.onQuit = onAbandon;
+      this.allForms.flat().forEach((f) => this.parent?.appendChild(f));
+      // give it a second to render out at first
+      // TODO: find a better way to do this
+      setTimeout(
+        () =>
+          this.trigger(
+            initial,
+            () => {
+              this.allForms.flat().forEach((f) => this.parent?.removeChild(f));
+              onAbandon();
+            },
+            (val: T) => {
+              this.allForms.flat().forEach((f) => this.parent?.removeChild(f));
+              onComplete(val);
+            }
+          ),
+        10
+      );
+    };
+  }
+
+  then = (nextform: CPSForm<T>, progressTitle?: string): FormChain<T> => {
+    const currform = this.currForm;
+    const newFormChain = new FormChain<T>(nextform);
+    newFormChain.allForms = [...this.allForms, nextform];
+    newFormChain.state = { ...this.state, states: [...this.state.states] };
+    newFormChain.trigger = (
+      init: T,
+      onAbandon: () => void,
+      onComplete: (val: T) => void
+    ) => {
+      currform.onQuit = () => {
+        currform.clearAndHide();
+        nextform.onQuit();
+      };
+      this.trigger(init, onAbandon, (val: T) => {
+        FormChain.run(nextform)(
+          val,
+          newFormChain.state,
+          // is this actually recusion?
+          () => newFormChain.trigger(init, onAbandon, onComplete),
+          onComplete
+        );
+      });
+    };
+    return newFormChain;
   };
 }
 
@@ -92,8 +213,7 @@ export abstract class CPSForm<T> extends LitElement {
     };
     setTimeout(
       () =>
-        this.show(
-          this,
+        this.run(
           val,
           {
             states: this.titles,
@@ -107,13 +227,13 @@ export abstract class CPSForm<T> extends LitElement {
   }
 
   // These are defined lazily during runtime
-  private onBack: () => void = () => {
+  onBack: () => void = () => {
     throw new Error(`${typeof this} method onBack not implemented`);
   };
-  private onNext: () => void = () => {
+  onNext: () => void = () => {
     throw new Error(`${typeof this} method onNext not implemented`);
   };
-  private onQuit: () => void = () => {
+  onQuit: () => void = () => {
     throw new Error(`${typeof this} method onQuit not implemented`);
   };
 
@@ -122,7 +242,7 @@ export abstract class CPSForm<T> extends LitElement {
   private allFormsElems: Array<HTMLElement> = [this];
   private parent?: HTMLElement;
 
-  private clearAndHide() {
+  clearAndHide() {
     this.clear();
     this.showAndFocus(false);
   }
@@ -154,7 +274,16 @@ export abstract class CPSForm<T> extends LitElement {
     back: () => void,
     next: (val: T) => void
   ) => {
-    CPSForm.show(this)(val, progress, back, next);
+    this.showAndFocus(true);
+    this.fill(val, progress);
+    this.onNext = () => {
+      this.showAndFocus(false);
+      next(this.transform(val));
+    };
+    this.onBack = () => {
+      this.showAndFocus(false);
+      back();
+    };
   };
 
   // use to chain forms together
@@ -163,33 +292,33 @@ export abstract class CPSForm<T> extends LitElement {
     if (progressTitle) this.titles.push(progressTitle);
 
     // javascript weirdness with references
-    const run = this.run;
-    this.run = (
+    const oldrun = this.run;
+    const quitFn = this.onQuit;
+
+    function newrun(
       val: T,
       prog: ProgressState,
       back: () => void,
       next: (_: T) => void
-    ) => {
+    ): void {
       // add onQuit to the next form
       nextform.onQuit = () => {
         nextform.clearAndHide();
-        this.onQuit();
+        quitFn();
       };
 
       // run this form, but make the next form run after this one
-      run(val, prog, back, (val: T) => {
+      oldrun(val, prog, back, (val: T) => {
         console.log("CALLED NEXT to", nextform);
         CPSForm.show(nextform)(
           val,
           increment_if(progressTitle, prog),
-          () => {
-            console.log("CALLED BACK to", form);
-            show(form, val, prog, back, next);
-          },
+          () => newrun(val, prog, back, next),
           next
         );
       });
-    };
+    }
+    this.run = newrun;
     return this;
   }
 

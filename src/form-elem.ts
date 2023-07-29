@@ -4,7 +4,7 @@ import { classMap } from "lit/directives/class-map.js";
 import { symbols } from "./styles";
 import { map } from "lit/directives/map.js";
 import { when } from "lit/directives/when.js";
-import { CPSForm } from "./HOFS";
+import { CPSForm, FormChain } from "./HOFS";
 import {
   GroupType,
   DatasetType,
@@ -86,18 +86,22 @@ export class NdxFormParent extends LitElement {
   constructor() {
     super();
 
-    let groupBuilderForm = new GroupInctypeFormpageElem<GroupTypeDef>()
+    let groupBuilderForm = new FormChain<GroupTypeDef>(
+      new GroupInctypeFormpageElem()
+    )
       .then(new TypenameFormpageElem())
-      .with_parent(this);
+      .withParent(this);
 
-    let datasetBuilderForm = new DatasetInctypeFormpageElem<DatasetTypeDef>()
+    let datasetBuilderForm = new FormChain<DatasetTypeDef>(
+      new DatasetInctypeFormpageElem()
+    )
       .then(new TypenameFormpageElem())
       .then(new AxesFormpageElem())
-      .with_parent(this);
+      .withParent(this);
 
     this.triggerGroupBuilder = () => {
       this.formOpen = true;
-      groupBuilderForm.trigger(
+      groupBuilderForm(
         Initializers.groupTypeDef,
         () => {
           this.formOpen = false;
@@ -112,7 +116,7 @@ export class NdxFormParent extends LitElement {
 
     this.triggerDatasetBuilder = () => {
       this.formOpen = true;
-      datasetBuilderForm.trigger(
+      datasetBuilderForm(
         Initializers.datasetTypeDef,
         () => {
           this.formOpen = false;
