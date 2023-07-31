@@ -26,14 +26,15 @@ let addprompt f x =
 let add15_p = addprompt add15
 let times2_p = addprompt times2
 let sub3_p = addprompt sub3
-let kthen k f x k' = k' (f (k x id))
+let kthen k x k' = k' (k x)
 let kstart x k = k x
-let k1 = kthen kstart add15_p
-let k2 = kthen k1 times2_p
-let k3 = kthen k2 sub3_p
+let k0 x = kthen (kstart x) add15_p
+(* let k1 = kthen kstart add15_p
+   let k2 = kthen k1 times2_p
+   let k3 = kthen k2 sub3_p *)
 
 let main () =
-  k3 1 (fun x ->
+  k0 1 (fun x ->
       print_endline ("final value: " ^ Int.to_string x);
       x)
 
