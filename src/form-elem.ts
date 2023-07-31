@@ -52,11 +52,6 @@ export interface HasRequired {
   required: boolean;
 }
 
-export type TriggerFormFn<T> = (
-  onAbandon: () => void,
-  onComplete: (res: T) => void
-) => void;
-
 export const Initializers = {
   groupTypeDef: {
     neurodataTypeDef: "",
@@ -86,11 +81,11 @@ export class NdxFormParent extends LitElement {
   constructor() {
     super();
 
-    let groupBuilderForm = new FormChain<GroupTypeDef>(
-      new GroupInctypeFormpageElem()
-    )
-      .then(new TypenameFormpageElem())
-      .withParent(this);
+    // let groupBuilderForm = new FormChain<GroupTypeDef>(
+    //   new GroupInctypeFormpageElem()
+    // )
+    //   .then(new TypenameFormpageElem())
+    //   .withParent(this);
 
     let datasetBuilderForm = new FormChain<DatasetTypeDef>(
       new DatasetInctypeFormpageElem()
@@ -99,20 +94,31 @@ export class NdxFormParent extends LitElement {
       .then(new AxesFormpageElem())
       .withParent(this);
 
-    this.triggerGroupBuilder = () => {
-      this.formOpen = true;
-      groupBuilderForm(
-        Initializers.groupTypeDef,
-        () => {
-          this.formOpen = false;
-          console.log("quit groupbuilder");
-        },
-        (res) => {
-          this.formOpen = false;
-          console.log("Built group", res);
-        }
-      );
-    };
+    // let triggerDatasetInctypeFormpage = show<DatasetTypeDef>(inc, state);
+    // let triggerTypenameFormpage = show<DatasetTypeDef>(nm, state);
+    // let triggerAxesFormpage = show<DatasetTypeDef>(nm, state);
+    // let datasetBuilderForm = then(
+    //   then<DatasetTypeDef>(
+    //     triggerDatasetInctypeFormpage,
+    //     triggerTypenameFormpage
+    //   ),
+    //   triggerAxesFormpage
+    // );
+
+    // this.triggerDatasetBuilder = () => {
+    //   this.formOpen = true;
+    //   datasetBuilderForm(
+    //     Initializers.datasetTypeDef,
+    //     () => {
+    //       this.formOpen = false;
+    //       console.log("quit groupbuilder");
+    //     },
+    //     (res) => {
+    //       this.formOpen = false;
+    //       console.log("Built dataset", res);
+    //     }
+    //   );
+    // };
 
     this.triggerDatasetBuilder = () => {
       this.formOpen = true;
@@ -128,6 +134,8 @@ export class NdxFormParent extends LitElement {
         }
       );
     };
+    this.triggerGroupBuilder = () => {};
+    // this.triggerDatasetBuilder = () => {};
   }
 
   private triggerGroupBuilder: () => void;
