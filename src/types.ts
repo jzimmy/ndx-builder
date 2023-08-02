@@ -13,7 +13,6 @@ import {
   PrimitiveDtype,
   TypeDef,
 } from "./nwb/spec";
-import { ComposedFormElem, composeForm, NdxFormManager } from "./parent";
 import { symbols } from "./styles";
 
 @customElement("link-dec-elem")
