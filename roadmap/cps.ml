@@ -7,32 +7,51 @@ let rec prompt x =
   | "back" | "b" -> Back
   | _ -> prompt x
 
+let isodd x = x / 2 * 2 <> x
 let add15 x = x + 15
 let times2 x = x * 2
 let sub3 x = x - 3
-(* let kthen k f x k' = k' ((k x) (fun x -> match prompt x with _ -> f x))
-   let knull x k = k x
-   let k0s = kthen knull add15
-   let k1s = kthen k0s times2
-   let k2s = kthen k1s sub3 *)
-(*********)
+let askn _ = read_int ()
 
-let rec fbuilder f (x, bk, fk) =
+let rec fbuilder f (states, i) (x, bk, fk) =
+  print_states states i;
   match prompt x with
-  | Next -> fk (f x, fun () -> (fbuilder f) (x, bk, fk))
+  | Next -> fk (f x, fun () -> (fbuilder f) (states, i) (x, bk, fk))
   | Back -> bk ()
 
-let rec k0 = fbuilder add15
-let rec k1 = fbuilder times2
-let rec k2 = fbuilder sub3
-let thenk f f' (x, bk, fk) = f (x, bk, fun (x', r) -> f' (x', r, fk))
+and print_states ts i =
+  match (ts, i) with
+  | [], _ -> print_endline ""
+  | t :: ts, 0 ->
+      print_string ("**" ^ t ^ "** ");
+      print_states ts (i - 1)
+  | t :: ts, _ ->
+      print_string (t ^ " ");
+      print_states ts (i - 1)
 
-let branchk cond t f (x, bk, fk) =
-  if cond x then t (x, bk, fk) else f (x, bk, fk)
+let states = [ "add15"; "times2"; "sub3" ]
+let fnull _ (x, bk, fk) = fk (x, bk)
+let a15 = fbuilder add15
+let ask = fbuilder askn
+let t2 = fbuilder times2
+let s3 = fbuilder sub3
+let thenk (t, t') (x, bk, fk) = t (x, bk, fun (x', bk') -> t' (x', bk', fk))
+let kthen f k = thenk (f, k)
+let ( ==> ) f k = thenk (f, k)
 
+let branchk (cond, tt, tf) (x, bk, fk) =
+  if cond x then tt (x, bk, fk) else tf (x, bk, fk)
+
+let ( |< ) cond (t, f) = branchk (cond, t, f)
 let fail () = print_endline "Back at start"
 let finish (x, _) = print_endline ("Final value: " ^ Int.to_string x)
-let trigger = thenk k0 (thenk k2 (thenk k0 k1))
+
+let trigger =
+  fnull (states, -1)
+  ==> ask (states, -1)
+  ==> (isodd |< (t2 (states, 1) ==> a15 (states, 0), s3 (states, 2)))
+  ==> a15 (states, 0)
+
 let main () = trigger (0, fail, finish)
 let _ = main ()
 

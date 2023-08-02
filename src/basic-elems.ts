@@ -1,5 +1,7 @@
 import { LitElement, html, css, CSSResultGroup } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { classMap } from "lit/directives/class-map.js";
+import { map } from "lit/directives/map.js";
 
 abstract class ButtonElem extends LitElement {
   @property({ type: Boolean, reflect: true })
@@ -72,6 +74,49 @@ export class DarkButton extends ButtonElem {
       }
     `,
   ];
+}
+
+@customElement("form-step-bar")
+export class FormStepBar extends LitElement {
+  @property({ type: Array<String> })
+  steps: string[] = [];
+
+  @property({ type: Number })
+  currStep: number = -1;
+
+  render() {
+    return html`${map(this.steps, (step, i) => {
+      return html`<h3
+        class=${classMap({
+          active: i == this.currStep,
+          completed: i < this.currStep,
+        })}
+      >
+        ${step}
+      </h3>`;
+    })}`;
+  }
+
+  static styles = css`
+    :host {
+      display: flex;
+      flex-direction: row;
+    }
+
+    h3 {
+      margin: 0;
+      padding: 0 1em;
+      text-decoration: underline;
+    }
+
+    h3:not(.completed):not(.active) {
+      opacity: 0.5;
+    }
+
+    h3.active {
+      color: var(--clickable);
+    }
+  `;
 }
 
 interface WithValue {

@@ -57,10 +57,11 @@ export type Namespace = {
   name: string;
   doc: string;
   version: [number, number, number];
-  authors: [string, string];
-  groups: GroupTypeDef[];
-  datasets: DatasetTypeDef[];
+  authors: [string, string][];
+  typedefs: TypeDef[];
 };
+
+export type TypeDef = ["GROUP", GroupTypeDef] | ["DATASET", DatasetTypeDef];
 
 export type NeuroDataTypeDef =
   | ["GROUP", GroupTypeDef]
@@ -193,8 +194,6 @@ export type LinkDec = {
   targetType: GroupType | DatasetType;
   quantityOrName: Quantity | string; // if named, quantity is one
 };
-
-export type TypeDef = ["GROUP", GroupTypeDef] | ["DATASET", DatasetTypeDef];
 
 // required UI componenets
 
