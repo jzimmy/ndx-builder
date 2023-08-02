@@ -53,7 +53,7 @@ export class GroupInctypeFormpageElem<
   transform = (data: T) => {
     return {
       ...data,
-      neurodataTypeInc: ["Core", this.inctypeNameInput.value] as GroupType,
+      neurodataTypeInc: ["None", null] as GroupType,
     };
   };
 
@@ -61,10 +61,12 @@ export class GroupInctypeFormpageElem<
     const [kind, incType] = data.neurodataTypeInc;
     switch (kind) {
       case "Core":
-        this.inctypeNameInput.value = incType;
+        this.inctypeNameInput.value = incType.neurodataTypeDef;
         break;
       case "Typedef":
         this.inctypeNameInput.value = incType.neurodataTypeDef;
+        break;
+      case "None":
         break;
       default:
         assertNever(kind);
@@ -84,10 +86,12 @@ export class DatasetInctypeFormpageElem<
     const [kind, incType] = data.neurodataTypeInc;
     switch (kind) {
       case "Core":
-        this.inctypeNameInput.value = incType;
+        this.inctypeNameInput.value = incType.neurodataTypeDef;
         break;
       case "Typedef":
         this.inctypeNameInput.value = incType.neurodataTypeDef;
+        break;
+      case "None":
         break;
       default:
         assertNever(kind);

@@ -124,7 +124,10 @@ export type Dtype =
 // Discriminated Union for top level GroupTypes
 // GroupType is a top level NWB Group, that can be used in a neurodataTypeInc and
 // can be used anywhere in a namespace
-export type GroupType = ["Core", CoreGroupType] | ["Typedef", GroupTypeDef];
+export type GroupType =
+  | ["Core", CoreGroupType]
+  | ["Typedef", GroupTypeDef]
+  | ["None", null];
 
 // GroupTypeDef is a GroupType that was created using the NDX API.
 export type GroupTypeDef = {
@@ -167,7 +170,8 @@ export type IncGroupDec = {
 // Top level dataset neurodata type
 export type DatasetType =
   | ["Core", CoreDatasetType]
-  | ["Typedef", DatasetTypeDef];
+  | ["Typedef", DatasetTypeDef]
+  | ["None", null];
 
 // DatasetTypeDef is a DatasetType that was created using the NDX API.
 export type DatasetTypeDef = {
