@@ -2,7 +2,7 @@ import { customElement, query, state } from "lit/decorators.js";
 import { Namespace } from "./nwb/spec";
 import { CPSForm } from "./HOFS";
 import { html } from "lit";
-import { NDXBuilderDefaultShowAndFocus } from "./forms";
+import { NDXBuilderDefaultShowAndFocus } from "./basicform";
 import { FormStepBar } from "./basic-elems";
 
 function codegen(ns: Namespace): string {

@@ -2,7 +2,6 @@ import { LitElement, html, css } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import "./type-elem";
 import "./types";
-import "./forms";
 import "./basic-elems";
 import "./playground";
 import { choose } from "lit/directives/choose.js";

@@ -1,6 +1,6 @@
 import { TemplateResult, html } from "lit";
 import { ProgressState } from "./HOFS";
-import { BasicFormPage } from "./forms";
+import { BasicFormPage } from "./basicform";
 import {
   HasInstanceNameAndDescription,
   HasRequired,

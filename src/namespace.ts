@@ -3,7 +3,7 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { map } from "lit/directives/map.js";
 import { Namespace, TypeDef } from "./nwb/spec";
 import { CPSForm, FormTrigger, ProgressState } from "./HOFS";
-import { BasicFormPage, NDXBuilderDefaultShowAndFocus } from "./forms";
+import { BasicFormPage, NDXBuilderDefaultShowAndFocus } from "./basicform";
 import "./basic-elems";
 import { FormStepBar } from "./basic-elems";
 import { Initializers } from "./nwb/spec-defaults";

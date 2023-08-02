@@ -10,7 +10,7 @@ import {
   //   HasAxes,
 } from "./parent";
 import { GroupType, TypeDef } from "./nwb/spec";
-import { BasicFormPage } from "./forms";
+import { BasicFormPage } from "./basicform";
 import { Initializers } from "./nwb/spec-defaults";
 
 abstract class InctypeFormpageElem<T> extends BasicFormPage<T> {

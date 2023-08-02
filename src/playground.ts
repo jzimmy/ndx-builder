@@ -4,7 +4,7 @@ import { symbols } from "./styles";
 import { classMap } from "lit/directives/class-map.js";
 import { map } from "lit/directives/map.js";
 import "./types";
-import "./forms";
+// import "./forms";
 import "./basic-elems";
 
 function assertUnreachable(_: never): never {

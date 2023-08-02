@@ -1,24 +1,24 @@
-import { CSSResultGroup, LitElement, TemplateResult, css, html } from "lit";
-import { customElement, query, state } from "lit/decorators.js";
-import { classMap } from "lit/directives/class-map.js";
-import { map } from "lit/directives/map.js";
-import { symbols } from "./styles";
-import {
-  AttributeDec,
-  DatasetDec,
-  DatasetType,
-  DatasetTypeDef,
-  Defaultable,
-  Dtype,
-  GroupDec,
-  GroupType,
-  GroupTypeDef,
-  LinkDec,
-} from "./nwb/spec";
-import { CPSForm, FormTrigger, ProgressState } from "./HOFS";
-import { NDXBuilderDefaultShowAndFocus } from "./forms";
-import { FormStepBar } from "./basic-elems";
-import { Initializers } from "./nwb/spec-defaults";
+// import { CSSResultGroup, LitElement, TemplateResult, css, html } from "lit";
+// import { customElement, query, state } from "lit/decorators.js";
+// import { classMap } from "lit/directives/class-map.js";
+// import { map } from "lit/directives/map.js";
+// import { symbols } from "./styles";
+// import {
+//   AttributeDec,
+//   DatasetDec,
+//   DatasetType,
+//   DatasetTypeDef,
+//   Defaultable,
+//   Dtype,
+//   GroupDec,
+//   GroupType,
+//   GroupTypeDef,
+//   LinkDec,
+// } from "./nwb/spec";
+// import { CPSForm, FormTrigger, ProgressState } from "./HOFS";
+// import { NDXBuilderDefaultShowAndFocus } from "./forms";
+// import { FormStepBar } from "./basic-elems";
+// import { Initializers } from "./nwb/spec-defaults";
 
 // @customElement("axes-form")
 // export class AxesFormpageElem<T extends HasAxes> extends BasicFormPage<T> {

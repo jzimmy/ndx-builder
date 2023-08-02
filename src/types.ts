@@ -1,18 +1,10 @@
 // todo implement onDelete for all
-import { css, html, LitElement, PropertyValueMap, TemplateResult } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import { css, html, LitElement, TemplateResult } from "lit";
+import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { BasicTypeElem } from "./type-elem";
 import "./type-elem";
-import "./forms";
-import { DefaultNameFormpageElem, GroupInctypeBrowser } from "./forms";
-import {
-  CoreDatasetType,
-  DatasetTypeDef,
-  GroupTypeDef,
-  PrimitiveDtype,
-  TypeDef,
-} from "./nwb/spec";
+import { DatasetTypeDef, GroupTypeDef, TypeDef } from "./nwb/spec";
 import { symbols } from "./styles";
 
 @customElement("link-dec-elem")
@@ -160,10 +152,6 @@ abstract class TypeDefElem<T> extends BasicTypeElem {
   @property()
   incType: { name: string } = { name: "Pick a type" };
 
-  @query("#form-manager")
-  formManager!: NdxFormManager;
-
-  abstract formpages: ComposedFormElem<T>[];
   abstract default: T;
   abstract fill(v: T): void;
   abstract typedef(): TypeDef | null;
@@ -178,36 +166,6 @@ abstract class TypeDefElem<T> extends BasicTypeElem {
   protected triggerForm: () => void = () => {
     throw new Error("Trigger form not set");
   };
-
-  protected _buildForm() {
-    const realtrigger = composeForm(
-      this.formManager,
-      this.default,
-      this.formpages
-    );
-    this.triggerForm = () => {
-      this.typeElem.formOpen = true;
-      realtrigger(
-        () => {
-          this.typeElem.formOpen = false;
-        },
-        (v) => {
-          console.log(v);
-          this.typeElem.formOpen = false;
-        }
-      );
-    };
-  }
-
-  protected firstUpdated(
-    _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
-  ): void {
-    super.firstUpdated(_changedProperties);
-    this._buildForm();
-    this.requestUpdate();
-    // TODO REMOVE TEMPORARY
-    // this.triggerForm();
-  }
 
   protected topInput(): TemplateResult<1> {
     return html`
@@ -248,14 +206,9 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
     return null;
   }
 
-  formpages: ComposedFormElem<GroupTypeDef>[] = [
-    new GroupInctypeBrowser(),
-    new DefaultNameFormpageElem(),
-  ];
-
   default: GroupTypeDef = {
     neurodataTypeDef: "",
-    neurodataTypeInc: ["Core", "None"],
+    neurodataTypeInc: ["None", null],
     doc: "",
     groups: [],
     datasets: [],
@@ -296,8 +249,6 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
     return null;
   }
 
-  formpages: ComposedFormElem<DatasetTypeDef>[] = [];
-
   get valid(): boolean {
     return false;
   }
@@ -305,8 +256,8 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
   protected icon: string = "dataset";
   default: DatasetTypeDef = {
     neurodataTypeDef: "",
-    dtype: ["PRIMITIVE", PrimitiveDtype.f32],
-    neurodataTypeInc: ["Core", "None"],
+    dtype: ["PRIMITIVE", "f32"],
+    neurodataTypeInc: ["None", null],
     doc: "",
     attributes: [],
     shape: [],
@@ -333,6 +284,15 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
 export class GroupSubtree extends LitElement {
   @property({ type: Boolean })
   disabled = true;
+
+  @property({ type: Function })
+  triggerAttribDecBuilderForm = () => {};
+  @property({ type: Function })
+  triggerDatasetDecBuilderForm = () => {};
+  @property({ type: Function })
+  triggerGroupDecBuilderForm = () => {};
+  @property({ type: Function })
+  triggerLinkDecBuilderForm = () => {};
 
   @property()
   attribs: AttribDecElem[] = [];
