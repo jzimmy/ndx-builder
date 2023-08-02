@@ -15,7 +15,10 @@ import {
   GroupTypeDef,
   LinkDec,
 } from "./nwb/spec";
-import { CPSForm } from "./HOFS";
+import { CPSForm, FormTrigger, ProgressState } from "./HOFS";
+import { NDXBuilderDefaultShowAndFocus } from "./forms";
+import { FormStepBar } from "./basic-elems";
+import { Initializers } from "./nwb/spec-defaults";
 
 // @customElement("axes-form")
 // export class AxesFormpageElem<T extends HasAxes> extends BasicFormPage<T> {
@@ -168,121 +171,4 @@ import { CPSForm } from "./HOFS";
 //   }
 
 //   static styles = [super.styles, css``];
-// }
-
-// abstract class VizFormpageElem<T> extends NdxFormPageElem<T> {
-//   drawProgressBar(_: string[], __: number): void {}
-
-//   @state()
-//   viztext: string = "";
-
-//   fill(data: T): this {
-//     this.viztext = JSON.stringify(data, null, 2);
-//     return this;
-//   }
-
-//   clear(): this {
-//     this.viztext = "";
-//     return this;
-//   }
-
-//   @query("input[name=continue]")
-//   continueButton!: HTMLInputElement;
-
-//   setSlotToCurrFormAndFocus(show: boolean): void {
-//     this.slot = show ? "currForm" : "";
-//     this.continueButton.showAndFocus();
-//   }
-
-//   _selfValidate(): void {}
-
-//   body() {}
-
-//   render() {
-//     return html`
-//       <div>${this.viztext}</div>
-//       <input type="button" value="Back" @click=${this.onBackCallback} />
-//       <input type="button" value="Close" @click=${this.onCloseCallback} />
-//       <input
-//         type="button"
-//         name="continue"
-//         value="Continue"
-//         @click=${this.onNextCallback}
-//       />
-
-//       <div style="display:flex;">${this.body()}</div>
-//     `;
-//   }
-// }
-
-// @customElement("groupdef-viz")
-// export class GroupDefVizFormpageElem extends VizFormpageElem<GroupTypeDef> {
-//   groups: GroupDec[] = [];
-//   datasets: DatasetDec[] = [];
-//   attribs: AttributeDec[] = [];
-//   links: LinkDec[] = [];
-
-//   triggerAttributeForm: () => void;
-//   constructor(attributeBuilderForm: TriggerFormFn<AttributeDec>) {
-//     super();
-//     this.triggerAttributeForm = () => {
-//       this.setSlotToCurrFormAndFocus(false);
-//       attributeBuilderForm(
-//         () => {
-//           this.setSlotToCurrFormAndFocus(true);
-//         },
-//         (value) => {
-//           this.attribs.push(value);
-//           this.setSlotToCurrFormAndFocus(true);
-//         }
-//       );
-//     };
-//   }
-
-//   transform = (data: GroupTypeDef) => {
-//     return data;
-//   };
-
-//   body() {
-//     return html`
-//       <input type="button" value="Add Group" />
-//       <input type="button" value="Add Dataset" />
-//       <input type="button" value="Add Attribute" />
-//       <input type="button" value="Add Link" />
-//     `;
-//   }
-// }
-
-// @customElement("datasetdef-viz")
-// export class DatasetDefVizFormpageElem extends VizFormpageElem<DatasetTypeDef> {
-//   attribs: AttributeDec[] = [];
-
-//   transform = (data: DatasetTypeDef) => {
-//     return { ...data, attributes: this.attribs };
-//   };
-
-//   triggerAttributeForm: () => void;
-//   constructor(attributeBuilderForm: TriggerFormFn<AttributeDec>) {
-//     super();
-//     this.triggerAttributeForm = () => {
-//       this.setSlotToCurrFormAndFocus(false);
-//       attributeBuilderForm(
-//         () => {
-//           this.setSlotToCurrFormAndFocus(true);
-//         },
-//         (value) => {
-//           this.attribs.push(value);
-//           this.setSlotToCurrFormAndFocus(true);
-//         }
-//       );
-//     };
-//   }
-
-//   body() {
-//     return html`<input
-//       type="button"
-//       value="Add Attribute"
-//       @click=${this.triggerAttributeForm}
-//     />`;
-//   }
 // }

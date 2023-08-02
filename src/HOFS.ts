@@ -19,7 +19,7 @@ export function id<T>(x: T) {
 }
 
 // ProgressState is used to manage the step bar titles
-type ProgressState = {
+export type ProgressState = {
   states: string[];
   currState: number | -1;
 };
@@ -111,13 +111,13 @@ export abstract class CPSForm<T>
   abstract showAndFocus(visible: boolean): void;
 
   // dont override
-  run(states?: string[], currState?: number): FormTriggerK<T> {
+  run(states?: string[], currState = -1): FormTriggerK<T> {
     const state: ProgressState = {
       states: states || [],
-      currState: currState || -1,
+      currState,
     };
     const triggerRec: FormTriggerK<T> = (val, back, next) => {
-      this.fill(val, currState == -1 ? state : undefined);
+      this.fill(val, currState != -1 ? state : undefined);
       this.showAndFocus(true);
       this.onBack = () => {
         this.showAndFocus(false);

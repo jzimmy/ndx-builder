@@ -1,16 +1,17 @@
 import { TemplateResult, html, css } from "lit";
 import { query, customElement } from "lit/decorators.js";
-import { assertNever } from "./HOFS";
+import { ProgressState, assertNever } from "./HOFS";
 import {
-  BasicFormPage,
   HasGroupIncType,
   HasDatasetIncType,
   //   HasTypeNameAndDescription,
   //   HasDefaultName,
   //   HasInstanceNameAndDescription,
   //   HasAxes,
-} from "./form-elem";
-import { GroupType } from "./nwb/spec";
+} from "./parent";
+import { GroupType, TypeDef } from "./nwb/spec";
+import { BasicFormPage } from "./forms";
+import { Initializers } from "./nwb/spec-defaults";
 
 abstract class InctypeFormpageElem<T> extends BasicFormPage<T> {
   formTitle: string = "Choose a base type to extend";
@@ -92,5 +93,49 @@ export class DatasetInctypeFormpageElem<
         assertNever(kind);
     }
     return this;
+  }
+}
+
+@customElement("generic-inctype-form")
+export class GenericInctypeFormpageElem extends InctypeFormpageElem<TypeDef> {
+  fill(val: TypeDef, progress?: ProgressState): void {
+    this.drawProgressBar(progress);
+    this.inctypeNameInput.value = val[1].neurodataTypeDef;
+  }
+
+  transform(val: TypeDef): TypeDef {
+    switch (this.kindSelect.value) {
+      case "group":
+        return [
+          "GROUP",
+          {
+            ...Initializers.groupTypeDef,
+            neurodataTypeDef: this.inctypeNameInput.value,
+          },
+        ];
+      case "dataset":
+        return [
+          "DATASET",
+          {
+            ...Initializers.datasetTypeDef,
+            neurodataTypeDef: this.inctypeNameInput.value,
+          },
+        ];
+    }
+    return val;
+  }
+
+  @query("select[name=inctype-kind]")
+  kindSelect!: HTMLSelectElement;
+
+  body() {
+    return html`
+      <label for="inctype-kind">IncType kind</label>
+      <select name="inctype-kind">
+        <option value="group">Group</option>
+        <option value="dataset">Dataset</option>
+      </select>
+      ${super.body()}
+    `;
   }
 }

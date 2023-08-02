@@ -183,10 +183,10 @@ export type AnonymousDatasetDec = {
 export type AttributeDec = {
   name: string;
   doc: string;
-  dtype: Dtype;
-  shape: [number, string][];
   required: boolean;
   value?: Defaultable<string>; // boolean flag means value is default
+  dtype: Dtype;
+  shape: [number, string][];
 };
 
 export type LinkDec = {

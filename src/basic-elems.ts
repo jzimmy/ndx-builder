@@ -2,6 +2,7 @@ import { LitElement, html, css, CSSResultGroup } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { map } from "lit/directives/map.js";
+import { ProgressState } from "./HOFS";
 
 abstract class ButtonElem extends LitElement {
   @property({ type: Boolean, reflect: true })
@@ -76,13 +77,24 @@ export class DarkButton extends ButtonElem {
   ];
 }
 
-@customElement("form-step-bar")
+@customElement("step-bar")
 export class FormStepBar extends LitElement {
+  @property({ reflect: true })
+  hidden: boolean = false;
+
   @property({ type: Array<String> })
   steps: string[] = [];
 
   @property({ type: Number })
   currStep: number = -1;
+
+  setProgressState(progress?: ProgressState) {
+    this.hidden = progress == undefined;
+    if (progress) {
+      this.currStep = progress.currState;
+      this.steps = progress.states;
+    }
+  }
 
   render() {
     return html`${map(this.steps, (step, i) => {
@@ -101,6 +113,10 @@ export class FormStepBar extends LitElement {
     :host {
       display: flex;
       flex-direction: row;
+    }
+
+    :host[hidden] {
+      display: none;
     }
 
     h3 {
