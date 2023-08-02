@@ -7,7 +7,6 @@ import { BasicFormPage, NDXBuilderDefaultShowAndFocus } from "./forms";
 import "./basic-elems";
 import { FormStepBar } from "./basic-elems";
 import { Initializers } from "./nwb/spec-defaults";
-import { range } from "lit/directives/range.js";
 import { when } from "lit/directives/when.js";
 
 @customElement("new-or-existing-namespace-form")
@@ -143,9 +142,6 @@ export class NamespaceMetadataFormpageElem extends BasicFormPage<Namespace> {
   @query("input[name=namespace-version]")
   namespaceVersionInput!: HTMLInputElement;
 
-  @query("step-bar")
-  stepBar!: FormStepBar;
-
   body(): TemplateResult<1> {
     return html`
       <step-bar></step-bar>
@@ -174,7 +170,7 @@ export class NamespaceMetadataFormpageElem extends BasicFormPage<Namespace> {
     val: Namespace,
     progress?: { states: string[]; currState: number } | undefined
   ): void {
-    this.stepBar.setProgressState(progress);
+    this.drawProgressBar(progress);
     if (val.authors.length !== 0) this.authors = [...val.authors];
     if (val.version.every((v) => v === -1)) {
       this.namespaceVersionInput.value = val.version

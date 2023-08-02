@@ -209,7 +209,7 @@ export class AxesFormpageElem<T extends HasAxes> extends BasicFormPage<T> {
     let shape = dims.map((dim, i) => [dim, labels[i]] as [number, string]);
     return {
       ...data,
-      shape: shape,
+      shape: [shape],
       dtype: ["PRIMITIVE", "i8"],
     };
   };

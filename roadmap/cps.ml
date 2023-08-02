@@ -1,5 +1,7 @@
 type direction = Next | Back
 
+type 'a trigger = 'a * (unit -> unit) * (('a * unit -> unit) -> unit) -> unit
+
 let rec prompt x =
   print_endline ("prompt: " ^ Int.to_string x);
   match read_line () with

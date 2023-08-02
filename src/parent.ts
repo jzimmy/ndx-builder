@@ -12,6 +12,7 @@ import {
   Namespace,
   TypeDef,
   AttributeDec,
+  Shape,
 } from "./nwb/spec";
 import { GenericInctypeFormpageElem } from "./inctype";
 import {
@@ -48,7 +49,7 @@ export interface HasInstanceNameAndDescription {
 }
 
 export interface HasAxes {
-  shape: [number, string][];
+  shape: Shape[];
   dtype: Dtype;
 }
 

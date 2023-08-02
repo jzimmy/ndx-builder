@@ -52,6 +52,7 @@
 
 // [_, true] means default
 export type Defaultable<T> = [T, boolean];
+export type Shape = [number | "None", string][];
 
 export type Namespace = {
   name: string;
@@ -61,6 +62,9 @@ export type Namespace = {
   typedefs: TypeDef[];
 };
 
+export type NWBType = ["CORE", CoreType] | ["TYPEDEF", TypeDef];
+
+export type CoreType = ["GROUP", CoreGroupType] | ["DATASET", CoreDatasetType];
 export type TypeDef = ["GROUP", GroupTypeDef] | ["DATASET", DatasetTypeDef];
 
 export type NeuroDataTypeDef =
@@ -74,10 +78,25 @@ export type Quantity =
   | ["Num", number];
 
 // TODO, fetch from NWB
-export type CoreGroupType = "Example" | "None";
-export type CoreDatasetType = "Example" | "None";
+export type CoreGroupType = {
+  neurodataTypeDef: string;
+  name: Defaultable<string>;
+  doc: string;
+};
+
+export type CoreDatasetType = {
+  neurodataTypeDef: string;
+  name: Defaultable<string>;
+  doc: string;
+  shape: Shape[];
+  dtype: Dtype;
+};
 
 export type PrimitiveDtype =
+  | "Ascii"
+  | "Text"
+  | "Bool"
+  | "IsoDatetime"
   | "i8"
   | "i16"
   | "i32"
@@ -88,13 +107,19 @@ export type PrimitiveDtype =
   | "u64"
   | "f32"
   | "f64"
-  | "Text"
-  | "IsoDatetime";
+  | "Numeric" // can be refined to numeric
+  | "Any"; // can be any
+
+export type CompoundDtype = {
+  name: string;
+  doc: string;
+  dtype: Dtype;
+};
 
 export type Dtype =
   | ["PRIMITIVE", PrimitiveDtype]
-  | ["REFSPEC", GroupType | DatasetType]
-  | ["COMPOUND", Dtype[]];
+  | ["REFSPEC", NWBType]
+  | ["COMPOUND", CompoundDtype[]];
 
 // Discriminated Union for top level GroupTypes
 // GroupType is a top level NWB Group, that can be used in a neurodataTypeInc and
@@ -152,7 +177,7 @@ export type DatasetTypeDef = {
   doc: string;
   name?: Defaultable<string>;
 
-  shape: [number, string][];
+  shape: Shape[];
   dtype: Dtype;
 
   attributes: AttributeDec[];
@@ -175,7 +200,7 @@ export type IncDatasetDec = {
 export type AnonymousDatasetDec = {
   doc: string;
   name: string;
-  shape: [number, string][];
+  shape: Shape[];
   dtype: Dtype;
   attributes: AttributeDec[];
 };
@@ -186,7 +211,7 @@ export type AttributeDec = {
   required: boolean;
   value?: Defaultable<string>; // boolean flag means value is default
   dtype: Dtype;
-  shape: [number, string][];
+  shape: Shape[];
 };
 
 export type LinkDec = {
