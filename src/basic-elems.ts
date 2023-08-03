@@ -1,4 +1,4 @@
-import { LitElement, html, css, CSSResultGroup } from "lit";
+import { LitElement, html, css, CSSResultGroup, PropertyValueMap } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { map } from "lit/directives/map.js";
@@ -296,22 +296,38 @@ export class ContinueBar extends LitElement {
   ];
 }
 
-interface WithValue {
+interface WithValueAndFocus {
   value: string;
+  focus: () => void;
 }
 
-abstract class NdxInputElem<T extends WithValue> extends LitElement {
+abstract class NdxInputElem extends LitElement {
+  @property({ type: Boolean, reflect: true })
+  active = false;
+
   @property({ type: Function, reflect: true })
-  validateInput: (s: string) => true | false | ["ERROR", string] = (_) => true;
-  abstract input: T;
+  validateInput: (s: string) => ["OK", string] | ["ERR", string] = (s) => [
+    "OK",
+    s,
+  ];
+
+  abstract input: WithValueAndFocus;
   abstract errorMessage: string;
 
+  protected firstUpdated(
+    _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
+  ): void {
+    super.firstUpdated(_changedProperties);
+    this.addEventListener("click", () => {
+      this.active = !this.active;
+      this.input.focus();
+    });
+  }
+
   get value(): string | null {
-    const currValue = this.input.value;
-    const validationSuccess = this.validateInput(currValue);
-    if (validationSuccess == true) return currValue;
-    if (validationSuccess == false) return null;
-    this.errorMessage = validationSuccess[1];
+    const [status, res] = this.validateInput(this.input.value);
+    if (status == "OK") return res;
+    this.errorMessage = res;
     return null;
   }
 }

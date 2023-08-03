@@ -8,6 +8,7 @@ import {
   GroupDecElem,
   LinkDecElem,
 } from "./types";
+import { when } from "lit-html/directives/when.js";
 
 /* Wrapper element for a type elem, contains the minimize,
  * close button and slots for the body and subtree.
@@ -15,6 +16,9 @@ import {
  */
 @customElement("type-elem-skeleton")
 export class TypeElemSkeleton extends LitElement {
+  @property({ type: Boolean, reflect: true })
+  hideCloseBtn: boolean = false;
+
   @property({ type: Boolean, reflect: true })
   minimize: boolean = true;
 
@@ -35,14 +39,19 @@ export class TypeElemSkeleton extends LitElement {
             @click=${() => (this.minimize = !this.minimize)}
             >${this.minimize ? "expand_content" : "minimize"}</span
           >
-          <span
-            class="material-symbols-outlined"
-            @click=${(e: Event) => {
-              this.remove();
-              this.onDelete(e.target!);
-            }}
-            >close</span
-          >
+          ${when(
+            !this.hideCloseBtn,
+            () => html`
+              <span
+                class="material-symbols-outlined"
+                @click=${(e: Event) => {
+                  this.remove();
+                  this.onDelete(e.target!);
+                }}
+                >close</span
+              >
+            `
+          )}
         </div>
         <slot name="body"></slot>
       </div>

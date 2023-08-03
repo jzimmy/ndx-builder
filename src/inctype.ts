@@ -376,31 +376,28 @@ export class GenericInctypeFormpageElem extends InctypeFormpageElem<TypeDef> {
 }
 
 @customElement("group-inctype-form")
-export class GroupInctypeFormpageElem<
-  T extends HasGroupIncType
-> extends InctypeFormpageElem<T> {
-  transform = (data: T) => {
+export class GroupInctypeFormpageElem extends InctypeFormpageElem<HasGroupIncType> {
+  transform = (data: HasGroupIncType) => {
     return {
       ...data,
       neurodataTypeInc: ["None", null] as GroupType,
     };
   };
 
-  fill(data: T): this {
+  fill(data: HasGroupIncType): void {
     const [kind, incType] = data.neurodataTypeInc;
     switch (kind) {
       case "Core":
-        this.inctypeNameInput.value = incType.neurodataTypeDef;
+        incType.neurodataTypeDef;
         break;
       case "Typedef":
-        this.inctypeNameInput.value = incType.neurodataTypeDef;
+        incType.neurodataTypeDef;
         break;
       case "None":
         break;
       default:
         assertNever(kind);
     }
-    return this;
   }
 }
 
@@ -409,16 +406,16 @@ export class DatasetInctypeFormpageElem<
   T extends HasDatasetIncType
 > extends InctypeFormpageElem<T> {
   transform = (data: T) => {
-    return { ...data, neurodataTypeInc: ["Core", this.inctypeNameInput.value] };
+    return { ...data, neurodataTypeInc: ["None", null] };
   };
   fill(data: T): this {
     const [kind, incType] = data.neurodataTypeInc;
     switch (kind) {
       case "Core":
-        this.inctypeNameInput.value = incType.neurodataTypeDef;
+        incType.neurodataTypeDef;
         break;
       case "Typedef":
-        this.inctypeNameInput.value = incType.neurodataTypeDef;
+        incType.neurodataTypeDef;
         break;
       case "None":
         break;
@@ -428,46 +425,3 @@ export class DatasetInctypeFormpageElem<
     return this;
   }
 }
-
-// export class GenericInctypeFormpageElem extends InctypeFormpageElem<TypeDef> {
-//   fill(val: TypeDef, progress?: ProgressState): void {
-//     this.drawProgressBar(progress);
-//     this.inctypeNameInput.value = val[1].neurodataTypeDef;
-//   }
-
-//   transform(val: TypeDef): TypeDef {
-//     switch (this.kindSelect.value) {
-//       case "group":
-//         return [
-//           "GROUP",
-//           {
-//             ...Initializers.groupTypeDef,
-//             neurodataTypeDef: this.inctypeNameInput.value,
-//           },
-//         ];
-//       case "dataset":
-//         return [
-//           "DATASET",
-//           {
-//             ...Initializers.datasetTypeDef,
-//             neurodataTypeDef: this.inctypeNameInput.value,
-//           },
-//         ];
-//     }
-//     return val;
-//   }
-
-//   @query("select[name=inctype-kind]")
-//   kindSelect!: HTMLSelectElement;
-
-//   body() {
-//     return html`
-//       <label for="inctype-kind">IncType kind</label>
-//       <select name="inctype-kind">
-//         <option value="group">Group</option>
-//         <option value="dataset">Dataset</option>
-//       </select>
-//       ${super.body()}
-//     `;
-//   }
-// }
