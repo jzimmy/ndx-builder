@@ -1,7 +1,7 @@
 import { LitElement, html, css } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
-import { FormChain } from "./HOFS";
+import { FormChain, ProgressState } from "./HOFS";
 import {
   GroupType,
   DatasetType,
@@ -14,7 +14,6 @@ import {
   AttributeDec,
   Shape,
 } from "./nwb/spec";
-import { GenericInctypeFormpageElem } from "./inctype";
 import {
   AxesFormpageElem,
   DatasetDefVizFormpageElem,
@@ -29,6 +28,9 @@ import {
 import { Initializers } from "./nwb/spec-defaults";
 import { CodegenFormpageElem } from "./codegen";
 import { AttribInfoFormpageElem } from "./attrib";
+import "./basic-elems";
+import { symbols } from "./styles";
+import { GenericInctypeFormpageElem } from "./inctype";
 
 export interface HasGroupIncType {
   neurodataTypeInc: GroupType;
@@ -68,9 +70,6 @@ export interface MaybeHasValue {
 // form manager
 @customElement("form-parent")
 export class NdxFormParent extends LitElement {
-  @property({ type: Boolean, reflect: true })
-  formOpen = true;
-
   constructor() {
     super();
 
@@ -163,22 +162,29 @@ export class NdxFormParent extends LitElement {
 
   render() {
     return html`
-      ${when(
-        !this.formOpen,
-        () => html`
-          <input type="button" value="new_group" />
-          <input type="button" value="new_dataset" />
-        `
-      )}
+      <h1>NWB Extension Builder</h1>
+      <a href="">Need help?</a>
       <form>
-        ${when(this.formOpen, () => html` <slot name="currForm"></slot> `)}
+        <slot name="currForm"></slot>
       </form>
     `;
   }
 
   static styles = [
+    symbols,
     css`
       :host {
+        background: var(--color-background-alt);
+        width: 100%;
+        height: 100%;
+        flex-direction: column;
+      }
+
+      form {
+        flex-shrink: 0;
+        margin: auto;
+        display: flex;
+        justify-content: center;
       }
     `,
   ];

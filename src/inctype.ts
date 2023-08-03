@@ -1,5 +1,5 @@
 import { TemplateResult, html, css } from "lit";
-import { query, customElement } from "lit/decorators.js";
+import { query, customElement, property, state } from "lit/decorators.js";
 import { ProgressState, assertNever } from "./HOFS";
 import {
   HasGroupIncType,
@@ -9,41 +9,370 @@ import {
   //   HasInstanceNameAndDescription,
   //   HasAxes,
 } from "./parent";
-import { GroupType, TypeDef } from "./nwb/spec";
+import {
+  DatasetType,
+  DatasetTypeDef,
+  GroupType,
+  GroupTypeDef,
+  TypeDef,
+} from "./nwb/spec";
 import { BasicFormPage } from "./basicform";
-import { Initializers } from "./nwb/spec-defaults";
+import { map } from "lit/directives/map.js";
+import { classMap } from "lit/directives/class-map.js";
+import { symbols } from "./styles";
+import { choose } from "lit/directives/choose.js";
 
 abstract class InctypeFormpageElem<T> extends BasicFormPage<T> {
   formTitle: string = "Choose a base type to extend";
 
+  @state()
+  selectedModule: number = 0;
+
+  @property({ reflect: true })
+  private _category: "Core" | "Typedef" | "None" = "Core";
+  get category() {
+    return this._category;
+  }
+
+  set category(val: "Core" | "Typedef" | "None") {
+    this._category = val;
+    this._selfValidate();
+    if (val != "None") this.selectedType = -1;
+  }
+
+  @state()
+  private _selectedType: number = -1;
+  get selectedType() {
+    return this._selectedType;
+  }
+  set selectedType(val: number) {
+    this._selectedType = val;
+    this._selfValidate();
+  }
+
   isValid(): boolean {
-    return this.inctypeNameInput.value !== "";
+    return this.category == "None" || this.selectedType != -1;
   }
 
-  clear(): this {
-    this.inctypeNameInput.value = "";
-    return this;
+  clear(): void {
+    this.selectedType = -1;
+    this.category = "Core";
   }
-
-  @query("input[name=inctype-name]")
-  inctypeNameInput!: HTMLInputElement;
 
   @query("input[name=inctype-name]")
   firstInput!: HTMLElement;
 
-  body(): TemplateResult<1> {
+  myTypes: string[] = [
+    "mytype1",
+    "mytype2",
+    "mytype3",
+    "mytype5",
+    "mytype7",
+    "mytype8",
+  ];
+
+  // pynwb core module names
+  modules = [
+    "core",
+    "device",
+    "ecephys",
+    "file",
+    "misc",
+    "ophys",
+    "processing",
+    "time_series",
+    "behavior",
+    "ecephys",
+  ];
+
+  private coreMenu() {
     return html`
-      <label for="inctype-name">IncType name</label>
-      <input
-        name="inctype-name"
-        @input=${this._selfValidate}
-        placeholder="ExampleIncType"
-        value=${""}
-      />
+      <div class="coremenu-grid">
+        <div class="modulemenu">
+          <h3>Modules</h3>
+          ${map(
+            this.modules,
+            (module, i) =>
+              html`<div
+                class=${classMap({ selected: i == this.selectedModule })}
+                @click=${() => {
+                  this.selectedModule = i;
+                  this.selectedType = -1;
+                }}
+              >
+                ${module}
+              </div>`
+          )}
+        </div>
+        <div class="typelist">
+          ${map(
+            this.modules.slice(0, this.modules[this.selectedModule].length),
+            (module, i) =>
+              html`<div
+                class=${classMap({ selected: i == this.selectedType })}
+                @click=${() => (this.selectedType = i)}
+              >
+                ${module}
+              </div>`
+          )}
+        </div>
+      </div>
     `;
   }
 
-  static styles = [super.styles, css``];
+  private mineMenu() {
+    return html`
+      <div class="coremenu-grid">
+        <div class="typelist">
+          ${map(
+            this.myTypes,
+            (type, i) =>
+              html`<div
+                class=${classMap({ selected: i == this.selectedType })}
+                @click=${() => (this.selectedType = i)}
+              >
+                ${type}
+              </div>`
+          )}
+        </div>
+      </div>
+    `;
+  }
+
+  private noneMenu() {
+    return html`
+      <div class="typelist">
+        <div class="dummy selected">None</div>
+      </div>
+    `;
+  }
+
+  private changeCategory(category: "Core" | "Typedef" | "None") {
+    this.category = category;
+    if (category != "None") this.selectedType = -1;
+  }
+
+  body() {
+    return html`
+      <div>
+        <h3 class=${classMap({ selected: this.category == "Core" })}
+            @click=${() => this.changeCategory("Core")}
+        >
+          Core Types
+        </h3>
+        ${
+          this.myTypes.length > 0
+            ? html`
+                <h3
+                  class=${classMap({ selected: this.category == "Typedef" })}
+                  @click=${() => this.changeCategory("Typedef")}
+                >
+                  My Types
+                </h3>
+              `
+            : html``
+        }
+        <h3 class=${classMap({ selected: this.category == "None" })}
+            @click=${() => this.changeCategory("None")}
+        >
+          No Base
+        </h3>
+        <hr></hr>
+      </div>
+      ${choose(this.category, [
+        ["Core", () => this.coreMenu()],
+        ["Typedef", () => this.mineMenu()],
+        ["None", () => this.noneMenu()],
+      ])}
+    `;
+  }
+
+  static styles = [
+    symbols,
+    css`
+      div.body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        box-sizing: border-box;
+        min-width: 500px;
+        position: relative;
+      }
+
+      div.body * {
+        transition: 0.2s;
+      }
+
+      div.body > span {
+        position: absolute;
+        top: 0;
+        right: 50%;
+        transform: translate(1150%, 75%);
+        cursor: pointer;
+        border: 2px solid red;
+      }
+
+      h2 {
+        margin: 0.5em;
+      }
+
+      div.body > div {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        padding: auto;
+        position: relative;
+        width: 100%;
+        transition: 0.3s;
+      }
+
+      div.body > div > h3 {
+        margin: 0.5em 1em;
+        min-width: 80px;
+        padding: 0.3em 0.5em;
+        text-align: center;
+        cursor: pointer;
+      }
+
+      div.body > div > h3:hover {
+        color: var(--clickable);
+      }
+
+      hr {
+        position: absolute;
+        top: 70%;
+        width: 80%;
+        transition: 0.3s;
+      }
+
+      .selected {
+        text-decoration: underline;
+      }
+
+      div.body > div > h3:not(:hover).selected {
+        color: var(--clickable);
+      }
+
+      .coremenu-grid {
+        padding: 1em;
+        width: 100%;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: center;
+      }
+
+      .modulemenu {
+        margin-right: 0.5em;
+        position: relative;
+        padding-right: 1em;
+        border-right: 1px solid var(--color-border-alt);
+      }
+
+      .modulemenu > h3 {
+        text-align: center;
+        position: sticky;
+        top: 0;
+        margin: 0;
+        padding: 0;
+        background: var(--color-background-alt);
+        border-bottom: 1px solid var(--color-border-alt);
+      }
+
+      .modulemenu > div {
+        padding: 0.6em 0.5em;
+        padding-bottom: 0.1em;
+        border-bottom: 1px solid var(--color-border-alt);
+        margin: 0 0.3em;
+        cursor: pointer;
+      }
+
+      .modulemenu > div:hover {
+        color: var(--clickable);
+        border-bottom: 1px solid var(--clickable);
+      }
+
+      .modulemenu > div.selected {
+        color: var(--clickable-hover);
+        border-bottom: 2px solid var(--clickable-hover);
+        text-decoration: none;
+      }
+
+      .modulemenu + .typelist {
+        margin-right: auto;
+      }
+
+      .typelist {
+        box-sizing: border-box;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        margin-bottom: auto;
+        width: 400px;
+        padding: 2em;
+      }
+
+      .typelist > div {
+        padding: 0.3em 0.5em;
+        border-radius: 0.2em;
+        height: 1.5em;
+        cursor: pointer;
+        margin: 0.4em;
+        border: 1px solid var(--color-border-alt);
+      }
+
+      .typelist > div:hover {
+        color: var(--clickable);
+        border: 1px solid var(--clickable);
+      }
+
+      .typelist > div.selected {
+        border: 2px solid var(--clickable);
+        color: var(--clickable);
+      }
+
+      div.body > div:last-child {
+        display: flex;
+        padding: 0 2em;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      div.body > div:last-child > dark-button {
+        margin-left: auto;
+      }
+
+      .dummy {
+        width: 80px;
+        margin: 1em;
+      }
+    `,
+  ];
+}
+
+@customElement("generic-inctype-form")
+export class GenericInctypeFormpageElem extends InctypeFormpageElem<TypeDef> {
+  fill(val: TypeDef, progress?: ProgressState | undefined): void {
+    this.drawProgressBar(progress);
+  }
+  transform(val: TypeDef): TypeDef {
+    let [kind, def] = val;
+    switch (kind) {
+      case "GROUP":
+        let groupInc: GroupType = ["None", null];
+        let groupDef: GroupTypeDef = {
+          ...(def as GroupTypeDef),
+          neurodataTypeInc: groupInc,
+        };
+        return [kind, groupDef];
+      case "DATASET":
+        let datasetInc: DatasetType = ["None", null];
+        return [
+          kind,
+          { ...(def as DatasetTypeDef), neurodataTypeInc: datasetInc },
+        ];
+      default:
+        assertNever(kind);
+    }
+  }
 }
 
 @customElement("group-inctype-form")
@@ -100,46 +429,45 @@ export class DatasetInctypeFormpageElem<
   }
 }
 
-@customElement("generic-inctype-form")
-export class GenericInctypeFormpageElem extends InctypeFormpageElem<TypeDef> {
-  fill(val: TypeDef, progress?: ProgressState): void {
-    this.drawProgressBar(progress);
-    this.inctypeNameInput.value = val[1].neurodataTypeDef;
-  }
+// export class GenericInctypeFormpageElem extends InctypeFormpageElem<TypeDef> {
+//   fill(val: TypeDef, progress?: ProgressState): void {
+//     this.drawProgressBar(progress);
+//     this.inctypeNameInput.value = val[1].neurodataTypeDef;
+//   }
 
-  transform(val: TypeDef): TypeDef {
-    switch (this.kindSelect.value) {
-      case "group":
-        return [
-          "GROUP",
-          {
-            ...Initializers.groupTypeDef,
-            neurodataTypeDef: this.inctypeNameInput.value,
-          },
-        ];
-      case "dataset":
-        return [
-          "DATASET",
-          {
-            ...Initializers.datasetTypeDef,
-            neurodataTypeDef: this.inctypeNameInput.value,
-          },
-        ];
-    }
-    return val;
-  }
+//   transform(val: TypeDef): TypeDef {
+//     switch (this.kindSelect.value) {
+//       case "group":
+//         return [
+//           "GROUP",
+//           {
+//             ...Initializers.groupTypeDef,
+//             neurodataTypeDef: this.inctypeNameInput.value,
+//           },
+//         ];
+//       case "dataset":
+//         return [
+//           "DATASET",
+//           {
+//             ...Initializers.datasetTypeDef,
+//             neurodataTypeDef: this.inctypeNameInput.value,
+//           },
+//         ];
+//     }
+//     return val;
+//   }
 
-  @query("select[name=inctype-kind]")
-  kindSelect!: HTMLSelectElement;
+//   @query("select[name=inctype-kind]")
+//   kindSelect!: HTMLSelectElement;
 
-  body() {
-    return html`
-      <label for="inctype-kind">IncType kind</label>
-      <select name="inctype-kind">
-        <option value="group">Group</option>
-        <option value="dataset">Dataset</option>
-      </select>
-      ${super.body()}
-    `;
-  }
-}
+//   body() {
+//     return html`
+//       <label for="inctype-kind">IncType kind</label>
+//       <select name="inctype-kind">
+//         <option value="group">Group</option>
+//         <option value="dataset">Dataset</option>
+//       </select>
+//       ${super.body()}
+//     `;
+//   }
+// }

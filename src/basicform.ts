@@ -1,5 +1,5 @@
 import { TemplateResult, html, css, CSSResultGroup, LitElement } from "lit";
-import { state, query } from "lit/decorators.js";
+import { state, query, property } from "lit/decorators.js";
 import { CPSForm, ProgressState } from "./HOFS";
 import { symbols } from "./styles";
 import { FormStepBar } from "./basic-elems";
@@ -16,7 +16,8 @@ import { styleMap } from "lit/directives/style-map.js";
  */
 export abstract class BasicFormPage<T> extends CPSForm<T> {
   abstract formTitle: string;
-  ready: boolean = false;
+  @property()
+  private ready: boolean = false;
   abstract isValid(): boolean;
   abstract body(): TemplateResult<1>;
   abstract get firstInput(): HTMLElement;
@@ -33,10 +34,6 @@ export abstract class BasicFormPage<T> extends CPSForm<T> {
     this.stepBar.setProgressState(progress);
   }
 
-  onValidateCallback = (ready: boolean) => {
-    this.continueButton.disabled = !ready;
-  };
-
   showAndFocus(show: boolean): void {
     NDXBuilderDefaultShowAndFocus(this, show, this.firstInput);
   }
@@ -48,56 +45,37 @@ export abstract class BasicFormPage<T> extends CPSForm<T> {
   private stepBar!: FormStepBar;
 
   _selfValidate() {
-    this.onValidateCallback(this.isValid());
+    this.ready = this.isValid();
   }
 
   render() {
     return html`
-      <div class="progress-bar">
-        <span class="material-symbols-outlined back_arrow" @click=${this.back}
-          >arrow_back</span
-        >
+      <back-or-quit-bar
+        .hideQuit=${this.hideQuit}
+        .back=${() => this.back()}
+        .quit=${() => this.quit()}
+      >
         <step-bar></step-bar>
-        <span
-          style="${styleMap({
-      visibility: this.hideQuit ? "hidden" : "visible",
-    })}"
-          class="material-symbols-outlined close_button"
-          @click=${this.quit}
-          >close</span
-        >
-      </div>
-      <div>
-        <h2>${this.formTitle}</h2>
-      </div>
+      </back-or-quit-bar>
+      <h2 style=${styleMap({ "text-align": "center" })} class="title">
+        ${this.formTitle}
+      </h2>
       <div class="body">${this.body()}</div>
-      <div>
-        <input
-          type="button"
-          .disabled=${!this.ready}
-          name="continuebutton"
-          value="Continue"
-          @click=${() => {
-        if (!this.isValid()) {
-          this.onValidateCallback(false);
-        } else {
-          this.next();
-        }
-      }}
-        />
-      </div>
+      <continue-bar
+        .disabled=${!this.ready}
+        .continue=${() => this.next()}
+      ></continue-bar>
     `;
   }
 
   static styles = [
     symbols,
     css`
-      * {
-        border: 1px solid red;
-      }
-
       :host {
         margin: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
       }
 
       :host > div:not(.body) {
@@ -108,6 +86,11 @@ export abstract class BasicFormPage<T> extends CPSForm<T> {
 
       :host > div:last-child > input[type="button"] {
         margin-left: auto;
+      }
+
+      :host h2.title {
+        text-align: center;
+        margin: 0 auto;
       }
 
       .progress-bar {
@@ -139,6 +122,10 @@ export abstract class BasicFormPage<T> extends CPSForm<T> {
       .body {
         display: flex;
         flex-direction: column;
+        width: 80%;
+        justify-content: center;
+        margin: auto;
+        margin-bottom: 2em;
       }
     `,
   ] as CSSResultGroup;

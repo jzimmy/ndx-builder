@@ -24,6 +24,11 @@ export type ProgressState = {
   currState: number | -1;
 };
 
+export const dummyProgress: ProgressState = {
+  states: ["THIS is step1", "then do step2", "then step3", "finally step4"],
+  currState: 0,
+};
+
 export type FormTrigger<T> = (
   val: T,
   onAbandon: () => void,

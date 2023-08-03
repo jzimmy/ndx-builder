@@ -1,13 +1,15 @@
-import { TemplateResult, html } from "lit";
+import { TemplateResult, css, html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { map } from "lit/directives/map.js";
 import { Namespace, TypeDef } from "./nwb/spec";
 import { CPSForm, FormTrigger, ProgressState } from "./HOFS";
 import { BasicFormPage, NDXBuilderDefaultShowAndFocus } from "./basicform";
 import "./basic-elems";
-import { FormStepBar } from "./basic-elems";
+import { FormStepBar, iconOf } from "./basic-elems";
 import { Initializers } from "./nwb/spec-defaults";
 import { when } from "lit/directives/when.js";
+import { symbols } from "./styles";
+import { classMap } from "lit/directives/class-map.js";
 
 @customElement("new-or-existing-namespace-form")
 export class NamespaceStartFormpageElem extends CPSForm<Namespace> {
@@ -25,18 +27,12 @@ export class NamespaceStartFormpageElem extends CPSForm<Namespace> {
 
   render() {
     return html`
-      <input
-        type="button"
-        name="create-new"
-        value="Create new extended NWB types"
-        @click=${this.next}
-      />
-      <input
-        type="button"
-        name="upload-old"
-        value="Modify an existing extension namespace"
-        @click=${this.next}
-      />
+      <big-button .icon=${"feed"} @click=${this.next}
+        >Create new NWB extension</big-button
+      >
+      <big-button .icon=${"upload"} @click=${this.next}
+        >Upload existing extension</big-button
+      >
     `;
   }
 
@@ -61,6 +57,21 @@ export class NamespaceStartFormpageElem extends CPSForm<Namespace> {
   }
 
   clear(): void {}
+
+  static styles = [
+    symbols,
+    css`
+      :host {
+        margin: auto;
+        display: flex;
+        flex-wrap: wrap;
+      }
+
+      :host > big-button {
+        margin: 1em;
+      }
+    `,
+  ];
 }
 
 @customElement("namespace-metadata-form")
@@ -229,7 +240,7 @@ export class NamespaceTypesFormpageElem extends CPSForm<Namespace> {
   }
 
   @property({ type: Function })
-  triggerTypeBuilder = () => {};
+  triggerTypeBuilder: () => void = () => {};
 
   showAndFocus(visible: boolean): void {
     NDXBuilderDefaultShowAndFocus(this, visible);
@@ -239,21 +250,139 @@ export class NamespaceTypesFormpageElem extends CPSForm<Namespace> {
     return this.types.length === 0;
   }
 
+  @state()
+  selected: number = -1;
+
   render() {
     return html`
-    <step-bar></step-bar>
-    <h1>My Types</h1>
-    ${map(
-      this.types,
-      ([kind, ty]) => html`<h2>${kind}, ${ty.neurodataTypeDef}</h2>`
-    )}
-    <input type="button" value="add new type" @click=${
-      this.triggerTypeBuilder
-    }></input>
-    <input type="button" value="back" @click=${this.back}></input>
-    <input type="button" .disabled=${this.ready} value="continue" @click=${
-      this.next
-    }></input>
+      <back-or-quit-bar
+        .back=${() => this.back()}
+        .hideQuit=${true}
+        .quit=${() => console.log("FUCK")}
+      >
+        <step-bar></step-bar>
+      </back-or-quit-bar>
+      <div class="body">
+        <div class="typesbar">
+          <h2>My Types</h2>
+          <hr />
+          <ul>
+            ${when(
+              this.types.length === 0,
+              () => html`<li class="nonemsg">No types yet</li>`
+            )}
+        ${map(
+          this.types,
+          ([kind, ty], i) => html` <li
+            class=${classMap({ selected: i == this.selected })}
+            @click=${() => (this.selected = i)}
+          >
+            <span class="material-symbols-outlined">${iconOf(kind)}</span>
+            ${ty.neurodataTypeDef}
+          </li>`
+        )}
+          </ul>
+        </div>
+        <div class="sidespace">
+          <light-button
+              @click=${this.triggerTypeBuilder}
+            >Create a type &nbsp;
+            <span
+              class="material-symbols-outlined"
+              >add</span
+            ></light-button
+          >
+        </div>
+      </div>
+      <continue-bar
+        type="button"
+        .disabled=${this.ready}
+        value="continue"
+        .continue=${() => this.next()}
+      />
+      </continue-bar>
     `;
   }
+
+  static styles = [
+    symbols,
+    css`
+      :host,
+      .typesbar {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1em;
+      }
+
+      .typesbar {
+        flex: 0 0 auto;
+        border-right: 1px solid var(--color-border-alt);
+      }
+
+      :host * {
+        transition: 0.2s;
+      }
+
+      .body {
+        display: flex;
+        margin: 2em;
+      }
+
+      .sidespace {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex: 1;
+        min-width: 20em;
+      }
+
+      h2 {
+        margin: 0;
+      }
+
+      hr {
+        position: relative;
+        border: 0.5px solid var(--color-border-alt);
+        width: 100%;
+      }
+
+      ul {
+        margin: 0;
+        padding: 0em;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      li {
+        list-style: none;
+        border-bottom: 1px solid var(--color-border-alt);
+        padding: 0.2em;
+        margin: 0.3em;
+        cursor: pointer;
+      }
+
+      li,
+      li > span.material-symbols-outlined {
+        font-size: 1.5em;
+      }
+
+      li:hover {
+        color: var(--clickable);
+        border-color: var(--clickable);
+      }
+
+      li.selected {
+        border-bottom: 3px solid var(--clickable-hover);
+        color: var(--clickable-hover);
+      }
+
+      li.nonemsg {
+        opacity: 0.5;
+        border: none;
+        margin: 1em 0;
+      }
+    `,
+  ];
 }

@@ -2,18 +2,29 @@ import { LitElement, html, css, CSSResultGroup } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { map } from "lit/directives/map.js";
-import { ProgressState } from "./HOFS";
+import { ProgressState, dummyProgress } from "./HOFS";
+import { symbols } from "./styles";
+
+export function iconOf(kind: "GROUP" | "DATASET") {
+  if (kind == "GROUP") return "folder";
+  else return "dataset";
+}
 
 abstract class ButtonElem extends LitElement {
   @property({ type: Boolean, reflect: true })
   disabled = false;
 
   render() {
-    return html`<slot></slot>`;
+    return html`<button .disabled=${this.disabled}><slot></slot></button>`;
   }
 
   static styles = css`
     :host {
+      padding: 0.1em;
+    }
+
+    button {
+      all: unset;
       padding: 0.3em 1em;
       border-radius: 0.2em;
       transition: 0.2s;
@@ -21,9 +32,10 @@ abstract class ButtonElem extends LitElement {
       justify-content: center;
       cursor: pointer;
     }
-    :host([disabled]) {
-      cursor: default;
-      pointer-events: none;
+
+    button:focus {
+      box-shadow: 0 0 0 3px var(--color-background-alt),
+        0 0 0 5px var(--clickable);
     }
   ` as CSSResultGroup;
 }
@@ -35,23 +47,25 @@ export class LightButton extends ButtonElem {
   static styles = [
     super.styles,
     css`
-      :host {
+      button {
         color: var(--clickable);
         border: 2px solid var(--clickable);
         background: var(--background-light-button);
       }
+
       :host([picked]) {
         background: inherit;
       }
-      :host([disabled]) {
+
+      button:disabled {
         color: var(--color-border-alt);
         border: 1px solid var(--color-border-alt);
       }
-      :host(:hover) {
+      button:hover {
         color: var(--clickable-hover);
         border: 2px solid var(--clickable-hover);
       }
-      :host(:not([disabled]):hover) {
+      button:not(:disabled):hover {
         background: var(--background-light-hover);
       }
     `,
@@ -77,16 +91,70 @@ export class DarkButton extends ButtonElem {
   ];
 }
 
+@customElement("big-button")
+export class BigPrettyButton extends ButtonElem {
+  @property({ type: String })
+  icon: string = "";
+
+  render() {
+    return html`
+      <span class="material-symbols-outlined">${this.icon}</span>
+      <span class="material-symbols-outlined">add</span>
+      <div><slot></slot></div>
+    `;
+  }
+
+  static styles = [
+    symbols,
+    css`
+      :host {
+        display: flex;
+        padding: 1em 1.5em;
+        border-radius: 0.5em;
+        border: 2px solid var(--color-border);
+        position: relative;
+        cursor: pointer;
+        transition: 0.2s;
+        width: 16em;
+        height: 6em;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: nowrap;
+      }
+
+      :host(:hover) {
+        color: var(--clickable);
+        border: 2px solid var(--clickable);
+      }
+
+      span.material-symbols-outlined {
+        font-size: 70px;
+      }
+
+      div {
+        display: block;
+        position: absolute;
+        background: var(--color-background-alt);
+        top: 0;
+        left: 0;
+        padding: 0 0.3em;
+        transform: translate(0.5em, -0.8em);
+        font-size: 1.2em;
+      }
+    `,
+  ];
+}
+
 @customElement("step-bar")
 export class FormStepBar extends LitElement {
   @property({ reflect: true })
   hidden: boolean = false;
 
   @property({ type: Array<String> })
-  steps: string[] = [];
+  steps: string[] = dummyProgress.states;
 
   @property({ type: Number })
-  currStep: number = -1;
+  currStep: number = dummyProgress.currState;
 
   setProgressState(progress?: ProgressState) {
     this.hidden = progress == undefined;
@@ -97,16 +165,17 @@ export class FormStepBar extends LitElement {
   }
 
   render() {
-    return html`${map(this.steps, (step, i) => {
-      return html`<h3
-        class=${classMap({
-          active: i == this.currStep,
-          completed: i < this.currStep,
-        })}
-      >
-        ${step}
-      </h3>`;
-    })}`;
+    return html` <span class="material-icons-outlined"></span>
+      ${map(this.steps, (step, i) => {
+        return html`<h3
+          class=${classMap({
+            active: i == this.currStep,
+            completed: i < this.currStep,
+          })}
+        >
+          ${step}
+        </h3>`;
+      })}`;
   }
 
   static styles = css`
@@ -133,6 +202,98 @@ export class FormStepBar extends LitElement {
       color: var(--clickable);
     }
   `;
+}
+
+@customElement("back-or-quit-bar")
+export class Navbar extends LitElement {
+  @property({ type: Boolean, reflect: true })
+  hideQuit: boolean = false;
+
+  @property({ type: Boolean, reflect: true })
+  hideBack: boolean = false;
+
+  @property({ type: Function })
+  back = () => {};
+
+  @property({ type: Function })
+  quit = () => {};
+
+  render() {
+    return html`<span @click=${this.back} class="material-symbols-outlined"
+        >arrow_back</span
+      >
+      <slot></slot>
+      <span @click=${this.quit} class="material-symbols-outlined"
+        >close</span
+      > `;
+  }
+
+  static styles = [
+    symbols,
+    css`
+      :host {
+        display: flex;
+        max-width: 100%;
+        justify-content: space-between;
+        align-items: center;
+        min-width: 50vw;
+      }
+
+      * {
+        transition: 0.2s;
+      }
+
+      span.material-symbols-outlined {
+        font-size: 2em;
+        padding: 0.2em 0.2em;
+        margin: 0 0.8em;
+        cursor: pointer;
+        border-bottom: 1px solid var(--color-background-alt);
+        border-radius: 0.1em;
+      }
+
+      span.material-symbols-outlined:hover {
+        border-bottom: 1px solid var(--color-border-alt);
+      }
+
+      :host([hideQuit]) span:last-child {
+        visibility: hidden;
+      }
+
+      :host([hideBack]) span:first-child {
+        visibility: hidden;
+      }
+    `,
+  ];
+}
+
+@customElement("continue-bar")
+export class ContinueBar extends LitElement {
+  @property({ type: Function })
+  continue = () => {};
+
+  @property({ type: Boolean, reflect: true })
+  disabled = false;
+
+  render() {
+    return html`<dark-button .disabled=${this.disabled} @click=${this.continue}
+      >Continue</dark-button
+    >`;
+  }
+
+  static styles = [
+    css`
+      :host {
+        display: flex;
+        width: 100%;
+      }
+
+      dark-button {
+        margin-left: auto;
+        margin-right: 20%;
+      }
+    `,
+  ];
 }
 
 interface WithValue {
