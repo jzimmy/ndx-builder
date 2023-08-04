@@ -1,11 +1,36 @@
 // todo implement onDelete for all
-import { css, html, LitElement, TemplateResult } from "lit";
+import {
+  css,
+  CSSResultGroup,
+  html,
+  HTMLTemplateResult,
+  LitElement,
+  TemplateResult,
+} from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { BasicTypeElem } from "./type-elem";
 import "./type-elem";
-import { DatasetTypeDef, GroupTypeDef, TypeDef } from "./nwb/spec";
+import {
+  AttributeDec,
+  DatasetTypeDef,
+  GroupTypeDef,
+  Shape,
+  TypeDef,
+} from "./nwb/spec";
 import { symbols } from "./styles";
+import {
+  HasDatasetIncType,
+  HasDefaultName,
+  HasGroupIncType,
+  HasInstanceNameAndDescription,
+  HasTypeNameAndDescription,
+} from "./parent";
+import "./forms";
+import { Initializers } from "./nwb/spec-defaults";
+import { when } from "lit-html/directives/when.js";
+import { InctypeBrowser } from "./playground";
+import { map } from "lit-html/directives/map.js";
 
 @customElement("link-dec-elem")
 export class LinkDecElem extends BasicTypeElem {
@@ -28,17 +53,54 @@ export class LinkDecElem extends BasicTypeElem {
 
 @customElement("attrib-dec-elem")
 export class AttribDecElem extends BasicTypeElem {
+  data: AttributeDec = {
+    name: "MyAttributeNmae",
+    doc: "This is a description of my attribute it measures temperature",
+    required: false,
+    dtype: ["PRIMITIVE", "f32"],
+    shape: [],
+  };
+
   get valid(): boolean {
     return false;
   }
+
   protected icon: string = "edit_note";
+
   render() {
     return html`
-      <type-elem .noProperties=${false} .noOptions=${true}
+      <type-elem .noProperties=${false} .noOptions=${false}
         >${this.renderIcon()}
-        <ndx-input slot="topinput" label="Attribute name"></ndx-input>
-        <ndx-textarea slot="first-fields"></ndx-textarea>
-        <nd-array slot="properties"></nd-array>
+        <div slot="topinput" class="typename">${this.data.name}</div>
+        <div slot="first-fields">${this.data.doc}</div>
+        <div slot="properties" class="fieldlabel">Axes</div>
+        <div slot="properties" class="fieldvalue">
+          ${renderShape(this.data.shape)}
+        </div>
+        <div slot="properties" class="fieldlabel">Data Type</div>
+        <div class="checkwrapper" slot="options">
+          <input
+            type="checkbox"
+            ?checked=${this.data.required}
+            style="pointer-events: none; focus: none;"
+          />
+          <div class="fieldlabel">Attribute required</div>
+        </div>
+        ${when(
+          this.data.value,
+          () => html`
+            <div slot="options" class="fieldlabel">Default value</div>
+            <div slot="options" class="fieldvalue">${this.data.value![0]}</div>
+            <div class="checkwrapper" slot="options">
+              <input
+                type="checkbox"
+                ?checked=${this.data.value![1]}
+                style="pointer-events: none; focus: none;"
+              />
+              <div class="fieldlabel">Allow override</div>
+            </div>
+          `
+        )}
       </type-elem>
     `;
   }
@@ -148,41 +210,34 @@ export class IncDatasetDecElem extends DatasetDecElem {
   }
 }
 
-abstract class TypeDefElem<T> extends BasicTypeElem {
+abstract class TypeDefElem<
+  T extends HasTypeNameAndDescription &
+    HasDefaultName &
+    (HasGroupIncType | HasDatasetIncType)
+> extends BasicTypeElem {
   @property()
-  incType: { name: string } = { name: "Pick a type" };
-
-  abstract default: T;
-  abstract fill(v: T): void;
-  abstract typedef(): TypeDef | null;
-
-  protected forms(): TemplateResult<1> {
-    return html`<ndx-form-manager
-      id="form-manager"
-      slot="form"
-    ></ndx-form-manager>`;
-  }
-
-  protected triggerForm: () => void = () => {
-    throw new Error("Trigger form not set");
-  };
+  abstract data: T;
+  abstract type(): T;
 
   protected topInput(): TemplateResult<1> {
     return html`
       ${this.renderIcon()}
-      <ndx-input slot="topinput" label="New type name"></ndx-input>
-      <ndx-textarea slot="first-fields"></ndx-textarea>
+      <div slot="topinput" class="typename">${this.data.neurodataTypeDef}</div>
+      <div slot="first-fields">${this.data.doc}</div>
     `;
   }
 
   protected bottomInput(): TemplateResult<1> {
+    let incTypeName =
+      this.data.neurodataTypeInc[0] != "None"
+        ? this.data.neurodataTypeInc[1].neurodataTypeDef
+        : "None";
     return html`<div id="keyword" slot="bottominput">extends</div>
-      <light-button
-        @click=${this.triggerForm}
-        slot="bottominput"
-        class=${classMap({ selected: this.incType.name != "Pick a type" })}
-        >${this.incType.name}</light-button
-      >`;
+      <div slot="bottominput" class="inctype">${incTypeName}</div>`;
+  }
+
+  protected defaultNameInput(): TemplateResult<1> {
+    return html` <ndx-input> </ndx-input> `;
   }
 }
 
@@ -192,61 +247,84 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
     throw new Error("Method not implemented.");
   }
 
-  fill(_v: GroupTypeDef): void {
-    throw new Error("Method not implemented.");
+  type(): GroupTypeDef {
+    return this.data;
   }
 
-  typedef(): TypeDef | null {
-    const type = this.type();
-    if (type == null) return null;
-    return ["GROUP", type];
-  }
-
-  type(): GroupTypeDef | null {
-    return null;
-  }
-
-  default: GroupTypeDef = {
-    neurodataTypeDef: "",
-    neurodataTypeInc: ["None", null],
-    doc: "",
+  data: GroupTypeDef = {
+    neurodataTypeDef: "Example",
+    neurodataTypeInc: [
+      "Typedef",
+      { ...Initializers.groupTypeDef, neurodataTypeDef: "Parent" },
+    ],
+    doc: "Some example group typedef",
     groups: [],
     datasets: [],
     attributes: [],
     links: [],
+    // name: ["MyInstance", true],
   };
 
-  incType = { name: "SpikeTimeSeries" };
+  incTypeName = this.data.neurodataTypeInc[1]!.neurodataTypeDef;
 
   protected icon: string = "folder";
   render() {
     return html`
-      <type-elem .noProperties=${true} .noOptions=${false}>
-        ${this.topInput()}
-        <default-name slot="options"></default-name>
-        ${this.bottomInput()}
+      <type-elem
+        .noProperties=${true}
+        .noOptions=${false}
+        .hideCloseBtn=${true}
+      >
+        ${this.topInput()} ${this.bottomInput()}
+        <div class="fieldlabel" slot="options">Default name</div>
+        <div slot="options" class="fieldvalue">
+          ${this.data.name ? this.data.name[0] : "None"}
+        </div>
+        ${when(
+          this.data.name,
+          () => html`
+            <div class="checkwrapper" slot="options">
+              <input
+                type="checkbox"
+                ?checked=${this.data.name ? this.data.name[1] : false}
+                style="pointer-events: none; focus: none;"
+              />
+              <div class="fieldlabel">No override</div>
+            </div>
+          `
+        )}
         <group-subtree .disabled=${false} slot="subtree"></group-subtree>
-        ${this.forms()}
-        <light-button slot="save">Save</light-button>
       </type-elem>
     `;
   }
+
+  static styles = [super.styles as CSSResultGroup, css``] as CSSResultGroup;
+}
+
+function renderShape(shapes: Shape[]): TemplateResult<1> {
+  if (shapes.length == 0) return html`<div>Not specified</div>`;
+  const renderOneShape = (shape: Shape, i: number) =>
+    shape.length > 0
+      ? html`
+          ${when(i > 0, () => "OR")}
+          <div class="shape-container">
+            ${shape.map(
+              ([k, v]) =>
+                html`<div>
+                  <div>${k == "None" ? "#" : k}</div>
+                  <div>${v}</div>
+                </div> `
+            )}
+          </div>
+        `
+      : html``;
+  return html` ${map(shapes, renderOneShape)} `;
 }
 
 @customElement("dataset-def-elem")
 export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
-  fill(_v: DatasetTypeDef): void {
-    throw new Error("Method not implemented.");
-  }
-
-  typedef(): TypeDef | null {
-    const type = this.type();
-    if (type == null) return null;
-    return ["DATASET", type];
-  }
-
-  type(): DatasetTypeDef | null {
-    return null;
+  type(): DatasetTypeDef {
+    return this.data;
   }
 
   get valid(): boolean {
@@ -254,25 +332,60 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
   }
 
   protected icon: string = "dataset";
-  default: DatasetTypeDef = {
-    neurodataTypeDef: "",
+  data: DatasetTypeDef = {
+    neurodataTypeDef: "ExampleName",
     dtype: ["PRIMITIVE", "f32"],
     neurodataTypeInc: ["None", null],
-    doc: "",
+    doc: "This is some description asdlkjfsd;lfa;lkj asd;fjda;lsfkj a;lsdfj a;dlskfj ;aldsfj fd;laksfj a;sdlfj ;adslfj asdl;j fds;lkjfd sal;lfapiudifhpqirq;kjgf e8yg;d dzk;fhfasohglakjgrflahjsfgois fsd fhglkafdg p",
     attributes: [],
-    shape: [],
+    shape: [
+      [
+        [1, "x"],
+        [2, "y"],
+        ["None", "mycoordinate"],
+      ],
+      [
+        [1, "x"],
+        [2, "y"],
+        [3, "z"],
+        ["None", "mycoordinate"],
+      ],
+    ],
   };
 
   render() {
     return html`
-      <type-elem .noProperties=${false} .noOptions=${false}>
-        ${this.topInput()}
-        <nd-array slot="properties"></nd-array>
-        <default-name slot="options"></default-name>
-        ${this.bottomInput()}
-        <dataset-subtree slot="subtree"></dataset-subtree>
-        ${this.forms()}
-        <light-button slot="save">Save</light-button>
+      <type-elem
+        .noProperties=${false}
+        .noOptions=${false}
+        .hideCloseBtn=${true}
+      >
+        ${this.topInput()} ${this.bottomInput()}
+        <div class="fieldlabel" slot="options">Default name</div>
+        <div slot="options" class="fieldvalue">
+          ${this.data.name ? this.data.name[0] : "None"}
+        </div>
+        ${when(
+          this.data.name,
+          () => html`
+            <div class="checkwrapper" slot="options">
+              <input
+                type="checkbox"
+                ?checked=${this.data.name ? this.data.name[1] : false}
+                style="pointer-events: none; focus: none;"
+              />
+              <div class="fieldlabel">No override</div>
+            </div>
+          `
+        )}
+        <div slot="properties" class="fieldlabel">
+          Axes (# means any length)
+        </div>
+        <div slot="properties" class="fieldvalue">
+          ${renderShape(this.data.shape)}
+        </div>
+        <div slot="properties" class="fieldlabel">Data Type</div>
+        <dataset-subtree .disabled=${false} slot="subtree"></dataset-subtree>
       </type-elem>
     `;
   }

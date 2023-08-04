@@ -7,7 +7,7 @@ import {
   DatasetDecElem,
   GroupDecElem,
   LinkDecElem,
-} from "./types";
+} from "./typeviz";
 import { when } from "lit-html/directives/when.js";
 
 /* Wrapper element for a type elem, contains the minimize,
@@ -20,7 +20,7 @@ export class TypeElemSkeleton extends LitElement {
   hideCloseBtn: boolean = false;
 
   @property({ type: Boolean, reflect: true })
-  minimize: boolean = true;
+  minimize: boolean = false;
 
   @state()
   protected subtreeEnabled = false;
@@ -68,6 +68,7 @@ export class TypeElemSkeleton extends LitElement {
       :host {
         position: relative;
       }
+
       :host * {
         transition: 0.2s;
       }
@@ -115,6 +116,7 @@ export class TypeElem extends LitElement {
   // TODO: find an automatic solution to hide when no slotted children (ideally css)!!!
   @property({ type: Boolean, reflect: true })
   noProperties: boolean = true;
+
   @property({ type: Boolean, reflect: true })
   noOptions: boolean = true;
 
@@ -124,19 +126,23 @@ export class TypeElem extends LitElement {
   }
 
   @property({ type: Boolean, reflect: true })
-  formOpen: boolean = false;
+  hideCloseBtn: boolean = false;
 
   render() {
-    if (this.formOpen) return html`<slot name="form"></slot>`;
     return html`
-      <type-elem-skeleton .onDelete=${this.onDelete}>
+      <type-elem-skeleton
+        .onDelete=${this.onDelete}
+        .hideCloseBtn=${this.hideCloseBtn}
+      >
         <div id="body" slot="body">
-          <div>
+          <div class="main-section">
             <div class="row">
               <slot class="icon" name="icon"></slot>
               <slot name="topinput"></slot>
             </div>
-            <slot name="first-fields"></slot>
+            <span class="first-fields">
+              <slot name="first-fields"></slot>
+            </span>
             <div class="row">
               <slot name="bottominput"></slot>
             </div>
@@ -155,112 +161,117 @@ export class TypeElem extends LitElement {
     `;
   }
 
-  static styles = css`
-    #body {
-      display: flex;
-      border: 1px solid var(--color-border);
-      border-radius: 0.5em;
-      padding: 1em;
-      box-shadow: 0 0 20px 5px #eee;
-    }
+  static styles = [
+    css`
+      #body {
+        display: flex;
+        border: 1px solid var(--color-border);
+        border-radius: 0.5em;
+        padding: 1em 0em;
+        box-shadow: 0 0 20px 5px #eee;
+      }
 
-    .row {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      margin-left: 0.5em;
-    }
+      #body > div {
+        padding: 0 1em;
+        display: flex;
+        flex-direction: column;
+        align-items: left;
+        min-width: 10em;
+      }
 
-    .row:last-child {
-      margin: 0 0.5em;
-    }
+      #body > div:not(:first-child) {
+        border-left: 1px solid var(--color-border-alt);
+      }
 
-    ::slotted([slot="keyword"]) {
-      font-size: 1.3em;
-      margin: 0 0.5em;
-    }
+      .row {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+      }
 
-    ::slotted([slot="topinput"]) {
-      font-size: 1.1em;
-    }
+      .row:first-child {
+        border-bottom: 1px solid var(--color-border-alt);
+      }
 
-    :not(type-elem-skeleton[minimize]) .advanced {
-      margin-left: 0.5em;
-    }
+      #body > .main-section {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: left;
+      }
 
-    ::slotted([slot="advanced-fields"]) {
-      margin-left: 0.5em;
-      padding-left: 0.5em;
-      border-left: 1px solid var(--color-border-alt);
-    }
+      .row:first-child {
+        margin-bottom: 0.5em;
+        padding-bottom: 0.3em;
+      }
 
-    .advanced,
-    .options {
-      display: flex;
-      flex-direction: column;
-      border-left: 1px solid var(--color-border-alt);
-      padding-left: 0.5em;
-    }
+      ::slotted([slot="keyword"]) {
+        font-size: 1.3em;
+        margin: 0 0.5em;
+      }
 
-    :not(:host([noOptions])) .advanced {
-      padding-right: 0.5em;
-    }
+      ::slotted([slot="topinput"]) {
+        font-size: 1.1em;
+      }
 
-    .advanced > div:first-child,
-    .options > div:first-child {
-      padding: 0.3em 0.5em;
-    }
+      :not(:host([noOptions])) .advanced {
+        padding-right: 0.5em;
+      }
 
-    type-elem-skeleton[minimize] .advanced,
-    type-elem-skeleton[minimize] .options,
-    :host([noProperties]) .advanced,
-    :host([noOptions]) .options {
-      display: none;
-    }
+      .advanced > div:first-child,
+      .options > div:first-child {
+        font-weight: bold;
+        margin: 0.5em 0;
+      }
 
-    :host([openForm]) ::slotted(*) {
-      display: none;
-    }
+      .advanced {
+        width: 100%;
+      }
 
-    :host([openForm]) ::slotted([slot="form"]) {
-      display: flex;
-      justify-content: center;
-    }
-  `;
+      .first-fields {
+        padding: 0.2em 0;
+        margin-bottom: 0.3em;
+        max-width: 30ch;
+      }
+
+      type-elem-skeleton[minimize] .first-fields,
+      type-elem-skeleton[minimize] #body > .advanced,
+      type-elem-skeleton[minimize] #body > .options,
+      :host([noProperties]) #body > .advanced,
+      :host([noOptions]) #body > .options {
+        display: none;
+      }
+
+      :host([openForm]) ::slotted(*) {
+        display: none;
+      }
+
+      :host([openForm]) ::slotted([slot="form"]) {
+        display: flex;
+        justify-content: center;
+      }
+    `,
+  ] as CSSResultGroup;
 }
 
 /* Adds some useful helper functions and styles to inherit.
  * This class has little semantic purpose beyond reducing boilerplate.
  */
 export abstract class BasicTypeElem extends LitElement {
-  abstract get valid(): boolean;
-
-  protected formParent?: GroupDecElem | DatasetDecElem;
-
   protected abstract icon: string;
   protected subtreeDisabled = false;
-  protected onDelete(target?: EventTarget): void {
-    throw new Error(`On delete not implemented. ${target}`);
-  }
-
-  protected onSave(): void {
-    throw new Error(`On save not implemented.`);
-  }
-
   protected renderIcon() {
     return html`<span slot="icon" class="material-symbols-outlined large"
       >${this.icon}</span
     >`;
   }
 
+  @property({ type: Function, reflect: true })
+  onDelete: (target?: EventTarget) => void = () => {};
+
   @query("type-elem")
   typeElem!: TypeElem;
-
-  protected toggleForm(setOpen?: boolean) {
-    if (!this.formParent) return;
-    this.formParent.typeElem.formOpen =
-      setOpen !== undefined ? setOpen : !this.typeElem.formOpen;
-  }
 
   protected firstUpdated(
     _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
@@ -305,8 +316,64 @@ export abstract class BasicTypeElem extends LitElement {
       ndx-input[slot="topinput"] {
         font-weight: bold;
       }
+
+      .inctype {
+        padding: 0.3em 0.5em;
+        color: var(--clickable-hover);
+        border: 1px solid var(--clickable);
+        font-weight: bold;
+        border-radius: 0.3em;
+        background: var(--background-light-button);
+      }
+
+      .typename {
+        font-weight: bold;
+        padding: 0.1em 0.4em;
+        margin-left: 0.5em;
+        transform: scale(1.2);
+      }
+
+      .fieldlabel {
+        color: var(--color-border-alt);
+        font-weight: 500;
+      }
+
+      .fieldvalue {
+        max-width: 45ch;
+        padding: 0.1em 0.4em;
+        border: 1px solid var(--color-border-alt);
+        opacity: 0.8;
+        border-radius: 0.3em;
+      }
+
+      .checkwrapper {
+        display: flex;
+      }
+
+      .checkwrapper input {
+        margin-right: 0.5em;
+      }
+
+      .shape-container {
+        display: flex;
+        flex-wrap: nowrap;
+      }
+
+      .shape-container > * {
+        min-width: 1ch;
+        padding: 0.1em 0.3em;
+        border-right: 1px solid var(--color-border-alt);
+      }
+
+      .shape-container > *:last-child {
+        border: 0;
+      }
+
+      .shape-container > * > div:first-child {
+        font-weight: bold;
+      }
     `,
-  ];
+  ] as CSSResultGroup;
 }
 
 /* subtrees */

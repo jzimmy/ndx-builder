@@ -3,9 +3,10 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { symbols } from "./styles";
 import { classMap } from "lit/directives/class-map.js";
 import { map } from "lit/directives/map.js";
-import "./types";
+import "./typeviz";
 // import "./forms";
 import "./basic-elems";
+import { when } from "lit-html/directives/when.js";
 
 function assertUnreachable(_: never): never {
   throw new Error("Didn't expect to get here");
@@ -132,24 +133,22 @@ export class NdxInput extends LitElement {
   @query("input")
   input!: HTMLInputElement;
 
-  get value() {
-    const value = this.input.value;
-    const [status, s] = this.validate(value);
-    if (status === "ERROR") {
-      this.errmsg = s;
+  @property()
+  value: string = "";
+
+  getValue(): string | null {
+    const [status, value] = this.validate(this.input.value);
+    if (status == "ERROR") {
+      this.errmsg = value;
       return null;
     }
-    return s;
-  }
-
-  set value(v: string | null) {
-    this.input.value = v || "";
+    return value;
   }
 
   protected firstUpdated(
     _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
   ): void {
-    this.addEventListener("click", () => this.input.showAndFocus());
+    this.addEventListener("click", () => this.input.focus());
   }
 
   render() {
@@ -163,13 +162,15 @@ export class NdxInput extends LitElement {
         @input=${() => (this.errmsg = "")}
         name=${this.name}
         type="text"
+        value=${this.value}
         class=${classMap(inputClasses)}
         placeholder=" "
       />
       <div class="placeholder">${this.label}</div>
-      ${this.info !== ""
-        ? html`<hover-icon id="info">${this.info}</hover-icon> `
-        : html``}
+      ${when(
+        this.info !== "",
+        () => html`<hover-icon id="info">${this.info}</hover-icon> `
+      )}
       <div
         id="errmsg"
         aria-label=${this.errmsg}
@@ -321,7 +322,7 @@ export class NdxTextarea extends LitElement {
   protected firstUpdated(
     _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
   ): void {
-    this.addEventListener("click", () => this.textarea.showAndFocus());
+    this.addEventListener("click", () => this.textarea.focus());
   }
 
   static styles = css`

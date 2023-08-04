@@ -1,16 +1,16 @@
 import { LitElement, html, css } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import "./type-elem";
-import "./types";
+import "./typeviz";
 import "./basic-elems";
 import "./playground";
 import { choose } from "lit/directives/choose.js";
-import { DatasetTypeDefElem, GroupTypeDefElem } from "./types";
+import { DatasetTypeDefElem, GroupTypeDefElem } from "./typeviz";
 
 @customElement("ndx-main")
 export class NdxMain extends LitElement {
   @state()
-  appState: "NEW" | "GROUP" | "DATASET" = "GROUP";
+  appState: "NEW" | "GROUP" | "DATASET" = "DATASET";
 
   @property()
   currTypedef?: GroupTypeDefElem | DatasetTypeDefElem;
@@ -32,6 +32,7 @@ export class NdxMain extends LitElement {
     return html` <h1>
         Create Extended NWB Types<a href="">New to NWB extensions?</a>
       </h1>
+      <attrib-dec-elem></attrib-dec-elem>
       <div>
         ${this.myTypes.length > 0 ? html`<mytypes-bar></mytypes-bar>` : html``}
         ${choose(
