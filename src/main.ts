@@ -32,7 +32,7 @@ export class NdxMain extends LitElement {
     return html` <h1>
         Create Extended NWB Types<a href="">New to NWB extensions?</a>
       </h1>
-      <link-dec-elem></link-dec-elem>
+      <group-anondec-elem></group-anondec-elem>
       <div>
         ${this.myTypes.length > 0 ? html`<mytypes-bar></mytypes-bar>` : html``}
         ${choose(

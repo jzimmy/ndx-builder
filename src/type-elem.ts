@@ -152,12 +152,12 @@ export class TypeElem extends LitElement {
               <slot class="icon" name="icon"></slot>
               <slot name="topinput"></slot>
             </div>
-            <span class="first-fields">
-              <slot name="first-fields"></slot>
-            </span>
             <div class="row">
               <slot name="bottominput"></slot>
             </div>
+            <span class="first-fields">
+              <slot name="first-fields"></slot>
+            </span>
           </div>
           <div class="advanced">
             <div>Properties:</div>
@@ -303,6 +303,8 @@ export abstract class BasicTypeElem extends LitElement {
       #keyword {
         font-size: 1.3em;
         margin: 0 0.5em;
+        color: var(--clickable);
+        font-weight: bold;
       }
 
       .selected {
@@ -328,15 +330,20 @@ export abstract class BasicTypeElem extends LitElement {
 
       .inctype {
         padding: 0.3em 0.5em;
-        border: 1px solid var(--clickable);
+        border: 1px solid var(--color-border);
         font-weight: bold;
         border-radius: 0.3em;
         // background: var(--background-light-button);
-        box-shadow: 0 0 20px 5px #eee;
       }
 
       .typename {
         font-weight: bold;
+        padding: 0.1em 0.4em;
+        margin-left: 0.5em;
+        transform: scale(1.2);
+      }
+
+      .instancename {
         padding: 0.1em 0.4em;
         margin-left: 0.5em;
         transform: scale(1.2);

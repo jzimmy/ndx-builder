@@ -5,6 +5,8 @@ import { classMap } from "lit/directives/class-map.js";
 import { BasicTypeElem } from "./type-elem";
 import "./type-elem";
 import {
+  AnonymousDatasetDec,
+  AnonymousGroupTypeDec,
   AttributeDec,
   DatasetDec,
   DatasetType,
@@ -12,6 +14,8 @@ import {
   GroupDec,
   GroupType,
   GroupTypeDef,
+  IncDatasetDec,
+  IncGroupDec,
   LinkDec,
   Quantity,
   Shape,
@@ -166,51 +170,57 @@ export class AttribDecElem extends BasicTypeElem {
 }
 
 export abstract class GroupDecElem extends BasicTypeElem {
-  @property()
-  incType = { name: "Pick a type" };
-
   protected icon: string = "folder";
+  abstract incTypeName: () => string;
+  abstract instanceName: () => string;
+
   protected topInput(): TemplateResult<1> {
     return html`
       ${this.renderIcon()}
-      <div id="keyword" slot="topinput">of</div>
-      <light-button
-        slot="topinput"
-        class=${classMap({ selected: this.incType.name != "Pick a type" })}
-        >${this.incType.name}</light-button
-      >
+      <div slot="topinput" class="instancename">${this.instanceName()}</div>
+      <div id="keyword" slot="bottominput">of</div>
+      <div slot="bottominput" class="inctype">${this.incTypeName()}</div>
     `;
   }
 }
 
 export abstract class DatasetDecElem extends BasicTypeElem {
-  @property()
-  abstract incType: { name: string };
+  abstract incTypeName: () => string;
   protected icon: string = "dataset";
   protected topInput(): TemplateResult<1> {
     return html`
       ${this.renderIcon()}
       <div id="keyword" slot="topinput">of</div>
-      <light-button
-        slot="topinput"
-        class=${classMap({ selected: this.incType.name != "Pick a type" })}
-        >${this.incType.name}</light-button
-      >
+      <light-button slot="topinput">${this.incTypeName()}</light-button>
     `;
   }
 }
 
 @customElement("group-anondec-elem")
 export class AnonGroupDecElem extends GroupDecElem {
+  @property()
+  data: AnonymousGroupTypeDec = {
+    doc: "This is a description of my group it measures temperature",
+    name: "AnonGroup",
+    groups: [],
+    datasets: [],
+    attributes: [],
+    links: [],
+  };
+
+  incTypeName = () => "None";
+  instanceName = () => this.data.name;
+
   get valid(): boolean {
     return false;
   }
-  incType: { name: string } = { name: "None" };
+
   render() {
     return html`
       <type-elem .noProperties=${false} .noOptions=${true}>
         ${this.topInput()}
-        <ndx-textarea slot="first-fields"></ndx-textarea>
+
+        <div slot="first-fields">${this.data.doc}</div>
         <name-or-quantity slot="properties"></name-or-quantity>
         <group-subtree slot="subtree"></group-subtree>
       </type-elem>
@@ -220,15 +230,25 @@ export class AnonGroupDecElem extends GroupDecElem {
 
 @customElement("group-incdec-elem")
 export class IncGroupDecElem extends GroupDecElem {
+  @property()
+  data: IncGroupDec = {
+    doc: "",
+    neurodataTypeInc: ["Typedef", Initializers.groupTypeDef],
+    quantityOrName: "",
+  };
+
   get valid(): boolean {
     return false;
   }
-  incType: { name: string } = { name: "Pick a type" };
+
+  incTypeName: () => string = () =>
+    this.data.neurodataTypeInc[1]!.neurodataTypeDef;
+
   render() {
     return html`
       <type-elem .noProperties=${true} .noOptions=${true}>
         ${this.topInput()}
-        <ndx-textarea slot="first-fields"></ndx-textarea>
+        <div slot="first-fields">${this.data.doc}</div>
       </type-elem>
     `;
   }
@@ -236,15 +256,27 @@ export class IncGroupDecElem extends GroupDecElem {
 
 @customElement("dataset-anondec-elem")
 export class AnonDatasetDecElem extends DatasetDecElem {
+  incTypeName = () => "None";
+
   get valid(): boolean {
     return false;
   }
-  incType: { name: string } = { name: "None" };
+
+  @property()
+  data: AnonymousDatasetDec = {
+    doc: "example doc string for example anon datatype",
+    name: "AnonDsetDec",
+    shape: [],
+    dtype: ["PRIMITIVE", "f32"],
+    attributes: [],
+  };
+
   render() {
     return html`
       <type-elem .noProperties=${false} .noOptions=${true}>
         ${this.topInput()}
-        <ndx-input slot="first-fields" label="Instance name"></ndx-input>
+        <div slot="first-fields">${this.data.name}</div>
+        <div slot="first-fields">${this.data.doc}</div>
         <ndx-textarea slot="first-fields"></ndx-textarea>
         <nd-array slot="properties"></nd-array>
         <dataset-subtree slot="subtree"></dataset-subtree>
@@ -255,10 +287,18 @@ export class AnonDatasetDecElem extends DatasetDecElem {
 
 @customElement("dataset-incdec-elem")
 export class IncDatasetDecElem extends DatasetDecElem {
+  incTypeName = () => this.data.neurodataTypeInc[1]!.neurodataTypeDef;
+
   get valid(): boolean {
     return false;
   }
-  incType: { name: string } = { name: "Pick a type" };
+
+  data: IncDatasetDec = {
+    doc: "",
+    neurodataTypeInc: ["Typedef", Initializers.datasetTypeDef],
+    quantityOrName: "",
+  };
+
   render() {
     return html`
       <type-elem .noProperties=${false} .noOptions=${true}>
