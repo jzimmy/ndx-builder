@@ -1,8 +1,8 @@
 // todo implement onDelete for all
 import { css, CSSResultGroup, html, LitElement, TemplateResult } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, query } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
-import { BasicTypeElem } from "./type-elem";
+import { BasicTypeElem, TypeElem } from "./type-elem";
 import "./type-elem";
 import {
   AnonymousDatasetDec,
@@ -85,19 +85,21 @@ export class LinkDecElem extends BasicTypeElem {
     const hasQuantity = typeof this.data.quantityOrName != typeof "";
     console.log(hasQuantity);
     return html`
-      <type-elem .noProperties=${false} .noOptions=${true}
-        >${this.renderIcon()}
-        <div id="keyword" slot="topinput">to</div>
-        <div slot="topinput" class="inctype">
-          ${targetTypeNameString(this.data.targetType)}
-        </div>
+      <type-elem .noProperties=${false} .noOptions=${true}>
+        <type-header
+          slot="topinput"
+          .icon=${"link"}
+          .keyword=${"to"}
+          .base=${targetTypeNameString(this.data.targetType)}
+        >
+        </type-header>
         <div slot="first-fields">${this.data.doc}</div>
-        <div slot="properties" class="fieldlabel">
-          ${hasQuantity ? "Quantity" : "Name"}
-        </div>
-        <div slot="properties" class="fieldvalue">
-          ${quantityOrNameString(this.data.quantityOrName)}
-        </div>
+        <labeled-field-value
+          slot="properties"
+          .label=${hasQuantity ? "Quantity" : "Name"}
+          .value=${quantityOrNameString(this.data.quantityOrName)}
+        >
+        </labeled-field-value>
       </type-elem>
     `;
   }
@@ -110,7 +112,17 @@ export class AttribDecElem extends BasicTypeElem {
     doc: "This is a description of my attribute it measures temperature",
     required: false,
     dtype: ["PRIMITIVE", "f32"],
-    data: ["SCALAR", ["EmptyString", true]],
+    // data: ["SCALAR", ["EmptyString", true]],
+    data: [
+      "SHAPE",
+      [
+        [
+          [1, "x"],
+          [2, "y"],
+          ["None", "mycoordinate"],
+        ],
+      ],
+    ],
   };
 
   get valid(): boolean {
@@ -131,74 +143,106 @@ export class AttribDecElem extends BasicTypeElem {
       shape = data[1];
     }
 
+    console.log(this.data.data, shape);
+
     return html`
-      <type-elem .noProperties=${false} .noOptions=${false}
-        >${this.renderIcon()}
-        <div slot="topinput" class="typename">${this.data.name}</div>
+      <type-elem .noProperties=${false} .noOptions=${false}>
+        <type-header slot="topinput" .icon=${this.icon} .name=${this.data.name}>
+        </type-header>
         <div slot="first-fields">${this.data.doc}</div>
         ${data[0] == "SCALAR"
           ? html`
-              <div slot="properties" class="fieldlabel">Value</div>
-              <div slot="properties" class="fieldvalue">${scalar}</div>
-              <div class="checkwrapper" slot="properties">
-                <input
-                  type="checkbox"
-                  ?checked=${scalarRequired}
-                  style="pointer-events: none; focus: none;"
-                />
-                <div class="fieldlabel">Value required</div>
-              </div>
+              <labeled-field-value
+                slot="properties"
+                .label=${"Value"}
+                .value=${scalar}
+              ></labeled-field-value>
+              <labeled-boolean-field
+                slot="properties"
+                .checked=${scalarRequired}
+                .label=${"Value required"}
+              ></labeled-boolean-field>
             `
           : html`
-              <div slot="properties" class="fieldlabel">Axes</div>
+              <!-- <div slot="properties" class="fieldlabel">Axes</div>
               <div slot="properties" class="fieldvalue">
                 ${renderShape(shape)}
-              </div>
+              </div> -->
+              <shape-viz
+                slot="properties"
+                .label=${"Axes"}
+                .shape=${shape}
+              ></shape-viz>
               <div slot="properties" class="fieldlabel">Data Type</div>
             `}
-        <div class="checkwrapper" slot="options">
+        <!-- <div class="checkwrapper" slot="options">
           <input
             type="checkbox"
             ?checked=${this.data.required}
             style="pointer-events: none; focus: none;"
           />
           <div class="fieldlabel">Attribute required</div>
-        </div>
+        </div> -->
+        <labeled-boolean-field
+          slot="options"
+          .checked=${this.data.required}
+          .label=${"Attribute required"}
+        ></labeled-boolean-field>
       </type-elem>
     `;
   }
 }
 
-export abstract class GroupDecElem extends BasicTypeElem {
-  protected icon: string = "folder";
-  abstract incTypeName: () => string;
-  abstract instanceName: () => string;
-
-  protected topInput(): TemplateResult<1> {
-    return html`
-      ${this.renderIcon()}
-      <div slot="topinput" class="instancename">${this.instanceName()}</div>
-      <div id="keyword" slot="bottominput">of</div>
-      <div slot="bottominput" class="inctype">${this.incTypeName()}</div>
-    `;
-  }
+function renderShape(shapes: Shape[]): TemplateResult<1> {
+  if (shapes.length == 0) return html`<div>Not specified</div>`;
+  const renderOneShape = (shape: Shape, i: number) =>
+    shape.length > 0
+      ? html`
+          ${when(i > 0, () => "OR")}
+          <div class="shape-container">
+            ${shape.map(
+              ([k, v]) =>
+                html`<div>
+                  <div>${k == "None" ? "Any" : k}</div>
+                  <div>${v}</div>
+                </div> `
+            )}
+          </div>
+        `
+      : html``;
+  return html` ${map(shapes, renderOneShape)} `;
 }
+// export abstract class GroupDecElem extends BasicTypeElem {
+//   protected icon: string = "folder";
+//   abstract incTypeName: () => string;
+//   abstract instanceName: () => string;
 
-export abstract class DatasetDecElem extends BasicTypeElem {
-  abstract incTypeName: () => string;
-  protected icon: string = "dataset";
-  protected topInput(): TemplateResult<1> {
-    return html`
-      ${this.renderIcon()}
-      <div id="keyword" slot="topinput">of</div>
-      <light-button slot="topinput">${this.incTypeName()}</light-button>
-    `;
-  }
-}
+//   protected topInput(): TemplateResult<1> {
+//     return html`
+//       ${this.renderIcon()}
+//       <div slot="topinput" class="instancename">${this.instanceName()}</div>
+//       <div id="keyword" slot="bottominput">of</div>
+//       <div slot="bottominput" class="inctype">${this.incTypeName()}</div>
+//     `;
+//   }
+// }
+
+// export abstract class DatasetDecElem extends BasicTypeElem {
+//   abstract incTypeName: () => string;
+//   protected icon: string = "dataset";
+//   protected topInput(): TemplateResult<1> {
+//     return html`
+//       ${this.renderIcon()}
+//       <div id="keyword" slot="topinput">of</div>
+//       <light-button slot="topinput">${this.incTypeName()}</light-button>
+//     `;
+//   }
+// }
 
 @customElement("group-anondec-elem")
-export class AnonGroupDecElem extends GroupDecElem {
-  @property()
+export class AnonGroupDecElem extends BasicTypeElem {
+  protected icon = "folder";
+
   data: AnonymousGroupTypeDec = {
     doc: "This is a description of my group it measures temperature",
     name: "AnonGroup",
@@ -215,24 +259,47 @@ export class AnonGroupDecElem extends GroupDecElem {
     return false;
   }
 
+  @property()
+  subtreeMinimize = true;
+
+  @query("type-elem")
+  typeElem!: TypeElem;
+
   render() {
     return html`
-      <type-elem .noProperties=${false} .noOptions=${true}>
-        ${this.topInput()}
-
+      <type-elem
+        .noProperties=${true}
+        .noOptions=${true}
+        .onToggleMinimize=${(m: boolean) => (this.subtreeMinimize = m)}
+      >
+        <type-header
+          slot="topinput"
+          .name=${this.data.name}
+          .keyword=${"of"}
+          .icon=${"folder"}
+          .base=${"None"}
+        ></type-header>
         <div slot="first-fields">${this.data.doc}</div>
-        <name-or-quantity slot="properties"></name-or-quantity>
-        <group-subtree slot="subtree"></group-subtree>
+        <group-subtree
+          slot="subtree"
+          .disabled=${false}
+          .attribs=${this.data.attributes}
+          .groups=${this.data.groups}
+          .datasets=${this.data.datasets}
+          .links=${this.data.links}
+          .minimized=${this.subtreeMinimize}
+        ></group-subtree>
       </type-elem>
     `;
   }
 }
 
 @customElement("group-incdec-elem")
-export class IncGroupDecElem extends GroupDecElem {
+export class IncGroupDecElem extends BasicTypeElem {
+  protected icon = "folder";
   @property()
   data: IncGroupDec = {
-    doc: "",
+    doc: "This is an example incdec elem",
     neurodataTypeInc: ["Typedef", Initializers.groupTypeDef],
     quantityOrName: "",
   };
@@ -242,20 +309,32 @@ export class IncGroupDecElem extends GroupDecElem {
   }
 
   incTypeName: () => string = () =>
-    this.data.neurodataTypeInc[1]!.neurodataTypeDef;
+    this.data.neurodataTypeInc[1]?.neurodataTypeDef || "None";
 
   render() {
+    const hasNameNotQuantity = typeof this.data.quantityOrName == typeof "";
     return html`
-      <type-elem .noProperties=${true} .noOptions=${true}>
-        ${this.topInput()}
+      <type-elem .noProperties=${false} .noOptions=${true}>
+        <type-header
+          slot="topinput"
+          .icon=${this.icon}
+          .keyword=${"of"}
+          .base=${this.incTypeName()}
+        ></type-header>
         <div slot="first-fields">${this.data.doc}</div>
+        <labeled-field-value
+          slot="properties"
+          .label=${hasNameNotQuantity ? "Name" : "Quantity"}
+          .value=${quantityOrNameString(this.data.quantityOrName)}
+        ></labeled-field-value>
       </type-elem>
     `;
   }
 }
 
 @customElement("dataset-anondec-elem")
-export class AnonDatasetDecElem extends DatasetDecElem {
+export class AnonDatasetDecElem extends BasicTypeElem {
+  protected icon: string = "dataset";
   incTypeName = () => "None";
 
   get valid(): boolean {
@@ -268,26 +347,59 @@ export class AnonDatasetDecElem extends DatasetDecElem {
     name: "AnonDsetDec",
     shape: [],
     dtype: ["PRIMITIVE", "f32"],
-    attributes: [],
+    attributes: [
+      // {
+      //   name: "MyAttributeNmae",
+      //   doc: "This is a description of my attribute it measures temperature",
+      //   required: false,
+      //   dtype: ["PRIMITIVE", "f32"],
+      //   data: ["SCALAR", ["EmptyString", true]],
+      // },
+    ],
   };
+
+  @property()
+  subtreeMinimize: boolean = true;
 
   render() {
     return html`
-      <type-elem .noProperties=${false} .noOptions=${true}>
-        ${this.topInput()}
-        <div slot="first-fields">${this.data.name}</div>
+      <type-elem
+        .noProperties=${false}
+        .noOptions=${true}
+        .onToggleMinimize=${(m: boolean) => (this.subtreeMinimize = m)}
+      >
+        <type-header
+          slot="topinput"
+          .keyword=${"of"}
+          .icon=${this.icon}
+          .name=${this.data.name}
+          .base=${"None"}
+        ></type-header>
         <div slot="first-fields">${this.data.doc}</div>
-        <ndx-textarea slot="first-fields"></ndx-textarea>
-        <nd-array slot="properties"></nd-array>
-        <dataset-subtree slot="subtree"></dataset-subtree>
+        <shape-viz
+          slot="properties"
+          .label=${"Axes"}
+          .shape=${this.data.shape}
+        ></shape-viz>
+        <labeled-field-value
+          slot="properties"
+          .label=${"Data Type"}
+          .value=${this.data.dtype[1]}
+        ></labeled-field-value>
+        <dataset-subtree
+          .attribs=${this.data.attributes}
+          .minimized=${this.subtreeMinimize}
+          slot="subtree"
+        ></dataset-subtree>
       </type-elem>
     `;
   }
 }
 
 @customElement("dataset-incdec-elem")
-export class IncDatasetDecElem extends DatasetDecElem {
-  incTypeName = () => this.data.neurodataTypeInc[1]!.neurodataTypeDef;
+export class IncDatasetDecElem extends BasicTypeElem {
+  protected icon: string = "dataset";
+  incTypeName = () => this.data.neurodataTypeInc[1]?.neurodataTypeDef || "None";
 
   get valid(): boolean {
     return false;
@@ -300,11 +412,21 @@ export class IncDatasetDecElem extends DatasetDecElem {
   };
 
   render() {
+    const hasQuantity = typeof this.data.quantityOrName != typeof "";
     return html`
       <type-elem .noProperties=${false} .noOptions=${true}>
-        ${this.topInput()}
-        <ndx-textarea slot="first-fields"></ndx-textarea>
-        <name-or-quantity slot="properties"></name-or-quantity>
+        <type-header
+          slot="topinput"
+          .icon=${this.icon}
+          .keyword=${"of"}
+          .base=${this.incTypeName()}
+        ></type-header>
+        <div slot="first-fields">${this.data.doc}</div>
+        <labeled-field-value
+          slot="properties"
+          .label=${hasQuantity ? "Quantity" : "Name"}
+          .value=${quantityOrNameString(this.data.quantityOrName)}
+        >
       </type-elem>
     `;
   }
@@ -319,21 +441,22 @@ abstract class TypeDefElem<
   abstract data: T;
   abstract type(): T;
 
-  protected topInput(): TemplateResult<1> {
-    return html`
-      ${this.renderIcon()}
-      <div slot="topinput" class="typename">${this.data.neurodataTypeDef}</div>
-      <div slot="first-fields">${this.data.doc}</div>
-    `;
-  }
-
-  protected bottomInput(): TemplateResult<1> {
+  protected header(): TemplateResult<1> {
     let incTypeName =
       this.data.neurodataTypeInc[0] != "None"
         ? this.data.neurodataTypeInc[1].neurodataTypeDef
         : "None";
-    return html`<div id="keyword" slot="bottominput">extends</div>
-      <div slot="bottominput" class="inctype">${incTypeName}</div>`;
+    return html`
+      <type-header
+        slot="topinput"
+        .icon=${this.icon}
+        .name=${this.data.neurodataTypeDef}
+        .keyword=${"extends"}
+        .typedef=${true}
+        .base=${incTypeName}
+      ></type-header>
+      <div slot="first-fields">${this.data.doc}</div>
+    `;
   }
 
   protected defaultNameInput(): TemplateResult<1> {
@@ -383,7 +506,7 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
         .noOptions=${false}
         .hideCloseBtn=${true}
       >
-        ${this.topInput()} ${this.bottomInput()}
+        ${this.header()}
         <div class="fieldlabel" slot="options">Default name</div>
         <div slot="options" class="fieldvalue">
           ${this.data.name ? this.data.name[0] : "None"}
@@ -405,32 +528,15 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
           .disabled=${false}
           slot="subtree"
           .attribs=${this.data.attributes}
+          .groups=${this.data.groups}
+          .datasets=${this.data.datasets}
+          .links=${this.data.links}
         ></group-subtree>
       </type-elem>
     `;
   }
 
   static styles = [super.styles as CSSResultGroup, css``] as CSSResultGroup;
-}
-
-function renderShape(shapes: Shape[]): TemplateResult<1> {
-  if (shapes.length == 0) return html`<div>Not specified</div>`;
-  const renderOneShape = (shape: Shape, i: number) =>
-    shape.length > 0
-      ? html`
-          ${when(i > 0, () => "OR")}
-          <div class="shape-container">
-            ${shape.map(
-              ([k, v]) =>
-                html`<div>
-                  <div>${k == "None" ? "Any" : k}</div>
-                  <div>${v}</div>
-                </div> `
-            )}
-          </div>
-        `
-      : html``;
-  return html` ${map(shapes, renderOneShape)} `;
 }
 
 @customElement("dataset-def-elem")
@@ -480,7 +586,7 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
         .noOptions=${false}
         .hideCloseBtn=${true}
       >
-        ${this.topInput()} ${this.bottomInput()}
+        ${this.header()}
         <div class="fieldlabel" slot="options">Default name</div>
         <div slot="options" class="fieldvalue">
           ${this.data.name ? this.data.name[0] : "None"}
@@ -538,41 +644,80 @@ export class GroupSubtree extends LitElement {
   @property()
   links: LinkDec[] = [];
 
+  @property()
+  minimized = false;
+
   render() {
-    return html`<subtree-branchh
-        ?disabled=${this.disabled}
-        slot="subtree"
-        id="groups"
-      >
-        <span slot="icon" class="material-symbols-outlined">folder</span>
-      </subtree-branchh>
-      <subtree-branchh ?disabled=${this.disabled} slot="subtree" id="datasets">
-        <span slot="icon" class="material-symbols-outlined">dataset</span>
-      </subtree-branchh>
-      <subtree-branchh
-        ?disabled=${this.disabled}
-        slot="subtree"
-        id="attributes"
-      >
-        <span slot="icon" class="material-symbols-outlined">edit_note</span>
-        ${map(
-          this.attribs,
-          (attrib) =>
-            html` <attrib-dec-elem
-                .data=${attrib}
-                slot="elems"
-              ></attrib-dec-elem>
-              <div slot="elems"></div>`
-        )}
-      </subtree-branchh>
-      <subtree-branchh
-        ?disabled=${this.disabled}
-        slot="subtree"
-        lastBranch="true"
-        id="links"
-      >
-        <span slot="icon" class="material-symbols-outlined">link</span>
-      </subtree-branchh>`;
+    const allBranchesFilled =
+      (this.attribs.length > 0 &&
+        this.groups.length > 0 &&
+        this.datasets.length > 0 &&
+        this.links.length > 0) ||
+      !this.minimized;
+    return html`
+      ${when(
+        this.groups.length > 0 || !this.minimized,
+        () => html`
+          <subtree-branchh
+            ?disabled=${this.disabled}
+            slot="subtree"
+            id="groups"
+          >
+            <span slot="icon" class="material-symbols-outlined">folder</span>
+          </subtree-branchh>
+        `
+      )}
+      ${when(
+        this.datasets.length > 0 || !this.minimized,
+        () => html`
+          <subtree-branchh
+            ?disabled=${this.disabled}
+            slot="subtree"
+            id="datasets"
+          >
+            <span slot="icon" class="material-symbols-outlined">dataset</span>
+          </subtree-branchh>
+        `
+      )}
+      ${when(
+        this.datasets.length > 0 || !this.minimized,
+        () => html`
+          <subtree-branchh
+            ?disabled=${this.disabled}
+            slot="subtree"
+            id="attributes"
+          >
+            <span slot="icon" class="material-symbols-outlined">edit_note</span>
+            ${map(
+              this.attribs,
+              (attrib) =>
+                html` <attrib-dec-elem
+                    .data=${attrib}
+                    slot="elems"
+                  ></attrib-dec-elem>
+                  <div slot="elems"></div>`
+            )}
+          </subtree-branchh>
+        `
+      )}
+      ${when(
+        this.links.length > 0 || !this.minimized,
+        () => html`
+          <subtree-branchh
+            ?disabled=${this.disabled}
+            slot="subtree"
+            lastBranch=${allBranchesFilled}
+            id="links"
+          >
+            <span slot="icon" class="material-symbols-outlined">link</span>
+          </subtree-branchh>
+        `
+      )}
+      ${when(
+        !allBranchesFilled,
+        () => html`<hidden-subtree slot="subtree"></hidden-subtree>`
+      )}
+    `;
   }
 
   static styles = [
@@ -588,26 +733,41 @@ export class GroupSubtree extends LitElement {
 @customElement("dataset-subtree")
 export class DatasetSubtree extends LitElement {
   @property({ type: Boolean })
-  disabled = true;
+  disabled = false;
 
   @property()
   attribs: AttributeDec[] = [];
 
+  @property({ type: Boolean })
+  minimized = false;
+
   render() {
-    return html`<subtree-branchh
-      ?disabled=${this.disabled}
-      slot="subtree"
-      lastBranch="true"
-      id="attributes"
-    >
-      <span slot="icon" class="material-symbols-outlined">edit_note</span>
-      ${map(
-        this.attribs,
-        (attrib) =>
-          html` <attrib-dec-elem .data=${attrib} slot="elems"></attrib-dec-elem>
-            <div slot="elems"></div>`
-      )}
-    </subtree-branchh>`;
+    console.log(this.minimized);
+    console.log(this.attribs.length);
+    const allBranchesFilled = this.attribs.length > 0 || !this.minimized;
+    return html` ${when(
+      allBranchesFilled,
+      () => html`
+        <subtree-branchh
+          ?disabled=${this.disabled}
+          slot="subtree"
+          id="attributes"
+          .lastBranch=${allBranchesFilled}
+        >
+          <span slot="icon" class="material-symbols-outlined">edit_note</span>
+          ${map(
+            this.attribs,
+            (attrib) =>
+              html` <attrib-dec-elem
+                  .data=${attrib}
+                  slot="elems"
+                ></attrib-dec-elem>
+                <div slot="elems"></div>`
+          )}
+        </subtree-branchh>
+      `,
+      () => html` <hidden-subtree slot="subtree"></hidden-subtree> `
+    )}`;
   }
 
   static styles = [symbols, css``];

@@ -32,58 +32,73 @@ export class NdxMain extends LitElement {
     return html` <h1>
         Create Extended NWB Types<a href="">New to NWB extensions?</a>
       </h1>
-      <group-anondec-elem></group-anondec-elem>
-      <div>
-        ${this.myTypes.length > 0 ? html`<mytypes-bar></mytypes-bar>` : html``}
-        ${choose(
-          this.appState,
-          [
-            [
-              "GROUP",
-              () =>
-                html`
-                  <group-def-elem
-                    class="typedef"
-                    .onDelete=${() => (this.appState = "NEW")}
-                  ></group-def-elem>
-                  <dark-button
-                    .disabled=${this.datasetDef ? this.datasetDef.valid : true}
-                    class="save"
-                    >Save</dark-button
-                  >
-                `,
-            ],
-            [
-              "DATASET",
+          <link-dec-elem></link-dec-elem>
+          <attrib-dec-elem></attrib-dec-elem>
+          <group-anondec-elem></group-anondec-elem>
+          <group-incdec-elem></group-incdec-elem>
+          <dataset-anondec-elem></dataset-anondec-elem>
+          <dataset-incdec-elem></dataset-incdec-elem>
+          <div>
+            ${
+              this.myTypes.length > 0
+                ? html`<mytypes-bar></mytypes-bar>`
+                : html``
+            }
+            ${choose(
+              this.appState,
+              [
+                [
+                  "GROUP",
+                  () =>
+                    html`
+                      <group-def-elem
+                        class="typedef"
+                        .onDelete=${() => (this.appState = "NEW")}
+                      ></group-def-elem>
+                      <dark-button
+                        .disabled=${this.datasetDef
+                          ? this.datasetDef.valid
+                          : true}
+                        class="save"
+                        >Save</dark-button
+                      >
+                    `,
+                ],
+                [
+                  "DATASET",
+                  () => html`
+                    <dataset-def-elem
+                      class="typedef"
+                      .onDelete=${() => (this.appState = "NEW")}
+                    ></dataset-def-elem>
+                    <dark-button
+                      .disabled=${this.datasetDef
+                        ? this.datasetDef.valid
+                        : true}
+                      class="save"
+                      >Save</dark-button
+                    >
+                  `,
+                ],
+              ],
               () => html`
-                <dataset-def-elem
-                  class="typedef"
-                  .onDelete=${() => (this.appState = "NEW")}
-                ></dataset-def-elem>
-                <dark-button
-                  .disabled=${this.datasetDef ? this.datasetDef.valid : true}
-                  class="save"
-                  >Save</dark-button
-                >
-              `,
-            ],
-          ],
-          () => html`
-            <div class="create">
-              <add-typedef-button
-                .icon=${"folder"}
-                @click=${() => (this.appState = "GROUP")}
-                >Create group type</add-typedef-button
-              >
-              <add-typedef-button
-                .icon=${"dataset"}
-                @click=${() => (this.appState = "DATASET")}
-                >Create dataset type</add-typedef-button
-              >
-            </div>
-          `
-        )}
-      </div>`;
+                <div class="create">
+                  <add-typedef-button
+                    .icon=${"folder"}
+                    @click=${() => (this.appState = "GROUP")}
+                    >Create group type</add-typedef-button
+                  >
+                  <add-typedef-button
+                    .icon=${"dataset"}
+                    @click=${() => (this.appState = "DATASET")}
+                    >Create dataset type</add-typedef-button
+                  >
+                </div>
+              `
+            )}
+          </div></attrib-dec-elem
+        ></attrib-dec-elem
+      >`;
   }
 
   static styles = css`

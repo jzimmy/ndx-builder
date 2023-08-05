@@ -1,14 +1,17 @@
-import { LitElement, html, css, CSSResultGroup, PropertyValueMap } from "lit";
+import {
+  LitElement,
+  html,
+  css,
+  CSSResultGroup,
+  PropertyValueMap,
+  TemplateResult,
+} from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { symbols } from "./styles";
-import {
-  AttribDecElem,
-  DatasetDecElem,
-  GroupDecElem,
-  LinkDecElem,
-} from "./typeviz";
 import { when } from "lit-html/directives/when.js";
+import { map } from "lit/directives/map.js";
+import { Shape } from "./nwb/spec";
 
 /* Wrapper element for a type elem, contains the minimize,
  * close button and slots for the body and subtree.
@@ -23,7 +26,7 @@ export class TypeElemSkeleton extends LitElement {
   minimize: boolean = true;
 
   @property({ type: Function })
-  onMinimize: () => void = () => {};
+  onToggleMinimize: (b: boolean) => void = (_) => {};
 
   @state()
   protected subtreeEnabled = false;
@@ -35,9 +38,7 @@ export class TypeElemSkeleton extends LitElement {
 
   private _handleMinimize() {
     this.minimize = !this.minimize;
-    if (this.minimize) {
-      this.onMinimize();
-    }
+    this.onToggleMinimize(this.minimize);
   }
 
   render() {
@@ -137,19 +138,25 @@ export class TypeElem extends LitElement {
   hideCloseBtn: boolean = false;
 
   @property({ type: Function })
-  onMinimize: () => void = () => {};
+  onToggleMinimize = (_: boolean) => {};
+
+  @query("type-elem-skeleton")
+  typeElemSkeleton!: TypeElemSkeleton;
+
+  get minimized(): boolean {
+    return this.typeElemSkeleton.minimize;
+  }
 
   render() {
     return html`
       <type-elem-skeleton
         .onDelete=${this.onDelete}
         .hideCloseBtn=${this.hideCloseBtn}
-        .onMinimize=${this.onMinimize}
+        .onToggleMinimize=${this.onToggleMinimize}
       >
         <div id="body" slot="body">
           <div class="main-section">
-            <div class="row">
-              <slot class="icon" name="icon"></slot>
+            <div class="topinput-wrapper">
               <slot name="topinput"></slot>
             </div>
             <div class="row">
@@ -188,7 +195,6 @@ export class TypeElem extends LitElement {
         display: flex;
         flex-direction: column;
         align-items: left;
-        min-width: 10em;
       }
 
       #body > div:not(:first-child) {
@@ -220,8 +226,9 @@ export class TypeElem extends LitElement {
         margin: 0 0.5em;
       }
 
-      ::slotted([slot="topinput"]) {
-        font-size: 1.1em;
+      type-elem-skeleton:not([minimize]) .topinput-wrapper {
+        border-bottom: 1px solid var(--color-border-alt);
+        padding-bottom: 0.5em;
       }
 
       :not(:host([noOptions])) .advanced {
@@ -529,6 +536,244 @@ export class SubtreeBranchh extends LitElement {
         margin-top: var(--upper-break);
         height: 2px;
         width: 2ch;
+      }
+    `,
+  ];
+}
+
+@customElement("hidden-subtree")
+class HiddenSubtree extends LitElement {
+  render() {
+    return html`
+      <div></div>
+      <span class="material-symbols-outlined">more_vert</span>
+    `;
+  }
+
+  static styles = [
+    symbols,
+    css`
+      :host {
+        padding-left: 3.3em;
+        display: block;
+      }
+
+      :host > div {
+        height: 1em;
+        margin-left: 0.7em;
+        border-left: 2px solid var(--color-border-alt);
+      }
+
+      span.material-symbols-outlined {
+        color: var(--color-border-alt);
+      }
+    `,
+  ];
+}
+
+@customElement("type-header")
+export class TypeHeader extends LitElement {
+  @property({ type: String })
+  icon: string = "";
+
+  @property({ type: String })
+  name: string = "";
+
+  @property({ type: String })
+  keyword: string = "";
+
+  @property({ type: String })
+  base: string = "";
+
+  @property({ type: Boolean, reflect: true })
+  typedef: boolean = false;
+
+  render() {
+    return html`
+      <div>
+        <span class="material-symbols-outlined">${this.icon}</span>
+        ${this.name
+          ? html`<div class="name">${this.name}</div>`
+          : html`
+              <span class="keyword">${this.keyword}</span>
+              <div class="inctype">${this.base}</div>
+            `}
+      </div>
+      ${when(
+        this.name !== "" && (this.keyword || this.base),
+        () => html`
+          <div class="bottomrow">
+            <span class="keyword">${this.keyword}</span>
+            <div class="inctype">${this.base}</div>
+          </div>
+        `
+      )}
+    `;
+  }
+
+  static styles = [
+    symbols,
+    css`
+      :host {
+        display: block;
+        border: 1px solid red;
+      }
+
+      span.material-symbols-outlined {
+        font-size: 2em;
+      }
+
+      :host > div {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+      }
+
+      :host([typedef]) .name {
+        font-weight: bold;
+        padding: 0.1em 0.4em;
+      }
+
+      .name {
+        font-size: 1.3em;
+        padding: 0.1em 0.4em;
+      }
+
+      .keyword {
+        font-size: 1.2em;
+        margin: 0 0.5em;
+        color: var(--clickable);
+        font-weight: bold;
+      }
+
+      .inctype {
+        padding: 0.3em 0.5em;
+        border: 1px solid var(--color-border);
+        font-weight: bold;
+        border-radius: 0.3em;
+      }
+
+      .bottomrow > .keyword {
+        margin-left: auto;
+      }
+    `,
+  ];
+}
+
+@customElement("labeled-field-value")
+export class LabeledFieldValue extends LitElement {
+  @property({ type: String })
+  label: string = "";
+  @property()
+  value: string = "";
+  render() {
+    return html`
+      <div class="label">${this.label}:</div>
+      <div class="value">${this.value}<slot></slot></div>
+    `;
+  }
+
+  static styles = css`
+    .label {
+      color: var(--color-border-alt);
+      font-weight: 700;
+      padding-left: 0.4em;
+    }
+    .value {
+      max-width: 45ch;
+      padding: 0.1em 0.4em;
+      border-bottom: 1px solid var(--color-border-alt);
+      opacity: 0.8;
+    }
+  ` as CSSResultGroup;
+}
+
+@customElement("labeled-boolean-field")
+export class LabeledBoolField extends LitElement {
+  @property({ type: Boolean })
+  checked = false;
+
+  @property({ type: String })
+  label = "";
+  render() {
+    return html`
+      <input type="checkbox" .checked=${this.checked} />
+      <div class="label">${this.label}</div>
+    `;
+  }
+
+  static styles = [
+    LabeledFieldValue.styles,
+    css`
+      :host {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+      }
+
+      input {
+        pointer-events: none;
+        focus: none;
+      }
+    `,
+  ];
+}
+
+@customElement("shape-viz")
+export class ShapeVisualizer extends LitElement {
+  renderShape(shapes: Shape[]): TemplateResult<1> {
+    if (shapes.length == 0) return html`<div>Not specified</div>`;
+    const renderOneShape = (shape: Shape, i: number) =>
+      shape.length > 0
+        ? html`
+            ${when(i > 0, () => "OR")}
+            <div class="shape-container">
+              ${shape.map(
+                ([k, v]) =>
+                  html`<div>
+                    <div>${k == "None" ? "Any" : k}</div>
+                    <div>${v}</div>
+                  </div> `
+              )}
+            </div>
+          `
+        : html``;
+    return html` ${map(shapes, renderOneShape)} `;
+  }
+  @property()
+  label = "Axes";
+
+  @property()
+  shape: Shape[] = [];
+
+  @property()
+  render() {
+    return html`
+      <labeled-field-value .label=${this.label}>
+        ${this.renderShape(this.shape)}
+      </labeled-field-value>
+    `;
+  }
+
+  static styles = [
+    css`
+      .shape-container {
+        display: flex;
+        flex-wrap: nowrap;
+      }
+
+      .shape-container > * {
+        min-width: 1ch;
+        padding: 0.1em 0.3em;
+        border-right: 1px solid var(--color-border-alt);
+      }
+
+      .shape-container > *:last-child {
+        border: 0;
+      }
+
+      .shape-container > * > div:first-child {
+        font-weight: bold;
       }
     `,
   ];
