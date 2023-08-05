@@ -1,51 +1,99 @@
 // todo implement onDelete for all
-import {
-  css,
-  CSSResultGroup,
-  html,
-  HTMLTemplateResult,
-  LitElement,
-  TemplateResult,
-} from "lit";
+import { css, CSSResultGroup, html, LitElement, TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { BasicTypeElem } from "./type-elem";
 import "./type-elem";
 import {
   AttributeDec,
+  DatasetDec,
+  DatasetType,
   DatasetTypeDef,
+  GroupDec,
+  GroupType,
   GroupTypeDef,
+  LinkDec,
+  Quantity,
   Shape,
-  TypeDef,
 } from "./nwb/spec";
 import { symbols } from "./styles";
 import {
   HasDatasetIncType,
   HasDefaultName,
   HasGroupIncType,
-  HasInstanceNameAndDescription,
   HasTypeNameAndDescription,
 } from "./parent";
 import "./forms";
 import { Initializers } from "./nwb/spec-defaults";
 import { when } from "lit-html/directives/when.js";
-import { InctypeBrowser } from "./playground";
 import { map } from "lit-html/directives/map.js";
+import { assertNever } from "./HOFS";
+
+function quantityOrNameString(qOrS: Quantity | string): string {
+  if (typeof qOrS == "string") return qOrS || "None";
+  let [k, q] = qOrS;
+  switch (k) {
+    case "+":
+      return "One or more";
+    case "*":
+      return "Any";
+    case "?":
+      return "Zero or one";
+    case "Num":
+      // we know it's a number
+      return `${q as number}`;
+    default:
+      assertNever(k);
+  }
+}
+
+function targetTypeNameString(targetType: GroupType | DatasetType) {
+  if (targetType[0] == "None") return "None";
+  let [kind, ty] = targetType;
+  switch (kind) {
+    case "Core":
+    case "Typedef":
+      return ty.neurodataTypeDef;
+    default:
+      assertNever(kind);
+  }
+}
 
 @customElement("link-dec-elem")
 export class LinkDecElem extends BasicTypeElem {
+  @property()
+  data: LinkDec = {
+    doc: "Some example documentation",
+    targetType: [
+      "Typedef",
+      { ...Initializers.groupTypeDef, neurodataTypeDef: "MyTarget" },
+    ],
+    quantityOrName: ["*", null],
+  };
+
   get valid(): boolean {
     return false;
   }
+
   protected icon: string = "link";
   render() {
+    // careful runtime type check
+    const hasQuantity = typeof this.data.quantityOrName != typeof "";
+    console.log(hasQuantity);
     return html`
       <type-elem .noProperties=${false} .noOptions=${true}
         >${this.renderIcon()}
         <div id="keyword" slot="topinput">to</div>
-        <light-button slot="topinput">Pick a target</light-button>
-        <ndx-textarea slot="first-fields"></ndx-textarea>
-        <name-or-quantity slot="properties"></name-or-quantity>
+        <div slot="topinput" class="inctype">
+          ${targetTypeNameString(this.data.targetType)}
+        </div>
+        <div slot="first-fields">${this.data.doc}</div>
+        <div slot="properties" class="fieldlabel">
+          ${hasQuantity ? "Quantity" : "Name"}
+        </div>
+        <div slot="properties" class="fieldvalue">
+          ${quantityOrNameString(this.data.quantityOrName)}
+        </div>
       </type-elem>
     `;
   }
@@ -58,7 +106,7 @@ export class AttribDecElem extends BasicTypeElem {
     doc: "This is a description of my attribute it measures temperature",
     required: false,
     dtype: ["PRIMITIVE", "f32"],
-    shape: [],
+    data: ["SCALAR", ["EmptyString", true]],
   };
 
   get valid(): boolean {
@@ -68,16 +116,42 @@ export class AttribDecElem extends BasicTypeElem {
   protected icon: string = "edit_note";
 
   render() {
+    const data = this.data.data;
+    let scalar = "";
+    let shape: Shape[] = [];
+    let scalarRequired = false;
+    if (data[0] == "SCALAR") {
+      scalar = data[1][0];
+      scalarRequired = data[1][1];
+    } else {
+      shape = data[1];
+    }
+
     return html`
       <type-elem .noProperties=${false} .noOptions=${false}
         >${this.renderIcon()}
         <div slot="topinput" class="typename">${this.data.name}</div>
         <div slot="first-fields">${this.data.doc}</div>
-        <div slot="properties" class="fieldlabel">Axes</div>
-        <div slot="properties" class="fieldvalue">
-          ${renderShape(this.data.shape)}
-        </div>
-        <div slot="properties" class="fieldlabel">Data Type</div>
+        ${data[0] == "SCALAR"
+          ? html`
+              <div slot="properties" class="fieldlabel">Value</div>
+              <div slot="properties" class="fieldvalue">${scalar}</div>
+              <div class="checkwrapper" slot="properties">
+                <input
+                  type="checkbox"
+                  ?checked=${scalarRequired}
+                  style="pointer-events: none; focus: none;"
+                />
+                <div class="fieldlabel">Value required</div>
+              </div>
+            `
+          : html`
+              <div slot="properties" class="fieldlabel">Axes</div>
+              <div slot="properties" class="fieldvalue">
+                ${renderShape(shape)}
+              </div>
+              <div slot="properties" class="fieldlabel">Data Type</div>
+            `}
         <div class="checkwrapper" slot="options">
           <input
             type="checkbox"
@@ -86,21 +160,6 @@ export class AttribDecElem extends BasicTypeElem {
           />
           <div class="fieldlabel">Attribute required</div>
         </div>
-        ${when(
-          this.data.value,
-          () => html`
-            <div slot="options" class="fieldlabel">Default value</div>
-            <div slot="options" class="fieldvalue">${this.data.value![0]}</div>
-            <div class="checkwrapper" slot="options">
-              <input
-                type="checkbox"
-                ?checked=${this.data.value![1]}
-                style="pointer-events: none; focus: none;"
-              />
-              <div class="fieldlabel">Allow override</div>
-            </div>
-          `
-        )}
       </type-elem>
     `;
   }
@@ -108,7 +167,8 @@ export class AttribDecElem extends BasicTypeElem {
 
 export abstract class GroupDecElem extends BasicTypeElem {
   @property()
-  abstract incType: { name: string };
+  incType = { name: "Pick a type" };
+
   protected icon: string = "folder";
   protected topInput(): TemplateResult<1> {
     return html`
@@ -260,7 +320,15 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
     doc: "Some example group typedef",
     groups: [],
     datasets: [],
-    attributes: [],
+    attributes: [
+      {
+        name: "MyAttributeNmae",
+        doc: "This is a description of my attribute it measures temperature",
+        required: false,
+        dtype: ["PRIMITIVE", "f32"],
+        data: ["SCALAR", ["EmptyString", true]],
+      },
+    ],
     links: [],
     // name: ["MyInstance", true],
   };
@@ -293,7 +361,11 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
             </div>
           `
         )}
-        <group-subtree .disabled=${false} slot="subtree"></group-subtree>
+        <group-subtree
+          .disabled=${false}
+          slot="subtree"
+          .attribs=${this.data.attributes}
+        ></group-subtree>
       </type-elem>
     `;
   }
@@ -311,7 +383,7 @@ function renderShape(shapes: Shape[]): TemplateResult<1> {
             ${shape.map(
               ([k, v]) =>
                 html`<div>
-                  <div>${k == "None" ? "#" : k}</div>
+                  <div>${k == "None" ? "Any" : k}</div>
                   <div>${v}</div>
                 </div> `
             )}
@@ -337,7 +409,15 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
     dtype: ["PRIMITIVE", "f32"],
     neurodataTypeInc: ["None", null],
     doc: "This is some description asdlkjfsd;lfa;lkj asd;fjda;lsfkj a;lsdfj a;dlskfj ;aldsfj fd;laksfj a;sdlfj ;adslfj asdl;j fds;lkjfd sal;lfapiudifhpqirq;kjgf e8yg;d dzk;fhfasohglakjgrflahjsfgois fsd fhglkafdg p",
-    attributes: [],
+    attributes: [
+      {
+        name: "MyAttributeNmae",
+        doc: "This is a description of my attribute it measures temperature",
+        required: false,
+        dtype: ["PRIMITIVE", "f32"],
+        data: ["SCALAR", ["EmptyString", true]],
+      },
+    ],
     shape: [
       [
         [1, "x"],
@@ -378,14 +458,16 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
             </div>
           `
         )}
-        <div slot="properties" class="fieldlabel">
-          Axes (# means any length)
-        </div>
+        <div slot="properties" class="fieldlabel">Axes</div>
         <div slot="properties" class="fieldvalue">
           ${renderShape(this.data.shape)}
         </div>
         <div slot="properties" class="fieldlabel">Data Type</div>
-        <dataset-subtree .disabled=${false} slot="subtree"></dataset-subtree>
+        <dataset-subtree
+          .disabled=${false}
+          slot="subtree"
+          .attribs=${this.data.attributes}
+        ></dataset-subtree>
       </type-elem>
     `;
   }
@@ -408,13 +490,13 @@ export class GroupSubtree extends LitElement {
   triggerLinkDecBuilderForm = () => {};
 
   @property()
-  attribs: AttribDecElem[] = [];
+  attribs: AttributeDec[] = [];
   @property()
-  datasets: DatasetDecElem[] = [];
+  datasets: DatasetDec[] = [];
   @property()
-  groups: GroupDecElem[] = [];
+  groups: GroupDec[] = [];
   @property()
-  links: LinkDecElem[] = [];
+  links: LinkDec[] = [];
 
   render() {
     return html`<subtree-branchh
@@ -433,6 +515,15 @@ export class GroupSubtree extends LitElement {
         id="attributes"
       >
         <span slot="icon" class="material-symbols-outlined">edit_note</span>
+        ${map(
+          this.attribs,
+          (attrib) =>
+            html` <attrib-dec-elem
+                .data=${attrib}
+                slot="elems"
+              ></attrib-dec-elem>
+              <div slot="elems"></div>`
+        )}
       </subtree-branchh>
       <subtree-branchh
         ?disabled=${this.disabled}
@@ -460,7 +551,7 @@ export class DatasetSubtree extends LitElement {
   disabled = true;
 
   @property()
-  attribs: AttribDecElem[] = [];
+  attribs: AttributeDec[] = [];
 
   render() {
     return html`<subtree-branchh
@@ -470,8 +561,14 @@ export class DatasetSubtree extends LitElement {
       id="attributes"
     >
       <span slot="icon" class="material-symbols-outlined">edit_note</span>
+      ${map(
+        this.attribs,
+        (attrib) =>
+          html` <attrib-dec-elem .data=${attrib} slot="elems"></attrib-dec-elem>
+            <div slot="elems"></div>`
+      )}
     </subtree-branchh>`;
   }
 
-  static styles = symbols;
+  static styles = [symbols, css``];
 }

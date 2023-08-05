@@ -41,7 +41,7 @@ export abstract class BasicFormPage<T> extends CPSForm<T> {
   @query("input[name=continuebutton]")
   continueButton!: HTMLInputElement;
 
-  @query("step-bar")
+  @query("step-bar[id=type]")
   private stepBar!: FormStepBar;
 
   _selfValidate() {
@@ -50,12 +50,17 @@ export abstract class BasicFormPage<T> extends CPSForm<T> {
 
   render() {
     return html`
+      <step-bar
+        .steps=${["add types", "namespace metadata", "export script"]}
+        style="opacity:0.8"
+        .currStep=${0}
+      ></step-bar>
       <back-or-quit-bar
         .hideQuit=${this.hideQuit}
         .back=${() => this.back()}
         .quit=${() => this.quit()}
       >
-        <step-bar></step-bar>
+        <step-bar id="type"></step-bar>
       </back-or-quit-bar>
       <h2 style=${styleMap({ "text-align": "center" })} class="title">
         ${this.formTitle}
@@ -126,6 +131,32 @@ export abstract class BasicFormPage<T> extends CPSForm<T> {
         justify-content: center;
         margin: auto;
         margin-bottom: 2em;
+      }
+
+      .clickbox-wrapper {
+        display: flex;
+        flex-wrap: nowrap;
+        justify-content: center;
+      }
+
+      .clickbox {
+        font-weight: 500;
+        margin: 0 0.5em;
+        padding: 0.5em 0.8em;
+        border: 2px solid var(--color-border-alt);
+        cursor: pointer;
+        border-radius: 0.3em;
+      }
+
+      .clickbox.selected {
+        color: var(--clickable);
+        border: 2px solid var(--clickable);
+        text-decoration: underline;
+      }
+
+      .clickbox:hover {
+        color: var(--clickable-hover);
+        border: 2px solid var(--clickable-hover);
       }
     `,
   ] as CSSResultGroup;

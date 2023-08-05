@@ -191,7 +191,6 @@ export class FormStepBar extends LitElement {
     h3 {
       margin: 0;
       padding: 0 1em;
-      text-decoration: underline;
     }
 
     h3:not(.completed):not(.active) {
@@ -199,7 +198,8 @@ export class FormStepBar extends LitElement {
     }
 
     h3.active {
-      color: var(--clickable);
+      // color: var(--clickable);
+      text-decoration: underline;
     }
   `;
 }
@@ -237,6 +237,8 @@ export class Navbar extends LitElement {
         justify-content: space-between;
         align-items: center;
         min-width: 50vw;
+        padding-bottom: 0.5em;
+        border-bottom: 1px solid black;
       }
 
       * {

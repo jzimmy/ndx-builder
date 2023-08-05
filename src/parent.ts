@@ -27,7 +27,7 @@ import {
 } from "./namespace";
 import { Initializers } from "./nwb/spec-defaults";
 import { CodegenFormpageElem } from "./codegen";
-import { AttribInfoFormpageElem } from "./attrib";
+import { AttribInfoFormpageElem, AttribValueFormpageElem } from "./attrib";
 import "./basic-elems";
 import { symbols } from "./styles";
 import { GenericInctypeFormpageElem } from "./inctype";
@@ -67,6 +67,12 @@ export interface MaybeHasValue {
   value?: Defaultable<string>;
 }
 
+type AttributeAndShape = {
+  att: AttributeDec;
+  shape: Shape[];
+  dtype: Dtype;
+};
+
 // form manager
 @customElement("form-parent")
 export class NdxFormParent extends LitElement {
@@ -101,18 +107,37 @@ export class NdxFormParent extends LitElement {
     ];
 
     let attributeBuilderForm = new FormChain<AttributeDec>(
-      new AttribInfoFormpageElem<AttributeDec>(),
+      new AttribInfoFormpageElem(),
       attbSteps,
       0
     )
-      .then(new AxesFormpageElem(), attbSteps, 1)
+      .branch(
+        (v: AttributeDec) => v.data[0] === "SHAPE",
+        new FormChain<AttributeAndShape>(
+          new AxesFormpageElem(),
+          attbSteps,
+          1
+        ).convert<AttributeDec>(
+          (v: AttributeAndShape) => {
+            return { ...v.att, data: ["SHAPE", v.shape], dtype: v.dtype };
+          },
+          (v: AttributeDec) => {
+            return {
+              att: v,
+              shape: v.data[0] === "SHAPE" ? v.data[1] : [],
+              dtype: v.dtype,
+            };
+          }
+        ),
+        new FormChain<AttributeDec>(new AttribValueFormpageElem(), attbSteps, 1)
+      )
       .withParent(this);
 
     let groupBuilderForm = new FormChain<GroupTypeDef>(
       new TypenameFormpageElem(),
       grpSteps,
       1
-    ).then(new GroupDefVizFormpageElem(attributeBuilderForm), dstSteps, 3);
+    ).then(new GroupDefVizFormpageElem(attributeBuilderForm), grpSteps, 3);
 
     let datasetBuilderForm = new FormChain<DatasetTypeDef>(
       new TypenameFormpageElem(),

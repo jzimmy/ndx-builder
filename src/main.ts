@@ -10,7 +10,7 @@ import { DatasetTypeDefElem, GroupTypeDefElem } from "./typeviz";
 @customElement("ndx-main")
 export class NdxMain extends LitElement {
   @state()
-  appState: "NEW" | "GROUP" | "DATASET" = "DATASET";
+  appState: "NEW" | "GROUP" | "DATASET" = "GROUP";
 
   @property()
   currTypedef?: GroupTypeDefElem | DatasetTypeDefElem;
@@ -32,7 +32,7 @@ export class NdxMain extends LitElement {
     return html` <h1>
         Create Extended NWB Types<a href="">New to NWB extensions?</a>
       </h1>
-      <attrib-dec-elem></attrib-dec-elem>
+      <link-dec-elem></link-dec-elem>
       <div>
         ${this.myTypes.length > 0 ? html`<mytypes-bar></mytypes-bar>` : html``}
         ${choose(
@@ -90,7 +90,7 @@ export class NdxMain extends LitElement {
     :host {
       height: 100vh;
       width: 100vw;
-      overflow: hidden;
+      overflow: scroll;
       display: flex;
       flex-direction: column;
       align-items: center;

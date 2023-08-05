@@ -20,7 +20,10 @@ export class TypeElemSkeleton extends LitElement {
   hideCloseBtn: boolean = false;
 
   @property({ type: Boolean, reflect: true })
-  minimize: boolean = false;
+  minimize: boolean = true;
+
+  @property({ type: Function })
+  onMinimize: () => void = () => {};
 
   @state()
   protected subtreeEnabled = false;
@@ -30,13 +33,18 @@ export class TypeElemSkeleton extends LitElement {
     throw new Error(`On delete not implemented. ${target}`);
   };
 
+  private _handleMinimize() {
+    this.minimize = !this.minimize;
+    if (this.minimize) {
+      this.onMinimize();
+    }
+  }
+
   render() {
     return html`
       <div id="main">
         <div class="row">
-          <span
-            class="material-symbols-outlined"
-            @click=${() => (this.minimize = !this.minimize)}
+          <span class="material-symbols-outlined" @click=${this._handleMinimize}
             >${this.minimize ? "expand_content" : "minimize"}</span
           >
           ${when(
@@ -128,11 +136,15 @@ export class TypeElem extends LitElement {
   @property({ type: Boolean, reflect: true })
   hideCloseBtn: boolean = false;
 
+  @property({ type: Function })
+  onMinimize: () => void = () => {};
+
   render() {
     return html`
       <type-elem-skeleton
         .onDelete=${this.onDelete}
         .hideCloseBtn=${this.hideCloseBtn}
+        .onMinimize=${this.onMinimize}
       >
         <div id="body" slot="body">
           <div class="main-section">
@@ -190,7 +202,9 @@ export class TypeElem extends LitElement {
         align-items: center;
       }
 
-      .row:first-child {
+      type-elem-skeleton:not([minimize]) .row:first-child {
+        margin-bottom: 0.5em;
+        padding-bottom: 0.3em;
         border-bottom: 1px solid var(--color-border-alt);
       }
 
@@ -199,11 +213,6 @@ export class TypeElem extends LitElement {
         display: flex;
         flex-direction: column;
         align-items: left;
-      }
-
-      .row:first-child {
-        margin-bottom: 0.5em;
-        padding-bottom: 0.3em;
       }
 
       ::slotted([slot="keyword"]) {
@@ -319,11 +328,11 @@ export abstract class BasicTypeElem extends LitElement {
 
       .inctype {
         padding: 0.3em 0.5em;
-        color: var(--clickable-hover);
         border: 1px solid var(--clickable);
         font-weight: bold;
         border-radius: 0.3em;
-        background: var(--background-light-button);
+        // background: var(--background-light-button);
+        box-shadow: 0 0 20px 5px #eee;
       }
 
       .typename {
@@ -335,15 +344,20 @@ export abstract class BasicTypeElem extends LitElement {
 
       .fieldlabel {
         color: var(--color-border-alt);
-        font-weight: 500;
+        font-weight: 700;
+        padding-left: 0.4em;
+      }
+
+      :not(.checkwrapper) > .fieldlabel::after {
+        content: ":";
       }
 
       .fieldvalue {
         max-width: 45ch;
         padding: 0.1em 0.4em;
-        border: 1px solid var(--color-border-alt);
+        border-bottom: 1px solid var(--color-border-alt);
         opacity: 0.8;
-        border-radius: 0.3em;
+        // border-radius: 0.3em;
       }
 
       .checkwrapper {
@@ -400,7 +414,7 @@ export class SubtreeBranchh extends LitElement {
             <slot name="icon"></slot>
           </span>
         </div>
-        ${this.lastBranch ? `` : html` <div class="vert"></div>`}
+        ${when(!this.lastBranch, () => html`<div class="vert"></div>`)}
       </div>
       <slot name="elems"></slot>
       <div class="branchelement">
@@ -419,7 +433,7 @@ export class SubtreeBranchh extends LitElement {
       :host {
         display: flex;
         flex-direction: row;
-        --upper-break: 4em;
+        --upper-break: 5em;
         padding-left: 4em;
       }
 
@@ -499,7 +513,15 @@ export class SubtreeBranchh extends LitElement {
       }
 
       ::slotted([slot="elems"]) {
-        padding-right: 2em;
+        margin-top: 1em;
+        padding-right: 0.5em;
+      }
+
+      ::slotted(div[slot="elems"]) {
+        background: var(--color-border-alt);
+        margin-top: var(--upper-break);
+        height: 2px;
+        width: 2ch;
       }
     `,
   ];

@@ -213,9 +213,8 @@ export type AttributeDec = {
   name: string;
   doc: string;
   required: boolean;
-  value?: Defaultable<string>; // boolean flag means value is default
+  data: ["SHAPE", Shape[]] | ["SCALAR", Defaultable<string>];
   dtype: Dtype;
-  shape: Shape[];
 };
 
 export type LinkDec = {
