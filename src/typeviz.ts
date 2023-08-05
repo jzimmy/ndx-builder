@@ -1,7 +1,6 @@
 // todo implement onDelete for all
 import { css, CSSResultGroup, html, LitElement, TemplateResult } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
-import { classMap } from "lit/directives/class-map.js";
 import { BasicTypeElem, TypeElem } from "./type-elem";
 import "./type-elem";
 import {
@@ -32,6 +31,7 @@ import { Initializers } from "./nwb/spec-defaults";
 import { when } from "lit-html/directives/when.js";
 import { map } from "lit-html/directives/map.js";
 import { assertNever } from "./HOFS";
+import { choose } from "lit/directives/choose.js";
 
 function quantityOrNameString(qOrS: Quantity | string): string {
   if (typeof qOrS == "string") return qOrS || "None";
@@ -347,15 +347,7 @@ export class AnonDatasetDecElem extends BasicTypeElem {
     name: "AnonDsetDec",
     shape: [],
     dtype: ["PRIMITIVE", "f32"],
-    attributes: [
-      // {
-      //   name: "MyAttributeNmae",
-      //   doc: "This is a description of my attribute it measures temperature",
-      //   required: false,
-      //   dtype: ["PRIMITIVE", "f32"],
-      //   data: ["SCALAR", ["EmptyString", true]],
-      // },
-    ],
+    attributes: [],
   };
 
   @property()
@@ -441,6 +433,9 @@ abstract class TypeDefElem<
   abstract data: T;
   abstract type(): T;
 
+  @property()
+  hideEditBtn = true;
+
   protected header(): TemplateResult<1> {
     let incTypeName =
       this.data.neurodataTypeInc[0] != "None"
@@ -505,6 +500,7 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
         .noProperties=${true}
         .noOptions=${false}
         .hideCloseBtn=${true}
+        .hideEditBtn=${this.hideEditBtn}
       >
         ${this.header()}
         <div class="fieldlabel" slot="options">Default name</div>
@@ -585,6 +581,7 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
         .noProperties=${false}
         .noOptions=${false}
         .hideCloseBtn=${true}
+        .hideEditBtn=${this.hideEditBtn}
       >
         ${this.header()}
         <div class="fieldlabel" slot="options">Default name</div>
@@ -644,6 +641,32 @@ export class GroupSubtree extends LitElement {
   @property()
   links: LinkDec[] = [];
 
+  @property({ type: Function })
+  triggerEditLinkDecForm = (_: LinkDec, __: number) => {};
+  @property({ type: Function })
+  triggerEditAttribDecForm = (_: AttributeDec, __: number) => {};
+  @property({ type: Function })
+  triggerEditGroupDecForm = (_: GroupDec, __: number) => {};
+  @property({ type: Function })
+  triggerEditDatasetDecForm = (_: DatasetDec, __: number) => {};
+
+  @property({ type: Function })
+  removeAttribDec(_: number): void {
+    throw new Error("Remove Attrib Method not implemented.");
+  }
+  @property({ type: Function })
+  removeDatasetDec(_: number): void {
+    throw new Error("Remove Dataset Method not implemented.");
+  }
+  @property({ type: Function })
+  removeGroupDec(_: number) {
+    throw new Error("Remove Group Method not implemented.");
+  }
+  @property({ type: Function })
+  removeLinkDec(_: number): void {
+    throw new Error("Remove Link Method not implemented.");
+  }
+
   @property()
   minimized = false;
 
@@ -657,48 +680,104 @@ export class GroupSubtree extends LitElement {
     return html`
       ${when(
         this.groups.length > 0 || !this.minimized,
-        () => html`
-          <subtree-branchh
-            ?disabled=${this.disabled}
-            slot="subtree"
-            id="groups"
-          >
-            <span slot="icon" class="material-symbols-outlined">folder</span>
-          </subtree-branchh>
-        `
+        () => html` <subtree-branchh
+          ?disabled=${this.disabled}
+          slot="subtree"
+          id="groups"
+          .addElem=${() => this.triggerGroupDecBuilderForm()}
+        >
+          <span slot="icon" class="material-symbols-outlined">folder</span>
+          ${map(
+            this.groups,
+            (grp, i) => html` ${choose(grp[0], [
+                [
+                  "INC",
+                  () => html`
+                    <group-incdec-elem
+                      .slot=${"elems"}
+                      .onClose=${() => this.removeGroupDec(i)}
+                      .data=${grp[1]}
+                      .onEdit=${() => this.triggerEditGroupDecForm(grp, i)}
+                    ></group-incdec-elem>
+                  `,
+                ],
+                [
+                  "ANONYMOUS",
+                  () => html`
+                    <group-anondec-elem
+                      .slot=${"elems"}
+                      .onClose=${() => this.removeGroupDec(i)}
+                      .data=${grp[1]}
+                      .onEdit=${() => this.triggerEditGroupDecForm(grp, i)}
+                    ></group-anondec-elem>
+                  `,
+                ],
+              ])}
+              <div slot="elems"></div>`
+          )}
+        </subtree-branchh>`
       )}
       ${when(
         this.datasets.length > 0 || !this.minimized,
-        () => html`
-          <subtree-branchh
-            ?disabled=${this.disabled}
-            slot="subtree"
-            id="datasets"
-          >
-            <span slot="icon" class="material-symbols-outlined">dataset</span>
-          </subtree-branchh>
-        `
+        () => html` <subtree-branchh
+          ?disabled=${this.disabled}
+          slot="subtree"
+          id="datasets"
+          .addElem=${() => this.triggerDatasetDecBuilderForm()}
+        >
+          <span slot="icon" class="material-symbols-outlined">dataset</span>
+          ${map(
+            this.datasets,
+            (dset, i) =>
+              html` ${choose(dset[0], [
+                  [
+                    "Inc",
+                    () => html`
+                      <dataset-incdec-elem
+                        .slot=${"elems"}
+                        .onClose=${() => this.removeDatasetDec(i)}
+                        .data=${dset[1]}
+                        .onEdit=${() => this.triggerEditDatasetDecForm(dset, i)}
+                      ></dataset-incdec-elem>
+                    `,
+                  ],
+                  [
+                    "Anonymous",
+                    () => html`
+                      <dataset-anondec-elem
+                        .slot=${"elems"}
+                        .onClose=${() => this.removeDatasetDec(i)}
+                        .data=${dset[1]}
+                        .onEdit=${() => this.triggerEditDatasetDecForm(dset, i)}
+                      ></dataset-anondec-elem>
+                    `,
+                  ],
+                ])}
+                <div slot="elems"></div>`
+          )}
+        </subtree-branchh>`
       )}
       ${when(
         this.datasets.length > 0 || !this.minimized,
-        () => html`
-          <subtree-branchh
-            ?disabled=${this.disabled}
-            slot="subtree"
-            id="attributes"
-          >
-            <span slot="icon" class="material-symbols-outlined">edit_note</span>
-            ${map(
-              this.attribs,
-              (attrib) =>
-                html` <attrib-dec-elem
-                    .data=${attrib}
-                    slot="elems"
-                  ></attrib-dec-elem>
-                  <div slot="elems"></div>`
-            )}
-          </subtree-branchh>
-        `
+        () => html` <subtree-branchh
+          ?disabled=${this.disabled}
+          slot="subtree"
+          id="attributes"
+          .addElem=${() => this.triggerAttribDecBuilderForm()}
+        >
+          <span slot="icon" class="material-symbols-outlined">edit_note</span>
+          ${map(
+            this.attribs,
+            (attrib, i) =>
+              html` <attrib-dec-elem
+                  .data=${attrib}
+                  slot="elems"
+                  .onClose=${() => this.removeAttribDec(i)}
+                  .onEdit=${() => this.triggerEditAttribDecForm(attrib, i)}
+                ></attrib-dec-elem>
+                <div slot="elems"></div>`
+          )}
+        </subtree-branchh>`
       )}
       ${when(
         this.links.length > 0 || !this.minimized,
@@ -708,8 +787,20 @@ export class GroupSubtree extends LitElement {
             slot="subtree"
             lastBranch=${allBranchesFilled}
             id="links"
+            .addElem=${() => this.triggerLinkDecBuilderForm()}
           >
             <span slot="icon" class="material-symbols-outlined">link</span>
+            ${map(
+              this.links,
+              (link, i) =>
+                html`<link-dec-elem
+                    .data=${link}
+                    slot="elems"
+                    .onClose=${() => this.removeLinkDec(i)}
+                    .onEdit=${() => this.triggerEditLinkDecForm(link, i)}
+                  ></link-dec-elem>
+                  <div slot="elems"></div>`
+            )}
           </subtree-branchh>
         `
       )}
@@ -741,6 +832,11 @@ export class DatasetSubtree extends LitElement {
   @property({ type: Boolean })
   minimized = false;
 
+  @property({ type: Function })
+  removeAttribDec(_: number): void {
+    throw new Error("RemoveAttrib Method not implemented.");
+  }
+
   render() {
     console.log(this.minimized);
     console.log(this.attribs.length);
@@ -757,10 +853,11 @@ export class DatasetSubtree extends LitElement {
           <span slot="icon" class="material-symbols-outlined">edit_note</span>
           ${map(
             this.attribs,
-            (attrib) =>
+            (attrib, i) =>
               html` <attrib-dec-elem
                   .data=${attrib}
                   slot="elems"
+                  .onClose=${() => this.removeAttribDec(i)}
                 ></attrib-dec-elem>
                 <div slot="elems"></div>`
           )}

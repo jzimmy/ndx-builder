@@ -22,6 +22,19 @@ export class TypeElemSkeleton extends LitElement {
   @property({ type: Boolean, reflect: true })
   hideCloseBtn: boolean = false;
 
+  @property({ type: Function })
+  onDelete = (target?: EventTarget) => {
+    throw new Error(`On delete not implemented. ${target}`);
+  };
+
+  @property({ type: Boolean, reflect: true })
+  hideEditBtn: boolean = false;
+
+  @property({ type: Function })
+  onEdit = () => {
+    throw new Error(`On edit not implemented.`);
+  };
+
   @property({ type: Boolean, reflect: true })
   minimize: boolean = true;
 
@@ -30,11 +43,6 @@ export class TypeElemSkeleton extends LitElement {
 
   @state()
   protected subtreeEnabled = false;
-
-  @property({ type: Function })
-  onDelete = (target?: EventTarget) => {
-    throw new Error(`On delete not implemented. ${target}`);
-  };
 
   private _handleMinimize() {
     this.minimize = !this.minimize;
@@ -49,14 +57,19 @@ export class TypeElemSkeleton extends LitElement {
             >${this.minimize ? "expand_content" : "minimize"}</span
           >
           ${when(
+            !this.minimize && !this.hideEditBtn,
+            () => html`
+              <span class="material-symbols-outlined" @click=${this.onEdit}
+                >edit</span
+              >
+            `
+          )}
+          ${when(
             !this.hideCloseBtn,
             () => html`
               <span
                 class="material-symbols-outlined"
-                @click=${(e: Event) => {
-                  this.remove();
-                  this.onDelete(e.target!);
-                }}
+                @click=${(e: Event) => this.onDelete(e.target!)}
                 >close</span
               >
             `
@@ -140,6 +153,14 @@ export class TypeElem extends LitElement {
   @property({ type: Function })
   onToggleMinimize = (_: boolean) => {};
 
+  @property({ type: Boolean, reflect: true })
+  hideEditBtn: boolean = false;
+
+  @property({ type: Function })
+  onEdit = () => {
+    throw new Error(`On edit not implemented.`);
+  };
+
   @query("type-elem-skeleton")
   typeElemSkeleton!: TypeElemSkeleton;
 
@@ -150,8 +171,10 @@ export class TypeElem extends LitElement {
   render() {
     return html`
       <type-elem-skeleton
-        .onDelete=${this.onDelete}
         .hideCloseBtn=${this.hideCloseBtn}
+        .hideEditBtn=${this.hideEditBtn}
+        .onDelete=${this.onDelete}
+        .onEdit=${this.onEdit}
         .onToggleMinimize=${this.onToggleMinimize}
       >
         <div id="body" slot="body">
@@ -284,7 +307,9 @@ export abstract class BasicTypeElem extends LitElement {
   }
 
   @property({ type: Function, reflect: true })
-  onDelete: (target?: EventTarget) => void = () => {};
+  onDelete: (target?: EventTarget) => void = () => {
+    throw new Error(`On delete not implemented.`);
+  };
 
   @query("type-elem")
   typeElem!: TypeElem;
@@ -542,7 +567,7 @@ export class SubtreeBranchh extends LitElement {
 }
 
 @customElement("hidden-subtree")
-class HiddenSubtree extends LitElement {
+export class HiddenSubtree extends LitElement {
   render() {
     return html`
       <div></div>
