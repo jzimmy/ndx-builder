@@ -1,5 +1,5 @@
 // todo implement onDelete for all
-import { css, CSSResultGroup, html, LitElement, TemplateResult } from "lit";
+import { css, CSSResultGroup, html, TemplateResult } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { BasicTypeElem, TypeElem } from "./type-elem";
 import "./type-elem";
@@ -7,10 +7,8 @@ import {
   AnonymousDatasetDec,
   AnonymousGroupTypeDec,
   AttributeDec,
-  DatasetDec,
   DatasetType,
   DatasetTypeDef,
-  GroupDec,
   GroupType,
   GroupTypeDef,
   IncDatasetDec,
@@ -19,7 +17,6 @@ import {
   Quantity,
   Shape,
 } from "./nwb/spec";
-import { symbols } from "./styles";
 import {
   HasDatasetIncType,
   HasDefaultName,
@@ -27,11 +24,11 @@ import {
   HasTypeNameAndDescription,
 } from "./parent";
 import "./forms";
+import "./subtree";
 import { Initializers } from "./nwb/spec-defaults";
 import { when } from "lit-html/directives/when.js";
 import { map } from "lit-html/directives/map.js";
 import { assertNever } from "./HOFS";
-import { choose } from "lit/directives/choose.js";
 
 function quantityOrNameString(qOrS: Quantity | string): string {
   if (typeof qOrS == "string") return qOrS || "None";
@@ -614,258 +611,4 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
       </type-elem>
     `;
   }
-}
-
-/// SUBTREES
-
-@customElement("group-subtree")
-export class GroupSubtree extends LitElement {
-  @property({ type: Boolean })
-  disabled = true;
-
-  @property({ type: Function })
-  triggerAttribDecBuilderForm = () => {};
-  @property({ type: Function })
-  triggerDatasetDecBuilderForm = () => {};
-  @property({ type: Function })
-  triggerGroupDecBuilderForm = () => {};
-  @property({ type: Function })
-  triggerLinkDecBuilderForm = () => {};
-
-  @property()
-  attribs: AttributeDec[] = [];
-  @property()
-  datasets: DatasetDec[] = [];
-  @property()
-  groups: GroupDec[] = [];
-  @property()
-  links: LinkDec[] = [];
-
-  @property({ type: Function })
-  triggerEditLinkDecForm = (_: LinkDec, __: number) => {};
-  @property({ type: Function })
-  triggerEditAttribDecForm = (_: AttributeDec, __: number) => {};
-  @property({ type: Function })
-  triggerEditGroupDecForm = (_: GroupDec, __: number) => {};
-  @property({ type: Function })
-  triggerEditDatasetDecForm = (_: DatasetDec, __: number) => {};
-
-  @property({ type: Function })
-  removeAttribDec(_: number): void {
-    throw new Error("Remove Attrib Method not implemented.");
-  }
-  @property({ type: Function })
-  removeDatasetDec(_: number): void {
-    throw new Error("Remove Dataset Method not implemented.");
-  }
-  @property({ type: Function })
-  removeGroupDec(_: number) {
-    throw new Error("Remove Group Method not implemented.");
-  }
-  @property({ type: Function })
-  removeLinkDec(_: number): void {
-    throw new Error("Remove Link Method not implemented.");
-  }
-
-  @property()
-  minimized = false;
-
-  render() {
-    const allBranchesFilled =
-      (this.attribs.length > 0 &&
-        this.groups.length > 0 &&
-        this.datasets.length > 0 &&
-        this.links.length > 0) ||
-      !this.minimized;
-    return html`
-      ${when(
-        this.groups.length > 0 || !this.minimized,
-        () => html` <subtree-branchh
-          ?disabled=${this.disabled}
-          slot="subtree"
-          id="groups"
-          .addElem=${() => this.triggerGroupDecBuilderForm()}
-        >
-          <span slot="icon" class="material-symbols-outlined">folder</span>
-          ${map(
-            this.groups,
-            (grp, i) => html` ${choose(grp[0], [
-                [
-                  "INC",
-                  () => html`
-                    <group-incdec-elem
-                      .slot=${"elems"}
-                      .onClose=${() => this.removeGroupDec(i)}
-                      .data=${grp[1]}
-                      .onEdit=${() => this.triggerEditGroupDecForm(grp, i)}
-                    ></group-incdec-elem>
-                  `,
-                ],
-                [
-                  "ANONYMOUS",
-                  () => html`
-                    <group-anondec-elem
-                      .slot=${"elems"}
-                      .onClose=${() => this.removeGroupDec(i)}
-                      .data=${grp[1]}
-                      .onEdit=${() => this.triggerEditGroupDecForm(grp, i)}
-                    ></group-anondec-elem>
-                  `,
-                ],
-              ])}
-              <div slot="elems"></div>`
-          )}
-        </subtree-branchh>`
-      )}
-      ${when(
-        this.datasets.length > 0 || !this.minimized,
-        () => html` <subtree-branchh
-          ?disabled=${this.disabled}
-          slot="subtree"
-          id="datasets"
-          .addElem=${() => this.triggerDatasetDecBuilderForm()}
-        >
-          <span slot="icon" class="material-symbols-outlined">dataset</span>
-          ${map(
-            this.datasets,
-            (dset, i) =>
-              html` ${choose(dset[0], [
-                  [
-                    "Inc",
-                    () => html`
-                      <dataset-incdec-elem
-                        .slot=${"elems"}
-                        .onClose=${() => this.removeDatasetDec(i)}
-                        .data=${dset[1]}
-                        .onEdit=${() => this.triggerEditDatasetDecForm(dset, i)}
-                      ></dataset-incdec-elem>
-                    `,
-                  ],
-                  [
-                    "Anonymous",
-                    () => html`
-                      <dataset-anondec-elem
-                        .slot=${"elems"}
-                        .onClose=${() => this.removeDatasetDec(i)}
-                        .data=${dset[1]}
-                        .onEdit=${() => this.triggerEditDatasetDecForm(dset, i)}
-                      ></dataset-anondec-elem>
-                    `,
-                  ],
-                ])}
-                <div slot="elems"></div>`
-          )}
-        </subtree-branchh>`
-      )}
-      ${when(
-        this.datasets.length > 0 || !this.minimized,
-        () => html` <subtree-branchh
-          ?disabled=${this.disabled}
-          slot="subtree"
-          id="attributes"
-          .addElem=${() => this.triggerAttribDecBuilderForm()}
-        >
-          <span slot="icon" class="material-symbols-outlined">edit_note</span>
-          ${map(
-            this.attribs,
-            (attrib, i) =>
-              html` <attrib-dec-elem
-                  .data=${attrib}
-                  slot="elems"
-                  .onClose=${() => this.removeAttribDec(i)}
-                  .onEdit=${() => this.triggerEditAttribDecForm(attrib, i)}
-                ></attrib-dec-elem>
-                <div slot="elems"></div>`
-          )}
-        </subtree-branchh>`
-      )}
-      ${when(
-        this.links.length > 0 || !this.minimized,
-        () => html`
-          <subtree-branchh
-            ?disabled=${this.disabled}
-            slot="subtree"
-            lastBranch=${allBranchesFilled}
-            id="links"
-            .addElem=${() => this.triggerLinkDecBuilderForm()}
-          >
-            <span slot="icon" class="material-symbols-outlined">link</span>
-            ${map(
-              this.links,
-              (link, i) =>
-                html`<link-dec-elem
-                    .data=${link}
-                    slot="elems"
-                    .onClose=${() => this.removeLinkDec(i)}
-                    .onEdit=${() => this.triggerEditLinkDecForm(link, i)}
-                  ></link-dec-elem>
-                  <div slot="elems"></div>`
-            )}
-          </subtree-branchh>
-        `
-      )}
-      ${when(
-        !allBranchesFilled,
-        () => html`<hidden-subtree slot="subtree"></hidden-subtree>`
-      )}
-    `;
-  }
-
-  static styles = [
-    symbols,
-    css`
-      span.material-symbols-outlined {
-        font-size: 30px;
-      }
-    `,
-  ];
-}
-
-@customElement("dataset-subtree")
-export class DatasetSubtree extends LitElement {
-  @property({ type: Boolean })
-  disabled = false;
-
-  @property()
-  attribs: AttributeDec[] = [];
-
-  @property({ type: Boolean })
-  minimized = false;
-
-  @property({ type: Function })
-  removeAttribDec(_: number): void {
-    throw new Error("RemoveAttrib Method not implemented.");
-  }
-
-  render() {
-    console.log(this.minimized);
-    console.log(this.attribs.length);
-    const allBranchesFilled = this.attribs.length > 0 || !this.minimized;
-    return html` ${when(
-      allBranchesFilled,
-      () => html`
-        <subtree-branchh
-          ?disabled=${this.disabled}
-          slot="subtree"
-          id="attributes"
-          .lastBranch=${allBranchesFilled}
-        >
-          <span slot="icon" class="material-symbols-outlined">edit_note</span>
-          ${map(
-            this.attribs,
-            (attrib, i) =>
-              html` <attrib-dec-elem
-                  .data=${attrib}
-                  slot="elems"
-                  .onClose=${() => this.removeAttribDec(i)}
-                ></attrib-dec-elem>
-                <div slot="elems"></div>`
-          )}
-        </subtree-branchh>
-      `,
-      () => html` <hidden-subtree slot="subtree"></hidden-subtree> `
-    )}`;
-  }
-
-  static styles = [symbols, css``];
 }
