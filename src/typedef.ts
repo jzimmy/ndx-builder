@@ -6,8 +6,8 @@ import {
   HasInstanceNameAndDescription,
   HasAxes,
 } from "./parent";
-import { BasicFormPage, NDXBuilderDefaultShowAndFocus } from "./basicform";
-import { CPSForm, FormTrigger, ProgressState } from "./HOFS";
+import { BasicFormPage, NDXBuilderDefaultShowAndFocus } from "./basic-form";
+import { CPSForm, FormTrigger, ProgressState } from "./hofs";
 import { FormStepBar } from "./basic-elems";
 import {
   GroupTypeDef,

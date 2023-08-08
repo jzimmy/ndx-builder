@@ -2,7 +2,7 @@ import { LitElement, html, css, CSSResultGroup, PropertyValueMap } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { map } from "lit/directives/map.js";
-import { ProgressState, dummyProgress } from "./HOFS";
+import { ProgressState, dummyProgress } from "./hofs";
 import { symbols } from "./styles";
 
 export function iconOf(kind: "GROUP" | "DATASET") {

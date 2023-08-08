@@ -1,7 +1,7 @@
 import { LitElement, html, css } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
-import { FormChain, ProgressState } from "./HOFS";
+import { FormChain, ProgressState } from "./hofs";
 import {
   GroupType,
   DatasetType,
@@ -13,6 +13,7 @@ import {
   TypeDef,
   AttributeDec,
   Shape,
+  Quantity,
 } from "./nwb/spec";
 import {
   AxesFormpageElem,
@@ -67,11 +68,15 @@ export interface MaybeHasValue {
   value?: Defaultable<string>;
 }
 
-type AttributeAndShape = {
+export interface HasQuantityOrName {
+  quantityOrName: Quantity | string;
+}
+
+export interface AttributeAndShape {
   att: AttributeDec;
   shape: Shape[];
   dtype: Dtype;
-};
+}
 
 // form manager
 @customElement("form-parent")

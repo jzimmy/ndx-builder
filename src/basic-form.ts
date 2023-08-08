@@ -1,6 +1,6 @@
 import { TemplateResult, html, css, CSSResultGroup, LitElement } from "lit";
 import { state, query, property } from "lit/decorators.js";
-import { CPSForm, ProgressState } from "./HOFS";
+import { CPSForm, ProgressState } from "./hofs";
 import { symbols } from "./styles";
 import { FormStepBar } from "./basic-elems";
 import { styleMap } from "lit/directives/style-map.js";

@@ -1,8 +1,8 @@
 import { customElement, query, state } from "lit/decorators.js";
 import { Namespace } from "./nwb/spec";
-import { CPSForm } from "./HOFS";
+import { CPSForm } from "./hofs";
 import { html } from "lit";
-import { NDXBuilderDefaultShowAndFocus } from "./basicform";
+import { NDXBuilderDefaultShowAndFocus } from "./basic-form";
 import { FormStepBar } from "./basic-elems";
 
 function codegen(ns: Namespace): string {

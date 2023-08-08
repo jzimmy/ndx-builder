@@ -1,4 +1,16 @@
-import { GroupTypeDef, DatasetTypeDef, Namespace, AttributeDec } from "./spec";
+import {
+  GroupTypeDef,
+  DatasetTypeDef,
+  Namespace,
+  AttributeDec,
+  GroupDec,
+  AnonymousGroupTypeDec,
+  LinkDec,
+  DatasetDec,
+  AnonymousDatasetDec,
+  IncGroupDec,
+  IncDatasetDec,
+} from "./spec";
 
 const namespace: Namespace = {
   name: "",
@@ -35,9 +47,59 @@ const attributeDec: AttributeDec = {
   required: false,
 };
 
+const anonymousGroupDec: AnonymousGroupTypeDec = {
+  doc: "",
+  name: "",
+  groups: [],
+  datasets: [],
+  attributes: [],
+  links: [],
+};
+
+const incGroupDec: IncGroupDec = {
+  doc: "",
+  neurodataTypeInc: ["None", null],
+  quantityOrName: "",
+};
+
+const groupDec: GroupDec = ["ANONYMOUS", anonymousGroupDec];
+
+const anonymousDatasetDec: AnonymousDatasetDec = {
+  doc: "",
+  name: "",
+  shape: [],
+  dtype: ["PRIMITIVE", "f32"],
+  attributes: [],
+};
+
+const incDatasetDec: IncDatasetDec = {
+  doc: "",
+  neurodataTypeInc: ["None", null],
+  quantityOrName: "",
+};
+
+const datasetDec: DatasetDec = ["Anonymous", anonymousDatasetDec];
+
+const linkDec: LinkDec = {
+  doc: "",
+  targetType: ["Typedef", datasetTypeDef],
+  quantityOrName: "",
+};
+
 export const Initializers = {
+  namespace: namespace,
+
   groupTypeDef: groupTypeDef,
   datasetTypeDef: datasetTypeDef,
-  namespace: namespace,
+
+  groupDec: groupDec,
+  anonymousGroupDec: anonymousGroupDec,
+  incGroupDec: incGroupDec,
+
+  datasetDec: datasetDec,
+  anonymousDatasetDec: anonymousDatasetDec,
+  incDatasetDec: incDatasetDec,
+
   attributeDec: attributeDec,
+  linkDec: linkDec,
 };

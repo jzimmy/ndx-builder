@@ -1,5 +1,10 @@
 /*
- * Higher Order HTML Forms????
+ * Higher Order Forms
+ * An internal library for creating chained forms with programmable logic
+ *
+ * Uses continuation passing style to allow for backtracking and incrementally building the forms
+ *
+ * See FormChain for the main API
  */
 
 import { LitElement } from "lit";
@@ -29,23 +34,22 @@ export const dummyProgress: ProgressState = {
   currState: 0,
 };
 
+// form trigger, this type is used in other modules
 export type FormTrigger<T> = (
   val: T,
   onAbandon: () => void,
   onComplete: (v: T) => void
 ) => void;
 
+// form trigger with backtracking continuation
+// only appears inside this module
 type FormTriggerK<T> = (
   val: T,
   back: () => void,
   fwd: (v: T, resume: () => void) => void
 ) => void;
 
-/* FormChain<T> is a set of two trigger functions, one that triggers the first
- * form in the chain, and one that triggers the last form.
- *
- * In the case of a chain with only form, both functions will be the same.
- */
+/**** Continuation passing semantics (not part of API) ****/
 
 // combine two triggers into one
 function then<T>(
@@ -57,6 +61,7 @@ function then<T>(
   };
 }
 
+// convert a trigger from type T to a trigger of type U
 function convert<T, U>(
   curr: FormTriggerK<T>,
   to: (v: T) => U,
@@ -66,6 +71,7 @@ function convert<T, U>(
     curr(from(val), back, (vnext, resume) => fwd(to(vnext), resume));
 }
 
+// branch based on a predicate
 function branch<T>(
   test: (v: T) => boolean,
   trueNext: FormTriggerK<T>,
@@ -76,6 +82,7 @@ function branch<T>(
   };
 }
 
+// choose a branch based on a key function
 function choose<T, U>(
   key: (v: T) => U,
   branches: Array<[U, FormTriggerK<T>]>,

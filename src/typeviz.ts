@@ -7,8 +7,10 @@ import {
   AnonymousDatasetDec,
   AnonymousGroupTypeDec,
   AttributeDec,
+  DatasetDec,
   DatasetType,
   DatasetTypeDef,
+  GroupDec,
   GroupType,
   GroupTypeDef,
   IncDatasetDec,
@@ -28,9 +30,9 @@ import "./subtree";
 import { Initializers } from "./nwb/spec-defaults";
 import { when } from "lit-html/directives/when.js";
 import { map } from "lit-html/directives/map.js";
-import { assertNever } from "./HOFS";
+import { assertNever } from "./hofs";
 
-function quantityOrNameString(qOrS: Quantity | string): string {
+export function quantityOrNameString(qOrS: Quantity | string): string {
   if (typeof qOrS == "string") return qOrS || "None";
   let [k, q] = qOrS;
   switch (k) {
@@ -280,11 +282,19 @@ export class AnonGroupDecElem extends BasicTypeElem {
         <group-subtree
           slot="subtree"
           .disabled=${false}
-          .attribs=${this.data.attributes}
           .groups=${this.data.groups}
           .datasets=${this.data.datasets}
+          .attribs=${this.data.attributes}
           .links=${this.data.links}
           .minimized=${this.subtreeMinimize}
+          .setGroupDecs=${(groups: GroupDec[]) =>
+            (this.data = { ...this.data, groups })}
+          .setDatasetDecs=${(datasets: DatasetDec[]) =>
+            (this.data = { ...this.data, datasets })}
+          .setAttributeDecs=${(attributes: AttributeDec[]) =>
+            (this.data = { ...this.data, attributes })}
+          .setLinkDecs=${(links: LinkDec[]) =>
+            (this.data = { ...this.data, links })}
         ></group-subtree>
       </type-elem>
     `;
@@ -377,6 +387,8 @@ export class AnonDatasetDecElem extends BasicTypeElem {
         ></labeled-field-value>
         <dataset-subtree
           .attribs=${this.data.attributes}
+          .setAttributeDecs=${(attributes: AttributeDec[]) =>
+            (this.data = { ...this.data, attributes })}
           .minimized=${this.subtreeMinimize}
           slot="subtree"
         ></dataset-subtree>
@@ -520,10 +532,18 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
         <group-subtree
           .disabled=${false}
           slot="subtree"
-          .attribs=${this.data.attributes}
           .groups=${this.data.groups}
           .datasets=${this.data.datasets}
+          .attribs=${this.data.attributes}
           .links=${this.data.links}
+          .setGroupDecs=${(groups: GroupDec[]) =>
+            (this.data = { ...this.data, groups })}
+          .setDatasetDecs=${(datasets: DatasetDec[]) =>
+            (this.data = { ...this.data, datasets })}
+          .setAttributeDecs=${(attributes: AttributeDec[]) =>
+            (this.data = { ...this.data, attributes })}
+          .setLinkDecs=${(links: LinkDec[]) =>
+            (this.data = { ...this.data, links })}
         ></group-subtree>
       </type-elem>
     `;
@@ -607,6 +627,8 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
           .disabled=${false}
           slot="subtree"
           .attribs=${this.data.attributes}
+          .setAttributeDecs=${(attributes: AttributeDec[]) =>
+            (this.data = { ...this.data, attributes })}
         ></dataset-subtree>
       </type-elem>
     `;

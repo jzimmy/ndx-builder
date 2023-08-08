@@ -1,6 +1,6 @@
 import { TemplateResult, html } from "lit";
-import { CPSForm, ProgressState } from "./HOFS";
-import { BasicFormPage } from "./basicform";
+import { CPSForm, ProgressState } from "./hofs";
+import { BasicFormPage } from "./basic-form";
 import {
   HasInstanceNameAndDescription,
   HasRequired,

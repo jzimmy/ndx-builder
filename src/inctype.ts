@@ -1,6 +1,6 @@
 import { TemplateResult, html, css } from "lit";
 import { query, customElement, property, state } from "lit/decorators.js";
-import { ProgressState, assertNever } from "./HOFS";
+import { ProgressState, assertNever } from "./hofs";
 import {
   HasGroupIncType,
   HasDatasetIncType,
@@ -10,13 +10,15 @@ import {
   //   HasAxes,
 } from "./parent";
 import {
+  AttributeDec,
   DatasetType,
   DatasetTypeDef,
   GroupType,
   GroupTypeDef,
+  LinkDec,
   TypeDef,
 } from "./nwb/spec";
-import { BasicFormPage } from "./basicform";
+import { BasicFormPage } from "./basic-form";
 import { map } from "lit/directives/map.js";
 import { classMap } from "lit/directives/class-map.js";
 import { symbols } from "./styles";
@@ -150,6 +152,24 @@ abstract class InctypeFormpageElem<T> extends BasicFormPage<T> {
   private changeCategory(category: "Core" | "Typedef" | "None") {
     this.category = category;
     if (category != "None") this.selectedType = -1;
+  }
+
+  highlightGroupType(type: GroupType) {
+    switch (type[0]) {
+      case "Core":
+        this.changeCategory("Core");
+        // todo find module and inctype
+        break;
+      case "None":
+        this.changeCategory("None");
+        // todo find module and inctype
+        break;
+      case "Typedef":
+        this.changeCategory("Typedef");
+        break;
+      default:
+        assertNever(type[0]);
+    }
   }
 
   body() {
@@ -384,8 +404,8 @@ export class GroupInctypeFormpageElem extends InctypeFormpageElem<HasGroupIncTyp
     };
   };
 
-  fill(data: HasGroupIncType): void {
-    const [kind, incType] = data.neurodataTypeInc;
+  fill(val: HasGroupIncType): void {
+    const [kind, incType] = val.neurodataTypeInc;
     switch (kind) {
       case "Core":
         incType.neurodataTypeDef;
@@ -423,5 +443,26 @@ export class DatasetInctypeFormpageElem<
         assertNever(kind);
     }
     return this;
+  }
+}
+
+@customElement("target-inctype-browser")
+export class TargetIncTypeFormpageElem extends InctypeFormpageElem<LinkDec> {
+  fill(val: LinkDec, progress?: ProgressState | undefined): void {
+    this.drawProgressBar(progress);
+  }
+  transform(val: LinkDec): LinkDec {
+    const target = ["None", null] as GroupType;
+    switch (this.category) {
+      case "Core":
+        break;
+      case "Typedef":
+        break;
+      case "None":
+        break;
+      default:
+        assertNever(this.category);
+    }
+    return { ...val, targetType: target };
   }
 }
