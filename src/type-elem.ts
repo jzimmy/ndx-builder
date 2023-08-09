@@ -474,7 +474,7 @@ export class TypeHeader extends LitElement {
     css`
       :host {
         display: block;
-        border: 1px solid red;
+        // border: 1px solid red;
       }
 
       span.material-symbols-outlined {

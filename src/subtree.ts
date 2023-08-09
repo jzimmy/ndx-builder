@@ -233,8 +233,9 @@ export class GroupSubtree extends LitElement {
 
   @property()
   minimized = false;
+  typedef = false;
 
-  renderSubtree() {
+  render() {
     const allBranchesFilled =
       (this.attribs.length > 0 &&
         this.groups.length > 0 &&

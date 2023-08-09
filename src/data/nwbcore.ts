@@ -5,7 +5,7 @@ import * as Spec from "../nwb/spec";
  * Do not edit.
  */
 
-type CoreTypeId = ["GROUP" | "DATASET", string];
+export type CoreTypeId = ["GROUP" | "DATASET", string];
 export function coreQuery(id: string): Spec.CoreType {
   const catalog: { [keyof: string]: Spec.CoreType } = {
     ImagingRetinotopy: [

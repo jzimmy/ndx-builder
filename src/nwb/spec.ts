@@ -209,6 +209,7 @@ export type AnonymousDatasetDec = {
   attributes: AttributeDec[];
 };
 
+// TODO move Dtype into data
 export type AttributeDec = {
   name: string;
   doc: string;

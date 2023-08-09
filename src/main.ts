@@ -30,7 +30,7 @@ export class NdxMain extends LitElement {
 
   render() {
     return html` <h1>
-        Create Extended NWB Types<a href="">New to NWB extensions?</a>
+        Some NDX AST Visual Elements
       </h1>
           <link-dec-elem></link-dec-elem>
           <attrib-dec-elem></attrib-dec-elem>
@@ -38,6 +38,7 @@ export class NdxMain extends LitElement {
           <group-incdec-elem></group-incdec-elem>
           <dataset-anondec-elem></dataset-anondec-elem>
           <dataset-incdec-elem></dataset-incdec-elem>
+          <dataset-def-elem></dataset-def-elem>
           <div>
             ${
               this.myTypes.length > 0

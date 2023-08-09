@@ -19,6 +19,7 @@ import {
 } from "./nwb/spec";
 import { Initializers } from "./nwb/spec-defaults";
 import { map } from "lit/directives/map.js";
+import "./subtree";
 
 @customElement("tydef-form")
 export class TypenameFormpageElem<

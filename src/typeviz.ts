@@ -25,7 +25,7 @@ import {
   HasGroupIncType,
   HasTypeNameAndDescription,
 } from "./parent";
-import "./forms";
+import "./forminputs";
 import "./subtree";
 import { Initializers } from "./nwb/spec-defaults";
 import { when } from "lit-html/directives/when.js";
@@ -107,7 +107,7 @@ export class LinkDecElem extends BasicTypeElem {
 @customElement("attrib-dec-elem")
 export class AttribDecElem extends BasicTypeElem {
   data: AttributeDec = {
-    name: "MyAttributeNmae",
+    name: "MyAttributeName",
     doc: "This is a description of my attribute it measures temperature",
     required: false,
     dtype: ["PRIMITIVE", "f32"],
@@ -570,7 +570,7 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
     doc: "This is some description asdlkjfsd;lfa;lkj asd;fjda;lsfkj a;lsdfj a;dlskfj ;aldsfj fd;laksfj a;sdlfj ;adslfj asdl;j fds;lkjfd sal;lfapiudifhpqirq;kjgf e8yg;d dzk;fhfasohglakjgrflahjsfgois fsd fhglkafdg p",
     attributes: [
       {
-        name: "MyAttributeNmae",
+        name: "MyAttributeName",
         doc: "This is a description of my attribute it measures temperature",
         required: false,
         dtype: ["PRIMITIVE", "f32"],
