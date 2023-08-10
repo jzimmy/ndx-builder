@@ -163,10 +163,6 @@ export class AttribDecElem extends BasicTypeElem {
               ></labeled-boolean-field>
             `
           : html`
-              <!-- <div slot="properties" class="fieldlabel">Axes</div>
-              <div slot="properties" class="fieldvalue">
-                ${renderShape(shape)}
-              </div> -->
               <shape-viz
                 slot="properties"
                 .label=${"Axes"}
@@ -174,14 +170,6 @@ export class AttribDecElem extends BasicTypeElem {
               ></shape-viz>
               <div slot="properties" class="fieldlabel">Data Type</div>
             `}
-        <!-- <div class="checkwrapper" slot="options">
-          <input
-            type="checkbox"
-            ?checked=${this.data.required}
-            style="pointer-events: none; focus: none;"
-          />
-          <div class="fieldlabel">Attribute required</div>
-        </div> -->
         <labeled-boolean-field
           slot="options"
           .checked=${this.data.required}

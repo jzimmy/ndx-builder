@@ -4,6 +4,7 @@ import "./type-elem";
 import "./typeviz";
 import "./basic-elems";
 import "./playground";
+import "./forminputs";
 import { choose } from "lit/directives/choose.js";
 import { DatasetTypeDefElem, GroupTypeDefElem } from "./typeviz";
 
@@ -32,6 +33,7 @@ export class NdxMain extends LitElement {
     return html` <h1>
         Some NDX AST Visual Elements
       </h1>
+          <input-tests-wrapper></input-tests-wrapper>
           <link-dec-elem></link-dec-elem>
           <attrib-dec-elem></attrib-dec-elem>
           <group-anondec-elem></group-anondec-elem>

@@ -21,6 +21,7 @@ abstract class ButtonElem extends LitElement {
   static styles = css`
     :host {
       padding: 0.1em;
+      user-select: no-select;
     }
 
     button {
@@ -36,6 +37,10 @@ abstract class ButtonElem extends LitElement {
     button:focus {
       box-shadow: 0 0 0 3px var(--color-background-alt),
         0 0 0 5px var(--clickable);
+    }
+
+    button:disabled {
+      pointer-events: none;
     }
   ` as CSSResultGroup;
 }
@@ -296,40 +301,4 @@ export class ContinueBar extends LitElement {
       }
     `,
   ];
-}
-
-interface WithValueAndFocus {
-  value: string;
-  focus: () => void;
-}
-
-abstract class NdxInputElem extends LitElement {
-  @property({ type: Boolean, reflect: true })
-  active = false;
-
-  @property({ type: Function, reflect: true })
-  validateInput: (s: string) => ["OK", string] | ["ERR", string] = (s) => [
-    "OK",
-    s,
-  ];
-
-  abstract input: WithValueAndFocus;
-  abstract errorMessage: string;
-
-  protected firstUpdated(
-    _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
-  ): void {
-    super.firstUpdated(_changedProperties);
-    this.addEventListener("click", () => {
-      this.active = !this.active;
-      this.input.focus();
-    });
-  }
-
-  get value(): string | null {
-    const [status, res] = this.validateInput(this.input.value);
-    if (status == "OK") return res;
-    this.errorMessage = res;
-    return null;
-  }
 }

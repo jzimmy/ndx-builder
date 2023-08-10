@@ -1,3 +1,6 @@
+/***
+ * All the logic for the app is in here, this is where the forms are glued together
+ */
 import { LitElement } from "lit";
 import { AttribInfoFormpageElem, AttribValueFormpageElem } from "./attrib";
 import { CodegenFormpageElem } from "./codegen";
