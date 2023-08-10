@@ -20,7 +20,7 @@ export abstract class BasicFormPage<T> extends CPSForm<T> {
   private ready: boolean = false;
   abstract isValid(): boolean;
   abstract body(): TemplateResult<1>;
-  abstract get firstInput(): HTMLElement;
+  abstract get firstInput(): HTMLElement | undefined;
 
   hideQuit: boolean = false;
 

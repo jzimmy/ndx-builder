@@ -4,6 +4,8 @@ import { classMap } from "lit/directives/class-map.js";
 import { map } from "lit/directives/map.js";
 import { ProgressState, dummyProgress } from "./hofs";
 import { symbols } from "./styles";
+import { when } from "lit/directives/when.js";
+import { styleMap } from "lit/directives/style-map.js";
 
 export function iconOf(kind: "GROUP" | "DATASET") {
   if (kind == "GROUP") return "folder";
@@ -24,6 +26,11 @@ abstract class ButtonElem extends LitElement {
       user-select: no-select;
     }
 
+    :host([disabled]) {
+      pointer-events: none;
+      user-select: no-select;
+    }
+
     button {
       all: unset;
       padding: 0.3em 1em;
@@ -41,6 +48,10 @@ abstract class ButtonElem extends LitElement {
 
     button:disabled {
       pointer-events: none;
+    }
+
+    ::slotted(*) {
+      user-select: no-select;
     }
   ` as CSSResultGroup;
 }
@@ -70,6 +81,7 @@ export class LightButton extends ButtonElem {
         color: var(--clickable-hover);
         border: 2px solid var(--clickable-hover);
       }
+
       button:not(:disabled):hover {
         background: var(--background-light-hover);
       }
@@ -173,40 +185,58 @@ export class FormStepBar extends LitElement {
     return html` <span class="material-icons-outlined"></span>
       ${map(this.steps, (step, i) => {
         return html`<h3
-          class=${classMap({
-            active: i == this.currStep,
-            completed: i < this.currStep,
-          })}
-        >
-          ${step}
-        </h3>`;
+            class=${classMap({
+              active: i == this.currStep,
+              completed: i < this.currStep,
+            })}
+          >
+            ${step}
+          </h3>
+          ${when(
+            i + 1 < this.steps.length,
+            () => html`
+              <span
+                style=${styleMap({
+                  color:
+                    i == this.currStep
+                      ? "var(--clickable)"
+                      : "var(--color-border-alt)",
+                })}
+                class="material-symbols-outlined"
+                >arrow_forward_ios</span
+              >
+            `
+          )} `;
       })}`;
   }
 
-  static styles = css`
-    :host {
-      display: flex;
-      flex-direction: row;
-    }
+  static styles = [
+    symbols,
+    css`
+      :host {
+        display: flex;
+        flex-direction: row;
+      }
 
-    :host[hidden] {
-      display: none;
-    }
+      :host[hidden] {
+        display: none;
+      }
 
-    h3 {
-      margin: 0;
-      padding: 0 1em;
-    }
+      h3 {
+        margin: 0;
+        padding: 0 1em;
+      }
 
-    h3:not(.completed):not(.active) {
-      opacity: 0.5;
-    }
+      h3:not(.completed):not(.active) {
+        opacity: 0.5;
+      }
 
-    h3.active {
-      // color: var(--clickable);
-      text-decoration: underline;
-    }
-  `;
+      h3.active {
+        // color: var(--clickable);
+        text-decoration: underline;
+      }
+    `,
+  ];
 }
 
 @customElement("back-or-quit-bar")

@@ -30,7 +30,7 @@ import "./subtree";
 import { Initializers } from "./nwb/spec-defaults";
 import { when } from "lit-html/directives/when.js";
 import { map } from "lit-html/directives/map.js";
-import { assertNever } from "./hofs";
+import { assertNever, Trigger } from "./hofs";
 
 export function quantityOrNameString(qOrS: Quantity | string): string {
   if (typeof qOrS == "string") return qOrS || "None";
@@ -466,6 +466,16 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
     return this.data;
   }
 
+  @property({ type: Function })
+  triggerAttribDecBuilderForm: Trigger<AttributeDec> = (_v, _a, _c) => {};
+  @property({ type: Function })
+  triggerDatasetDecBuilderForm: Trigger<DatasetDec> = (_v, _a, _c) => {};
+  @property({ type: Function })
+  triggerGroupDecBuilderForm: Trigger<GroupDec> = (_v, _a, _c) => {};
+  @property({ type: Function })
+  triggerLinkDecBuilderForm: Trigger<LinkDec> = (_v, _a, _c) => {};
+
+  @property()
   data: GroupTypeDef = {
     neurodataTypeDef: "Example",
     neurodataTypeInc: [
@@ -485,7 +495,7 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
       },
     ],
     links: [],
-    // name: ["MyInstance", true],
+    name: ["MyInstance", true],
   };
 
   incTypeName = this.data.neurodataTypeInc[1]!.neurodataTypeDef;
@@ -532,6 +542,10 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
             (this.data = { ...this.data, attributes })}
           .setLinkDecs=${(links: LinkDec[]) =>
             (this.data = { ...this.data, links })}
+          .triggerAttribDecBuilderForm=${this.triggerAttribDecBuilderForm}
+          .triggerLinkDecBuilderForm=${this.triggerLinkDecBuilderForm}
+          .triggerGroupDecBuilderForm=${this.triggerGroupDecBuilderForm}
+          .triggerDatasetDecBuilderForm=${this.triggerDatasetDecBuilderForm}
         ></group-subtree>
       </type-elem>
     `;

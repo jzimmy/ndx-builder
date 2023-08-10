@@ -10,6 +10,7 @@ import {
   Dtype,
   GroupType,
   GroupTypeDef,
+  PrimitiveDtype,
   Quantity,
   Shape,
 } from "./nwb/spec";
@@ -80,10 +81,10 @@ export class RadioInputWrapper extends NdxInputElem<string> {
       }
 
       div {
-        margin: 0 0.5em;
+        // margin: 0 0.5em;
         padding: 0.5em;
-        border-radius: 0.3em;
-        border: 2px solid var(--color-border-alt);
+        // border-radius: 0.3em;
+        border-bottom: 2px solid var(--color-border-alt);
         transition: 0.2s;
         cursor: pointer;
         font-size: 1.2em;
@@ -92,9 +93,13 @@ export class RadioInputWrapper extends NdxInputElem<string> {
 
       div:hover,
       div:focus {
-        border-color: var(--clickable-hover);
-        color: var(--clickable-hover);
-        padding: 0.5em 0.7em;
+        padding: 0.5em 1em;
+      }
+
+      div:not(.selected):hover,
+      div:not(.selected):focus {
+        border-color: var(--color-border);
+        color: var(--color-border);
       }
 
       .selected {
@@ -269,17 +274,16 @@ export class ShapeInput extends NdxInputElem<Shape[]> {
               <div class="toprow">
                 Axis Label
                 <div class="addremove">
-                  <light-button .disabled=${shape.length <= 1}>
-                    <span
-                      class="material-symbols-outlined"
-                      @click=${() =>
-                        (this.shapes = [
-                          ...this.shapes.slice(0, i),
-                          shape.slice(0, -1),
-                          ...this.shapes.slice(i + 1),
-                        ])}
-                      >remove</span
-                    >
+                  <light-button
+                    .disabled=${shape.length <= 1}
+                    @click=${() =>
+                      (this.shapes = [
+                        ...this.shapes.slice(0, i),
+                        shape.slice(0, -1),
+                        ...this.shapes.slice(i + 1),
+                      ])}
+                  >
+                    <span class="material-symbols-outlined">remove</span>
                   </light-button>
                   <light-button>
                     <span
@@ -352,11 +356,6 @@ export class ShapeInput extends NdxInputElem<Shape[]> {
         width: 6em;
       }
 
-      .addremove {
-        margin-left: auto;
-        display: flex;
-      }
-
       .or-bar {
         margin: 0.5em 0;
         display: flex;
@@ -368,6 +367,10 @@ export class ShapeInput extends NdxInputElem<Shape[]> {
         margin-right: 0.5em;
       }
 
+      .addremove {
+        margin-left: auto;
+        display: flex;
+      }
       .addremove light-button,
       .or-bar light-button {
         font-size: 0.1em;
@@ -486,6 +489,11 @@ export class ShapeOrScalarInput extends NdxInputElem<
 
 @customElement("checkbox-input")
 export class CheckboxInput extends NdxInputElem<boolean> {
+  constructor() {
+    super();
+    this.addEventListener("click", () => (this.checked = !this.checked));
+  }
+
   fill(val: boolean): void {
     this.checkboxInput.checked = val;
   }
@@ -493,6 +501,7 @@ export class CheckboxInput extends NdxInputElem<boolean> {
   value(): boolean {
     return this.checkboxInput.checked;
   }
+
   clear(): void {
     this.checkboxInput.checked = this.default;
   }
@@ -503,6 +512,9 @@ export class CheckboxInput extends NdxInputElem<boolean> {
   @property()
   label: string = "";
 
+  @property({ reflect: true, type: Boolean })
+  checked: boolean = true;
+
   @property()
   default: boolean = false;
 
@@ -510,19 +522,63 @@ export class CheckboxInput extends NdxInputElem<boolean> {
 
   render() {
     return html`
-      <input type="checkbox" .value=${this.default} />
-      <div>${this.label}</div>
+      <!-- <input type="checkbox" .value=${this.default} /> -->
+      <div class=${classMap({ checked: this.checked, checkbox: true })}>
+        <span class="material-symbols-outlined">done</span>
+      </div>
+      <div class="label">${this.label}</div>
     `;
   }
 
   static styles = [
+    symbols,
     css`
       :host {
         display: flex;
         align-items: center;
+        cursor: pointer;
+        user-select: none;
       }
 
-      div {
+      * {
+        transition: 0.2s;
+      }
+
+      :host(:not([checked])) span.material-symbols-outlined {
+        display: none;
+      }
+
+      span.material-symbols-outlined {
+        top: 50%;
+        left: 50%;
+        position: absolute;
+        font-size: 18px;
+        transform: translate(-50%, -50%) scale(1.2);
+        color: var(--clickable-hover);
+      }
+
+      .checkbox {
+        // padding: 0.1em 0.3em;
+        // padding: 0 0.2em;
+        border-radius: 0.2em;
+        border: 1px solid var(--color-border-alt);
+        position: relative;
+        height: 18px;
+        width: 18px;
+        background: var(--color-background);
+      }
+
+      .checkbox:not(.checked):hover {
+        background: var(--background-light-button);
+        border-color: var(--clickable);
+      }
+
+      .checkbox.checked {
+        background: var(--background-light-button);
+        border: 2px solid var(--clickable);
+      }
+
+      .label {
         margin-left: 0.5em;
       }
     `,
@@ -533,54 +589,74 @@ export class CheckboxInput extends NdxInputElem<boolean> {
 export class DtypeInput extends NdxInputElem<Dtype> {
   firstElement?: HTMLElement | undefined;
   fill(val: Dtype): void {
-    throw new Error("Method not implemented.");
-  }
-  value(): Dtype | null {
-    throw new Error("Method not implemented.");
-  }
-  clear(): void {
-    throw new Error("Method not implemented.");
+    this.dtypeOption = val[0] == "PRIMITIVE" ? 0 : 1;
+    if (val[0] == "PRIMITIVE") {
+      this.dtypeOption = 0;
+      this.primitive = val[1];
+      this.dtypeOption = 1;
+    } else if (val[0] == "COMPOUND" && val[1].length > 0) {
+      this.compoundType = val[1];
+    }
   }
 
-  primitiveOptions(): TemplateResult<1> {
+  value(): Dtype | null {
+    if (!this.isValid()) return null;
+    if (this.dtypeOption == 0) {
+      return ["PRIMITIVE", this.primitive];
+    } else {
+      return ["COMPOUND", this.compoundType];
+    }
+  }
+
+  clear(): void {
+    this.dtypeOption = 0;
+    this.compoundType = [{ name: "", dtype: ["PRIMITIVE", "Any"], doc: "" }];
+    this.primitive = "Any";
+  }
+
+  primitiveOptions(selected: string = ""): TemplateResult<1> {
     return html`
-      <option value="i8">int8</option>
-      <option value="i6">int16</option>
-      <option value="i32">int32</option>
-      <option value="i64">int64</option>
-      <option value="u8">uint8</option>
-      <option value="u16">uint16</option>
-      <option value="u32">uint32</option>
-      <option value="u64">uint64</option>
-      <option value="f32">float32</option>
-      <option value="f64">float64</option>
-      <option value="Bool">bool</option>
-      <option value="Ascii">ascii</option>
-      <option value="Text">Text</option>
-      <option value="IsoDatetime">ISO Datetime</option>
-      <option value="Numeric">Numeric</option>
-      <option value="Any">Any</option>
+      <option value="i8" ?selected=${selected == "i8"}>int8</option>
+      <option value="i6" ?selected=${selected == "i16"}>int16</option>
+      <option value="i32" ?selected=${selected == "i32"}>int32</option>
+      <option value="i64" ?selected=${selected == "i64"}>int64</option>
+      <option value="u8" ?selected=${selected == "u8"}>uint8</option>
+      <option value="u16" ?selected=${selected == "u16"}>uint16</option>
+      <option value="u32" ?selected=${selected == "u32"}>uint32</option>
+      <option value="u64" ?selected=${selected == "u64"}>uint64</option>
+      <option value="f32" ?selected=${selected == "f32"}>float32</option>
+      <option value="f64" ?selected=${selected == "f64"}>float64</option>
+      <option value="Bool" ?selected=${selected == "Bool"}>bool</option>
+      <option value="Ascii" ?selected=${selected == "Ascii"}>ascii</option>
+      <option value="Text" ?selected=${selected == "Text"}>Text</option>
+      <option value="IsoDatetime" ?selected=${selected == "IsoDateTime"}>
+        ISO Datetime
+      </option>
+      <option value="Numeric" ?selected=${selected == "Numeric"}>
+        Numeric
+      </option>
+      <option value="Any" ?selected=${selected == "Any"}>Any</option>
     `;
   }
 
   dtypeOptions = ["Primitive", "Compound"];
+  primitive: PrimitiveDtype = "Any";
+
   @state()
-  dtypeOption = -1;
+  dtypeOption = 0;
 
-  dtype: Dtype = ["PRIMITIVE", "i8"];
-
+  @state()
   compoundType: CompoundDtype[] = [
-    { name: "", dtype: ["PRIMITIVE", "i8"], doc: "" },
+    { name: "", dtype: ["PRIMITIVE", "Any"], doc: "" },
   ];
 
   render() {
     return html`
       <radio-input
+        .selected=${0}
         .options=${this.dtypeOptions}
         .onSelect=${(i: number) => {
           this.dtypeOption = i;
-          this.dtype =
-            i == 0 ? ["PRIMITIVE", "i8"] : ["COMPOUND", this.compoundType];
         }}
       ></radio-input>
 
@@ -589,7 +665,7 @@ export class DtypeInput extends NdxInputElem<Dtype> {
           "Primitive",
           () => html`
             <select>
-              ${this.primitiveOptions()}
+              ${this.primitiveOptions(this.primitive)}
             </select>
           `,
         ],
@@ -597,10 +673,20 @@ export class DtypeInput extends NdxInputElem<Dtype> {
           "Compound",
           () => html`
             <div class="addremove">
-              <light-button>
+              <light-button
+                .disabled=${this.compoundType.length <= 1}
+                @click=${() =>
+                  (this.compoundType = [...this.compoundType.slice(0, -1)])}
+              >
                 <span class="material-symbols-outlined">remove</span>
               </light-button>
-              <light-button>
+              <light-button
+                @click=${() =>
+                  (this.compoundType = [
+                    ...this.compoundType,
+                    { name: "", doc: "", dtype: ["PRIMITIVE", "Any"] },
+                  ])}
+              >
                 <span class="material-symbols-outlined">add</span>
               </light-button>
             </div>
@@ -615,7 +701,9 @@ export class DtypeInput extends NdxInputElem<Dtype> {
                   <input type="text" value=${name} />
                   <input type="text" value=${doc} />
                   <select>
-                    ${this.primitiveOptions()}
+                    ${this.primitiveOptions(
+                      dtype[0] == "PRIMITIVE" ? dtype[1] : ""
+                    )}
                   </select>
                 `
               )}
@@ -630,7 +718,19 @@ export class DtypeInput extends NdxInputElem<Dtype> {
     css`
       .compound-wrapper {
         display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-columns: 1fr 2fr 1fr;
+      }
+
+      .addremove {
+        margin-left: auto;
+        display: flex;
+      }
+      .addremove light-button {
+        font-size: 0.1em;
+        margin: 0 2em;
+      }
+      .addremove span.material-symbols-outlined {
+        font-size: 20px;
       }
     `,
   ];

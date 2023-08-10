@@ -52,10 +52,7 @@ type TriggerK<T> = (
 /**** Continuation passing semantics (not part of API) ****/
 
 // combine two triggers into one
-function then<T>(
-  curr: TriggerK<T>,
-  next: TriggerK<T>
-): TriggerK<T> {
+function then<T>(curr: TriggerK<T>, next: TriggerK<T>): TriggerK<T> {
   return (val, back, fwd) => {
     curr(val, back, (vnext, resume) => next(vnext, resume, fwd));
   };
@@ -174,7 +171,7 @@ export abstract class CPSForm<T>
 }
 
 // controls the visuals of a generic CPSForm
-interface CPSFormController {
+export interface CPSFormController {
   clearAndHide(): void;
   showAndFocus(visible: boolean): void;
   onQuit: () => void;
@@ -258,7 +255,7 @@ export class FormChain<T> {
   withParent(parent: HTMLElement): Trigger<T> {
     return (val: T, abandon: () => void, complete: (v: T) => void) => {
       const quitFn = () => {
-        this.mapElems((f) => f.clearAndHide());
+        // this.mapElems((f) => f.clearAndHide());
         this.mapElems((f) => parent.removeChild(f));
         this.mapElems((f) => (f.onQuit = () => {}));
         abandon();
@@ -269,7 +266,7 @@ export class FormChain<T> {
 
       const triggerForm = () => {
         this.trigger(val, quitFn, (v, _) => {
-          this.mapElems((f) => f.clearAndHide());
+          //   this.mapElems((f) => f.clearAndHide());
           this.mapElems((f) => parent.removeChild(f));
           complete(v);
         });

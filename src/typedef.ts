@@ -282,60 +282,60 @@ abstract class VizForm<T> extends CPSForm<T> {
   }
 }
 
-@customElement("groupdef-viz")
-export class GroupDefVizForm extends VizForm<GroupTypeDef> {
-  @query("input[name=add-group]")
-  firstInput!: HTMLInputElement;
+// @customElement("groupdef-viz")
+// export class GroupDefVizForm extends VizForm<GroupTypeDef> {
+//   @query("input[name=add-group]")
+//   firstInput!: HTMLInputElement;
 
-  @property()
-  groups: GroupDec[] = [];
-  @property()
-  datasets: DatasetDec[] = [];
-  @property()
-  attribs: AttributeDec[] = [];
-  @property()
-  links: LinkDec[] = [];
+//   @property()
+//   groups: GroupDec[] = [];
+//   @property()
+//   datasets: DatasetDec[] = [];
+//   @property()
+//   attribs: AttributeDec[] = [];
+//   @property()
+//   links: LinkDec[] = [];
 
-  triggerAttributeForm: () => void;
-  constructor(attributeBuilderForm: Trigger<AttributeDec>) {
-    super();
-    this.triggerAttributeForm = () => {
-      this.showAndFocus(false);
-      attributeBuilderForm(
-        Initializers.attributeDec,
-        () => {
-          this.showAndFocus(true);
-        },
-        (value) => {
-          this.showAndFocus(true);
-          this.attribs = [...this.attribs, value];
-        }
-      );
-    };
-  }
+//   triggerAttributeForm: () => void;
+//   constructor(attributeBuilderForm: Trigger<AttributeDec>) {
+//     super();
+//     this.triggerAttributeForm = () => {
+//       this.showAndFocus(false);
+//       attributeBuilderForm(
+//         Initializers.attributeDec,
+//         () => {
+//           this.showAndFocus(true);
+//         },
+//         (value) => {
+//           this.showAndFocus(true);
+//           this.attribs = [...this.attribs, value];
+//         }
+//       );
+//     };
+//   }
 
-  transform = (data: GroupTypeDef) => {
-    return data;
-  };
+//   transform = (data: GroupTypeDef) => {
+//     return data;
+//   };
 
-  body() {
-    return html`
-      <input type="button" name="add-group" value="Add Group" />
-      <input type="button" name="add-dataset" value="Add Dataset" />
-      <input
-        type="button"
-        name="add-attrib"
-        value="Add Attribute"
-        @click=${this.triggerAttributeForm}
-      />
-      <input type="button" name="add-link" value="Add Link" />
-      ${map([this.groups], (x) => html`${JSON.stringify(x)}`)}
-      ${map([this.datasets], (x) => html`${JSON.stringify(x)}`)}
-      ${map([this.attribs], (x) => html`${JSON.stringify(x)}`)}
-      ${map([this.links], (x) => html`${JSON.stringify(x)}`)}
-    `;
-  }
-}
+//   body() {
+//     return html`
+//       <input type="button" name="add-group" value="Add Group" />
+//       <input type="button" name="add-dataset" value="Add Dataset" />
+//       <input
+//         type="button"
+//         name="add-attrib"
+//         value="Add Attribute"
+//         @click=${this.triggerAttributeForm}
+//       />
+//       <input type="button" name="add-link" value="Add Link" />
+//       ${map([this.groups], (x) => html`${JSON.stringify(x)}`)}
+//       ${map([this.datasets], (x) => html`${JSON.stringify(x)}`)}
+//       ${map([this.attribs], (x) => html`${JSON.stringify(x)}`)}
+//       ${map([this.links], (x) => html`${JSON.stringify(x)}`)}
+//     `;
+//   }
+// }
 
 @customElement("datasetdef-viz")
 export class DatasetDefVizForm extends VizForm<DatasetTypeDef> {

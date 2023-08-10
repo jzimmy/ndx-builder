@@ -15,12 +15,7 @@ import {
   Shape,
   Quantity,
 } from "./nwb/spec";
-import {
-  AxesForm,
-  DatasetDefVizForm,
-  GroupDefVizForm,
-  TypenameForm,
-} from "./typedef";
+import { AxesForm, DatasetDefVizForm, TypenameForm } from "./typedef";
 import {
   NamespaceMetadataForm,
   NamespaceStartForm,
@@ -32,6 +27,7 @@ import { AttribInfoForm, AttribValueForm } from "./attrib";
 import "./basic-elems";
 import { symbols } from "./styles";
 import { GenericInctypeForm } from "./inctype";
+import { GroupTypeVizForm } from "./typeviz-form";
 
 export interface HasGroupIncType {
   neurodataTypeInc: GroupType;
@@ -142,7 +138,7 @@ export class NdxFormParent extends LitElement {
       new TypenameForm(),
       grpSteps,
       1
-    ).then(new GroupDefVizForm(attributeBuilderForm), grpSteps, 3);
+    ).then(new GroupTypeVizForm(attributeBuilderForm), grpSteps, 3);
 
     let datasetBuilderForm = new FormChain<DatasetTypeDef>(
       new TypenameForm(),

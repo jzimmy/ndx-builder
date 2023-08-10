@@ -24,14 +24,10 @@ import {
   LinkDec,
   GroupDec,
 } from "./nwb/spec";
-import {
-  AxesForm,
-  TypenameForm,
-  GroupDefVizForm,
-  DatasetDefVizForm,
-} from "./typedef";
+import { AxesForm, TypenameForm, DatasetDefVizForm } from "./typedef";
 import { AttributeAndShape } from "./parent";
 import { Initializers } from "./nwb/spec-defaults";
+import { GroupTypevizForm } from "./typeviz-form";
 
 const namespaceBuilderSteps = [
   "Add custom types",
@@ -120,7 +116,7 @@ export function buildFormChains(parent: LitElement) {
     groupTypeDefBuilderSteps,
     1
   ).then(
-    new GroupDefVizForm(attributeBuilderTrigger),
+    new GroupTypevizForm(attributeBuilderTrigger),
     groupTypeDefBuilderSteps,
     3
   );

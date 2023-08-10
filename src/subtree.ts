@@ -205,32 +205,6 @@ export class GroupSubtree extends LitElement {
   @property({ type: Function })
   triggerLinkDecBuilderForm: Trigger<LinkDec> = (_v, _a, _c) => {};
 
-  //   @property({ type: Function })
-  //   triggerEditLinkDecForm = (_: LinkDec, __: number) => {};
-  //   @property({ type: Function })
-  //   triggerEditAttribDecForm = (_: AttributeDec, __: number) => {};
-  //   @property({ type: Function })
-  //   triggerEditGroupDecForm = (_: GroupDec, __: number) => {};
-  //   @property({ type: Function })
-  //   triggerEditDatasetDecForm = (_: DatasetDec, __: number) => {};
-
-  //   @property({ type: Function })
-  //   removeAttribDec(_: number): void {
-  //     throw new Error("Remove Attrib Method not implemented.");
-  //   }
-  //   @property({ type: Function })
-  //   removeDatasetDec(_: number): void {
-  //     throw new Error("Remove Dataset Method not implemented.");
-  //   }
-  //   @property({ type: Function })
-  //   removeGroupDec(_: number) {
-  //     throw new Error("Remove Group Method not implemented.");
-  //   }
-  //   @property({ type: Function })
-  //   removeLinkDec(_: number): void {
-  //     throw new Error("Remove Link Method not implemented.");
-  //   }
-
   @property()
   minimized = false;
   typedef = false;
