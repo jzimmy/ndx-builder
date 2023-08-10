@@ -16,22 +16,22 @@ import {
   Quantity,
 } from "./nwb/spec";
 import {
-  AxesFormpageElem,
-  DatasetDefVizFormpageElem,
-  GroupDefVizFormpageElem,
-  TypenameFormpageElem,
+  AxesForm,
+  DatasetDefVizForm,
+  GroupDefVizForm,
+  TypenameForm,
 } from "./typedef";
 import {
-  NamespaceMetadataFormpageElem,
-  NamespaceStartFormpageElem,
-  NamespaceTypesFormpageElem,
+  NamespaceMetadataForm,
+  NamespaceStartForm,
+  NamespaceTypesForm,
 } from "./namespace";
 import { Initializers } from "./nwb/spec-defaults";
-import { CodegenFormpageElem } from "./codegen";
-import { AttribInfoFormpageElem, AttribValueFormpageElem } from "./attrib";
+import { CodegenForm } from "./codegen";
+import { AttribInfoForm, AttribValueForm } from "./attrib";
 import "./basic-elems";
 import { symbols } from "./styles";
-import { GenericInctypeFormpageElem } from "./inctype";
+import { GenericInctypeForm } from "./inctype";
 
 export interface HasGroupIncType {
   neurodataTypeInc: GroupType;
@@ -112,14 +112,14 @@ export class NdxFormParent extends LitElement {
     ];
 
     let attributeBuilderForm = new FormChain<AttributeDec>(
-      new AttribInfoFormpageElem(),
+      new AttribInfoForm(),
       attbSteps,
       0
     )
       .branch(
         (v: AttributeDec) => v.data[0] === "SHAPE",
         new FormChain<AttributeAndShape>(
-          new AxesFormpageElem(),
+          new AxesForm(),
           attbSteps,
           1
         ).convert<AttributeDec>(
@@ -134,26 +134,26 @@ export class NdxFormParent extends LitElement {
             };
           }
         ),
-        new FormChain<AttributeDec>(new AttribValueFormpageElem(), attbSteps, 1)
+        new FormChain<AttributeDec>(new AttribValueForm(), attbSteps, 1)
       )
       .withParent(this);
 
     let groupBuilderForm = new FormChain<GroupTypeDef>(
-      new TypenameFormpageElem(),
+      new TypenameForm(),
       grpSteps,
       1
-    ).then(new GroupDefVizFormpageElem(attributeBuilderForm), grpSteps, 3);
+    ).then(new GroupDefVizForm(attributeBuilderForm), grpSteps, 3);
 
     let datasetBuilderForm = new FormChain<DatasetTypeDef>(
-      new TypenameFormpageElem(),
+      new TypenameForm(),
       dstSteps,
       1
     )
-      .then(new AxesFormpageElem(), dstSteps, 2)
-      .then(new DatasetDefVizFormpageElem(attributeBuilderForm), dstSteps, 3);
+      .then(new AxesForm(), dstSteps, 2)
+      .then(new DatasetDefVizForm(attributeBuilderForm), dstSteps, 3);
 
     let typedefBuilderForm = new FormChain<TypeDef>(
-      new GenericInctypeFormpageElem(),
+      new GenericInctypeForm(),
       tydefSteps,
       0
     )
@@ -172,11 +172,11 @@ export class NdxFormParent extends LitElement {
       .withParent(this);
 
     let namespaceBuilderForm = new FormChain<Namespace>(
-      new NamespaceStartFormpageElem()
+      new NamespaceStartForm()
     )
-      .then(new NamespaceTypesFormpageElem(typedefBuilderForm), nsbSteps, 0)
-      .then(new NamespaceMetadataFormpageElem(), nsbSteps, 1)
-      .then(new CodegenFormpageElem(), nsbSteps, 2)
+      .then(new NamespaceTypesForm(typedefBuilderForm), nsbSteps, 0)
+      .then(new NamespaceMetadataForm(), nsbSteps, 1)
+      .then(new CodegenForm(), nsbSteps, 2)
       .withParent(this);
 
     namespaceBuilderForm(

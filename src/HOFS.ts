@@ -35,7 +35,7 @@ export const dummyProgress: ProgressState = {
 };
 
 // form trigger, this type is used in other modules
-export type FormTrigger<T> = (
+export type Trigger<T> = (
   val: T,
   onAbandon: () => void,
   onComplete: (v: T) => void
@@ -43,7 +43,7 @@ export type FormTrigger<T> = (
 
 // form trigger with backtracking continuation
 // only appears inside this module
-type FormTriggerK<T> = (
+type TriggerK<T> = (
   val: T,
   back: () => void,
   fwd: (v: T, resume: () => void) => void
@@ -53,9 +53,9 @@ type FormTriggerK<T> = (
 
 // combine two triggers into one
 function then<T>(
-  curr: FormTriggerK<T>,
-  next: FormTriggerK<T>
-): FormTriggerK<T> {
+  curr: TriggerK<T>,
+  next: TriggerK<T>
+): TriggerK<T> {
   return (val, back, fwd) => {
     curr(val, back, (vnext, resume) => next(vnext, resume, fwd));
   };
@@ -63,10 +63,10 @@ function then<T>(
 
 // convert a trigger from type T to a trigger of type U
 function convert<T, U>(
-  curr: FormTriggerK<T>,
+  curr: TriggerK<T>,
   to: (v: T) => U,
   from: (v: U) => T
-): FormTriggerK<U> {
+): TriggerK<U> {
   return (val, back, fwd) =>
     curr(from(val), back, (vnext, resume) => fwd(to(vnext), resume));
 }
@@ -74,9 +74,9 @@ function convert<T, U>(
 // branch based on a predicate
 function branch<T>(
   test: (v: T) => boolean,
-  trueNext: FormTriggerK<T>,
-  falseNext: FormTriggerK<T>
-): FormTriggerK<T> {
+  trueNext: TriggerK<T>,
+  falseNext: TriggerK<T>
+): TriggerK<T> {
   return (val, back, fwd) => {
     test(val) ? trueNext(val, back, fwd) : falseNext(val, back, fwd);
   };
@@ -85,9 +85,9 @@ function branch<T>(
 // choose a branch based on a key function
 function choose<T, U>(
   key: (v: T) => U,
-  branches: Array<[U, FormTriggerK<T>]>,
-  defaultCase: FormTriggerK<T>
-): FormTriggerK<T> {
+  branches: Array<[U, TriggerK<T>]>,
+  defaultCase: TriggerK<T>
+): TriggerK<T> {
   return (val, back, fwd) => {
     let k = key(val);
     let branch = branches.find(([k_, _]) => k_ == k);
@@ -123,12 +123,12 @@ export abstract class CPSForm<T>
   abstract showAndFocus(visible: boolean): void;
 
   // dont override
-  run(states?: string[], currState = -1): FormTriggerK<T> {
+  run(states?: string[], currState = -1): TriggerK<T> {
     const state: ProgressState = {
       states: states || [],
       currState,
     };
-    const triggerRec: FormTriggerK<T> = (val, back, next) => {
+    const triggerRec: TriggerK<T> = (val, back, next) => {
       this.fill(val, currState != -1 ? state : undefined);
       this.showAndFocus(true);
       this.onBack = () => {
@@ -181,7 +181,7 @@ interface CPSFormController {
 }
 
 export class FormChain<T> {
-  private trigger: FormTriggerK<T>;
+  private trigger: TriggerK<T>;
   private mapElems: <U>(f: (v: CPSFormController & LitElement) => U) => U[];
 
   // create a new form chain
@@ -255,7 +255,7 @@ export class FormChain<T> {
     return convertedChain;
   }
 
-  withParent(parent: HTMLElement): FormTrigger<T> {
+  withParent(parent: HTMLElement): Trigger<T> {
     return (val: T, abandon: () => void, complete: (v: T) => void) => {
       const quitFn = () => {
         this.mapElems((f) => f.clearAndHide());

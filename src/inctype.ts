@@ -24,7 +24,7 @@ import { classMap } from "lit/directives/class-map.js";
 import { symbols } from "./styles";
 import { choose } from "lit/directives/choose.js";
 
-abstract class InctypeFormpageElem<T> extends BasicFormPage<T> {
+abstract class InctypeForm<T> extends BasicFormPage<T> {
   formTitle: string = "Choose a base type to extend";
 
   @state()
@@ -369,7 +369,7 @@ abstract class InctypeFormpageElem<T> extends BasicFormPage<T> {
 }
 
 @customElement("generic-inctype-form")
-export class GenericInctypeFormpageElem extends InctypeFormpageElem<TypeDef> {
+export class GenericInctypeForm extends InctypeForm<TypeDef> {
   fill(val: TypeDef, progress?: ProgressState | undefined): void {
     this.drawProgressBar(progress);
   }
@@ -396,7 +396,7 @@ export class GenericInctypeFormpageElem extends InctypeFormpageElem<TypeDef> {
 }
 
 @customElement("group-inctype-form")
-export class GroupInctypeFormpageElem extends InctypeFormpageElem<HasGroupIncType> {
+export class GroupInctypeForm extends InctypeForm<HasGroupIncType> {
   transform = (data: HasGroupIncType) => {
     return {
       ...data,
@@ -422,9 +422,9 @@ export class GroupInctypeFormpageElem extends InctypeFormpageElem<HasGroupIncTyp
 }
 
 @customElement("dataset-inctype-form")
-export class DatasetInctypeFormpageElem<
+export class DatasetInctypeForm<
   T extends HasDatasetIncType
-> extends InctypeFormpageElem<T> {
+> extends InctypeForm<T> {
   transform = (data: T) => {
     return { ...data, neurodataTypeInc: ["None", null] };
   };
@@ -447,7 +447,7 @@ export class DatasetInctypeFormpageElem<
 }
 
 @customElement("target-inctype-browser")
-export class TargetIncTypeFormpageElem extends InctypeFormpageElem<LinkDec> {
+export class TargetIncTypeForm extends InctypeForm<LinkDec> {
   fill(val: LinkDec, progress?: ProgressState | undefined): void {
     this.drawProgressBar(progress);
   }

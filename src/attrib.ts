@@ -12,7 +12,7 @@ import { classMap } from "lit/directives/class-map.js";
 import { styleMap } from "lit/directives/style-map.js";
 
 @customElement("attrib-info-form")
-export class AttribInfoFormpageElem extends BasicFormPage<AttributeDec> {
+export class AttribInfoForm extends BasicFormPage<AttributeDec> {
   formTitle: string = "Define a new attribute";
 
   isValid(): boolean {
@@ -108,7 +108,7 @@ export class AttribInfoFormpageElem extends BasicFormPage<AttributeDec> {
 }
 
 @customElement("attrib-value-form")
-export class AttribValueFormpageElem extends BasicFormPage<AttributeDec> {
+export class AttribValueForm extends BasicFormPage<AttributeDec> {
   formTitle: string = "Add a value to the attribute";
 
   isValid(): boolean {

@@ -2,18 +2,18 @@
  * All the logic for the app is in here, this is where the forms are glued together
  */
 import { LitElement } from "lit";
-import { AttribInfoFormpageElem, AttribValueFormpageElem } from "./attrib";
-import { CodegenFormpageElem } from "./codegen";
+import { AttribInfoForm, AttribValueForm } from "./attrib";
+import { CodegenForm } from "./codegen";
 import { FormChain } from "./hofs";
 import {
-  GenericInctypeFormpageElem,
-  GroupInctypeFormpageElem,
-  TargetIncTypeFormpageElem,
+  GenericInctypeForm,
+  GroupInctypeForm,
+  TargetIncTypeForm,
 } from "./inctype";
 import {
-  NamespaceStartFormpageElem,
-  NamespaceTypesFormpageElem,
-  NamespaceMetadataFormpageElem,
+  NamespaceStartForm,
+  NamespaceTypesForm,
+  NamespaceMetadataForm,
 } from "./namespace";
 import {
   AttributeDec,
@@ -25,10 +25,10 @@ import {
   GroupDec,
 } from "./nwb/spec";
 import {
-  AxesFormpageElem,
-  TypenameFormpageElem,
-  GroupDefVizFormpageElem,
-  DatasetDefVizFormpageElem,
+  AxesForm,
+  TypenameForm,
+  GroupDefVizForm,
+  DatasetDefVizForm,
 } from "./typedef";
 import { AttributeAndShape } from "./parent";
 import { Initializers } from "./nwb/spec-defaults";
@@ -61,12 +61,10 @@ const groupTypeDefBuilderSteps = [
 ];
 
 export function buildFormChains(parent: LitElement) {
-  let linkBuilderFormTrigger = new FormChain<LinkDec>(
-    new TargetIncTypeFormpageElem()
-  );
+  let linkBuilderTrigger = new FormChain<LinkDec>(new TargetIncTypeForm());
 
-  let groupDecBuilderFormTrigger = new FormChain(
-    new GroupInctypeFormpageElem()
+  let groupDecBuilderTrigger = new FormChain(
+    new GroupInctypeForm()
   ).convert<GroupDec>(
     (v) => {
       return v.neurodataTypeInc[0] == "None"
@@ -86,15 +84,15 @@ export function buildFormChains(parent: LitElement) {
     }
   );
 
-  let attributeBuilderFormTrigger = new FormChain<AttributeDec>(
-    new AttribInfoFormpageElem(),
+  let attributeBuilderTrigger = new FormChain<AttributeDec>(
+    new AttribInfoForm(),
     attributeBuilderSteps,
     0
   )
     .branch(
       (v: AttributeDec) => v.data[0] === "SHAPE",
       new FormChain<AttributeAndShape>(
-        new AxesFormpageElem(),
+        new AxesForm(),
         attributeBuilderSteps,
         1
       ).convert<AttributeDec>(
@@ -110,7 +108,7 @@ export function buildFormChains(parent: LitElement) {
         }
       ),
       new FormChain<AttributeDec>(
-        new AttribValueFormpageElem(),
+        new AttribValueForm(),
         attributeBuilderSteps,
         1
       )
@@ -118,29 +116,29 @@ export function buildFormChains(parent: LitElement) {
     .withParent(parent);
 
   let groupBuilderFormChain = new FormChain<GroupTypeDef>(
-    new TypenameFormpageElem(),
+    new TypenameForm(),
     groupTypeDefBuilderSteps,
     1
   ).then(
-    new GroupDefVizFormpageElem(attributeBuilderFormTrigger),
+    new GroupDefVizForm(attributeBuilderTrigger),
     groupTypeDefBuilderSteps,
     3
   );
 
   let datasetBuilderFormChain = new FormChain<DatasetTypeDef>(
-    new TypenameFormpageElem(),
+    new TypenameForm(),
     datasetTypeDefBuilderSteps,
     1
   )
-    .then(new AxesFormpageElem(), datasetTypeDefBuilderSteps, 2)
+    .then(new AxesForm(), datasetTypeDefBuilderSteps, 2)
     .then(
-      new DatasetDefVizFormpageElem(attributeBuilderFormTrigger),
+      new DatasetDefVizForm(attributeBuilderTrigger),
       datasetTypeDefBuilderSteps,
       3
     );
 
-  let typedefBuilderFormTrigger = new FormChain<TypeDef>(
-    new GenericInctypeFormpageElem(),
+  let typedefBuilderTrigger = new FormChain<TypeDef>(
+    new GenericInctypeForm(),
     typeDefSteps,
     0
   )
@@ -158,16 +156,14 @@ export function buildFormChains(parent: LitElement) {
     )
     .withParent(parent);
 
-  let namespaceBuilderForm = new FormChain<Namespace>(
-    new NamespaceStartFormpageElem()
-  )
+  let namespaceBuilderForm = new FormChain<Namespace>(new NamespaceStartForm())
     .then(
-      new NamespaceTypesFormpageElem(typedefBuilderFormTrigger),
+      new NamespaceTypesForm(typedefBuilderTrigger),
       namespaceBuilderSteps,
       0
     )
-    .then(new NamespaceMetadataFormpageElem(), namespaceBuilderSteps, 1)
-    .then(new CodegenFormpageElem(), namespaceBuilderSteps, 2)
+    .then(new NamespaceMetadataForm(), namespaceBuilderSteps, 1)
+    .then(new CodegenForm(), namespaceBuilderSteps, 2)
     .withParent(parent);
 
   return namespaceBuilderForm;

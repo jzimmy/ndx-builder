@@ -13,7 +13,7 @@ ${JSON.stringify(ns)}`;
 }
 
 @customElement("codegen-form")
-export class CodegenFormpageElem extends CPSForm<Namespace> {
+export class CodegenForm extends CPSForm<Namespace> {
   fill(
     val: Namespace,
     progress?: { states: string[]; currState: number } | undefined

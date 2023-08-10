@@ -7,7 +7,7 @@ import {
   HasAxes,
 } from "./parent";
 import { BasicFormPage, NDXBuilderDefaultShowAndFocus } from "./basic-form";
-import { CPSForm, FormTrigger, ProgressState } from "./hofs";
+import { CPSForm, Trigger, ProgressState } from "./hofs";
 import { FormStepBar } from "./basic-elems";
 import {
   GroupTypeDef,
@@ -22,7 +22,7 @@ import { map } from "lit/directives/map.js";
 import "./subtree";
 
 @customElement("tydef-form")
-export class TypenameFormpageElem<
+export class TypenameForm<
   T extends HasTypeNameAndDescription & HasDefaultName
 > extends BasicFormPage<T> {
   get firstInput(): HTMLElement {
@@ -97,7 +97,7 @@ export class TypenameFormpageElem<
 }
 
 @customElement("decname-form")
-export class NameDecFormpageElem<
+export class NameDecForm<
   T extends HasInstanceNameAndDescription
 > extends BasicFormPage<T> {
   get firstInput(): HTMLElement {
@@ -154,7 +154,7 @@ export class NameDecFormpageElem<
 }
 
 @customElement("axes-form")
-export class AxesFormpageElem<T extends HasAxes> extends BasicFormPage<T> {
+export class AxesForm<T extends HasAxes> extends BasicFormPage<T> {
   get firstInput(): HTMLElement {
     return this.axesShapeInput;
   }
@@ -236,7 +236,7 @@ export class AxesFormpageElem<T extends HasAxes> extends BasicFormPage<T> {
   static styles = [super.styles, css``];
 }
 
-abstract class VizFormpageElem<T> extends CPSForm<T> {
+abstract class VizForm<T> extends CPSForm<T> {
   abstract firstInput: HTMLInputElement;
 
   @state()
@@ -283,7 +283,7 @@ abstract class VizFormpageElem<T> extends CPSForm<T> {
 }
 
 @customElement("groupdef-viz")
-export class GroupDefVizFormpageElem extends VizFormpageElem<GroupTypeDef> {
+export class GroupDefVizForm extends VizForm<GroupTypeDef> {
   @query("input[name=add-group]")
   firstInput!: HTMLInputElement;
 
@@ -297,7 +297,7 @@ export class GroupDefVizFormpageElem extends VizFormpageElem<GroupTypeDef> {
   links: LinkDec[] = [];
 
   triggerAttributeForm: () => void;
-  constructor(attributeBuilderForm: FormTrigger<AttributeDec>) {
+  constructor(attributeBuilderForm: Trigger<AttributeDec>) {
     super();
     this.triggerAttributeForm = () => {
       this.showAndFocus(false);
@@ -338,7 +338,7 @@ export class GroupDefVizFormpageElem extends VizFormpageElem<GroupTypeDef> {
 }
 
 @customElement("datasetdef-viz")
-export class DatasetDefVizFormpageElem extends VizFormpageElem<DatasetTypeDef> {
+export class DatasetDefVizForm extends VizForm<DatasetTypeDef> {
   @query("input[name=add-attrib]")
   firstInput!: HTMLInputElement;
 
@@ -351,7 +351,7 @@ export class DatasetDefVizFormpageElem extends VizFormpageElem<DatasetTypeDef> {
 
   triggerAttributeForm: () => void;
 
-  constructor(attributeBuilderForm: FormTrigger<AttributeDec>) {
+  constructor(attributeBuilderForm: Trigger<AttributeDec>) {
     super();
     this.triggerAttributeForm = () => {
       this.showAndFocus(false);

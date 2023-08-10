@@ -1,6 +1,7 @@
-import { LitElement, css, html } from "lit";
+import { LitElement, TemplateResult, css, html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import {
+  CompoundDtype,
   CoreDatasetType,
   CoreGroupType,
   DatasetType,
@@ -485,16 +486,47 @@ export class ShapeOrScalarInput extends NdxInputElem<
 
 @customElement("checkbox-input")
 export class CheckboxInput extends NdxInputElem<boolean> {
-  firstElement?: HTMLElement | undefined;
   fill(val: boolean): void {
-    throw new Error("Method not implemented.");
+    this.checkboxInput.checked = val;
   }
-  value(): boolean | null {
-    throw new Error("Method not implemented.");
+
+  value(): boolean {
+    return this.checkboxInput.checked;
   }
   clear(): void {
-    throw new Error("Method not implemented.");
+    this.checkboxInput.checked = this.default;
   }
+
+  @query("input")
+  checkboxInput!: HTMLInputElement;
+
+  @property()
+  label: string = "";
+
+  @property()
+  default: boolean = false;
+
+  firstElement?: HTMLElement = this.checkboxInput;
+
+  render() {
+    return html`
+      <input type="checkbox" .value=${this.default} />
+      <div>${this.label}</div>
+    `;
+  }
+
+  static styles = [
+    css`
+      :host {
+        display: flex;
+        align-items: center;
+      }
+
+      div {
+        margin-left: 0.5em;
+      }
+    `,
+  ];
 }
 
 @customElement("dtype-input")
@@ -509,12 +541,107 @@ export class DtypeInput extends NdxInputElem<Dtype> {
   clear(): void {
     throw new Error("Method not implemented.");
   }
+
+  primitiveOptions(): TemplateResult<1> {
+    return html`
+      <option value="i8">int8</option>
+      <option value="i6">int16</option>
+      <option value="i32">int32</option>
+      <option value="i64">int64</option>
+      <option value="u8">uint8</option>
+      <option value="u16">uint16</option>
+      <option value="u32">uint32</option>
+      <option value="u64">uint64</option>
+      <option value="f32">float32</option>
+      <option value="f64">float64</option>
+      <option value="Bool">bool</option>
+      <option value="Ascii">ascii</option>
+      <option value="Text">Text</option>
+      <option value="IsoDatetime">ISO Datetime</option>
+      <option value="Numeric">Numeric</option>
+      <option value="Any">Any</option>
+    `;
+  }
+
+  dtypeOptions = ["Primitive", "Compound"];
+  @state()
+  dtypeOption = -1;
+
+  dtype: Dtype = ["PRIMITIVE", "i8"];
+
+  compoundType: CompoundDtype[] = [
+    { name: "", dtype: ["PRIMITIVE", "i8"], doc: "" },
+  ];
+
+  render() {
+    return html`
+      <radio-input
+        .options=${this.dtypeOptions}
+        .onSelect=${(i: number) => {
+          this.dtypeOption = i;
+          this.dtype =
+            i == 0 ? ["PRIMITIVE", "i8"] : ["COMPOUND", this.compoundType];
+        }}
+      ></radio-input>
+
+      ${choose(this.dtypeOptions[this.dtypeOption], [
+        [
+          "Primitive",
+          () => html`
+            <select>
+              ${this.primitiveOptions()}
+            </select>
+          `,
+        ],
+        [
+          "Compound",
+          () => html`
+            <div class="addremove">
+              <light-button>
+                <span class="material-symbols-outlined">remove</span>
+              </light-button>
+              <light-button>
+                <span class="material-symbols-outlined">add</span>
+              </light-button>
+            </div>
+
+            <div class="compound-wrapper">
+              <div>Name</div>
+              <div>Doc</div>
+              <div>Type</div>
+              ${map(
+                this.compoundType,
+                ({ name, doc, dtype }) => html`
+                  <input type="text" value=${name} />
+                  <input type="text" value=${doc} />
+                  <select>
+                    ${this.primitiveOptions()}
+                  </select>
+                `
+              )}
+            </div>
+          `,
+        ],
+      ])}
+    `;
+  }
+  static styles = [
+    symbols,
+    css`
+      .compound-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+    `,
+  ];
 }
 
 @customElement("input-tests-wrapper")
 export class TestWrapper extends LitElement {
   render() {
     return html`
+      <dtype-input></dtype-input>
+      <checkbox-input label="Test checkbox"></checkbox-input>
       <shape-or-scalar-input></shape-or-scalar-input>
       <quantity-or-name-input></quantity-or-name-input>
       <value-input label="Typename"></value-input>

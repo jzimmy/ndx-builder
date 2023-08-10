@@ -2,7 +2,7 @@ import { TemplateResult, css, html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { map } from "lit/directives/map.js";
 import { Namespace, TypeDef } from "./nwb/spec";
-import { CPSForm, FormTrigger, ProgressState } from "./hofs";
+import { CPSForm, Trigger, ProgressState } from "./hofs";
 import { BasicFormPage, NDXBuilderDefaultShowAndFocus } from "./basic-form";
 import "./basic-elems";
 import { FormStepBar, iconOf } from "./basic-elems";
@@ -12,7 +12,7 @@ import { symbols } from "./styles";
 import { classMap } from "lit/directives/class-map.js";
 
 @customElement("new-or-existing-namespace-form")
-export class NamespaceStartFormpageElem extends CPSForm<Namespace> {
+export class NamespaceStartForm extends CPSForm<Namespace> {
   showAndFocus(visible: boolean): void {
     NDXBuilderDefaultShowAndFocus(this, visible);
   }
@@ -75,7 +75,7 @@ export class NamespaceStartFormpageElem extends CPSForm<Namespace> {
 }
 
 @customElement("namespace-metadata-form")
-export class NamespaceMetadataFormpageElem extends BasicFormPage<Namespace> {
+export class NamespaceMetadataForm extends BasicFormPage<Namespace> {
   hideQuit: boolean = true;
 
   formTitle: string = "Metadata for your extension";
@@ -201,8 +201,8 @@ export class NamespaceMetadataFormpageElem extends BasicFormPage<Namespace> {
 }
 
 @customElement("namespace-types-form")
-export class NamespaceTypesFormpageElem extends CPSForm<Namespace> {
-  constructor(typeBuilderTrigger: FormTrigger<TypeDef>) {
+export class NamespaceTypesForm extends CPSForm<Namespace> {
+  constructor(typeBuilderTrigger: Trigger<TypeDef>) {
     super();
     this.triggerTypeBuilder = () => {
       this.showAndFocus(false);

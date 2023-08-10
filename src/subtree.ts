@@ -5,7 +5,7 @@ import { map } from "lit/directives/map.js";
 import { when } from "lit/directives/when.js";
 import { AttributeDec, DatasetDec, GroupDec, LinkDec } from "./nwb/spec";
 import { symbols } from "./styles";
-import { FormTrigger } from "./hofs";
+import { Trigger } from "./hofs";
 import { Initializers } from "./nwb/spec-defaults";
 
 @customElement("subtree-branchh")
@@ -197,13 +197,13 @@ export class GroupSubtree extends LitElement {
   setLinkDecs: (links: LinkDec[]) => void = (_) => {};
 
   @property({ type: Function })
-  triggerAttribDecBuilderForm: FormTrigger<AttributeDec> = (_v, _a, _c) => {};
+  triggerAttribDecBuilderForm: Trigger<AttributeDec> = (_v, _a, _c) => {};
   @property({ type: Function })
-  triggerDatasetDecBuilderForm: FormTrigger<DatasetDec> = (_v, _a, _c) => {};
+  triggerDatasetDecBuilderForm: Trigger<DatasetDec> = (_v, _a, _c) => {};
   @property({ type: Function })
-  triggerGroupDecBuilderForm: FormTrigger<GroupDec> = (_v, _a, _c) => {};
+  triggerGroupDecBuilderForm: Trigger<GroupDec> = (_v, _a, _c) => {};
   @property({ type: Function })
-  triggerLinkDecBuilderForm: FormTrigger<LinkDec> = (_v, _a, _c) => {};
+  triggerLinkDecBuilderForm: Trigger<LinkDec> = (_v, _a, _c) => {};
 
   //   @property({ type: Function })
   //   triggerEditLinkDecForm = (_: LinkDec, __: number) => {};
@@ -503,7 +503,7 @@ export class DatasetSubtree extends LitElement {
   minimized = false;
 
   @property({ type: Function })
-  triggerAttribDecBuilderForm: FormTrigger<AttributeDec> = (_v, _a, _c) => {};
+  triggerAttribDecBuilderForm: Trigger<AttributeDec> = (_v, _a, _c) => {};
 
   @property({ type: Function })
   setAttributeDecs: (attribs: AttributeDec[]) => void = (_) => {};
