@@ -9,7 +9,14 @@ import {
   //   HasInstanceNameAndDescription,
   //   HasAxes,
 } from "./parent";
-import { DatasetType, GroupType, LinkDec, NWBType, TypeDef } from "./nwb/spec";
+import {
+  CoreType,
+  DatasetType,
+  GroupType,
+  LinkDec,
+  NWBType,
+  TypeDef,
+} from "./nwb/spec";
 import { BasicFormPage } from "./basic-form";
 import { map } from "lit/directives/map.js";
 import { classMap } from "lit/directives/class-map.js";
@@ -18,6 +25,28 @@ import { choose } from "lit/directives/choose.js";
 import { NamespaceTypesForm } from "./namespace";
 import { when } from "lit/directives/when.js";
 import { Initializers } from "./nwb/spec-defaults";
+import { modules } from "./data/nwbcore";
+
+function grabAllModules(): [
+  name: string,
+  inctype: Inctype<() => CoreType>[]
+][] {
+  let res: [name: string, inctype: Inctype<() => CoreType>[]][] = [];
+  for (const key in modules) {
+    res.push([
+      key,
+      modules[key].map(([kind, id]) => {
+        return {
+          name: id,
+          inctype: () => queryCore(id),
+        };
+      }),
+    ]);
+  }
+  return res;
+}
+
+console.log(grabAllModules());
 
 type Inctype<T> = {
   id: string;
@@ -63,7 +92,8 @@ abstract class InctypeForm<T, U> extends BasicFormPage<T> {
   firstInput!: HTMLElement;
 
   // pynwb core module names
-  abstract modules: [name: string, inctype: Inctype<U>[]][];
+  // modules are loaded lazily (kind of)
+  abstract modules: [name: string, inctype: Inctype<() => U>[]][];
 
   get myTypes(): Inctype<U>[] {
     return (
@@ -132,7 +162,7 @@ abstract class InctypeForm<T, U> extends BasicFormPage<T> {
                 class=${classMap({ selected: i == this.selectedType })}
                 @click=${() => {
                   this.selectedType = i;
-                  this.inctype = inctype;
+                  this.inctype = inctype();
                 }}
               >
                 ${id}
@@ -395,7 +425,7 @@ export class GenericInctypeForm extends InctypeForm<TypeDef, NWBType> {
     return { id: typedef[1].neurodataTypeDef, inctype };
   }
 
-  modules: [name: string, inctype: Inctype<NWBType>[]][] = [];
+  modules: [name: string, inctype: Inctype<() => NWBType>[]][] = [];
 
   noneTypes: Inctype<NWBType>[] = [
     {
@@ -476,7 +506,7 @@ export class GroupInctypeForm extends InctypeForm<HasGroupIncType, GroupType> {
     }
   }
 
-  modules: [name: string, inctype: Inctype<GroupType>[]][] = [];
+  modules: [name: string, inctype: Inctype<() => GroupType>[]][] = [];
 
   noneTypes: Inctype<GroupType>[] = [
     {
@@ -525,7 +555,7 @@ export class DatasetInctypeForm extends InctypeForm<
     }
   }
 
-  modules: [name: string, inctype: Inctype<DatasetType>[]][] = [];
+  modules: [name: string, inctype: Inctype<() => DatasetType>[]][] = [];
   noneTypes: Inctype<DatasetType>[] = [
     {
       inctype: ["None", null],
@@ -570,7 +600,7 @@ export class TargetIncTypeForm extends InctypeForm<LinkDec, NWBType> {
       inctype: ["DATASET", ["Typedef", typedef[1]]],
     };
   }
-  modules: [name: string, inctype: Inctype<NWBType>[]][] = [];
+  modules: [name: string, inctype: Inctype<() => NWBType>[]][] = [];
   noneTypes: Inctype<NWBType>[] = [];
 
   fill(val: LinkDec, progress?: ProgressState | undefined): void {
