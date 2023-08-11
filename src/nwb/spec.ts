@@ -205,7 +205,7 @@ export type AnonymousDatasetDec = {
   doc: string;
   name: string;
   shape: Shape[];
-  dtype: Dtype;
+  readonly dtype: Dtype;
   attributes: AttributeDec[];
 };
 
@@ -215,12 +215,12 @@ export type AttributeDec = {
   doc: string;
   required: boolean;
   data: ["SHAPE", Shape[]] | ["SCALAR", Defaultable<string>];
-  dtype: Dtype;
+  readonly dtype: Dtype;
 };
 
 export type LinkDec = {
   doc: string;
-  targetType: NWBType;
+  readonly targetType: NWBType;
   quantityOrName: Quantity | string; // if named, quantity is one
 };
 

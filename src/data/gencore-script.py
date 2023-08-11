@@ -11,6 +11,18 @@ python3 src/data/gencore-script.py > src/data/nwbcore.ts
 
 
 def write_nwbcore_ts(catalog, modules):
+    catalog_obj = re.sub(
+        r"\"coreQueryAsNWBType\(([^\)]*)\)\"",
+        r"coreQueryAsNWBType(\1)",
+        json.dumps(catalog, indent=2),
+    )
+
+    catalog_obj = re.sub(
+        r'"dtype":\s+\[\s*\"REFSPEC\"\s*,\s*(.*)\s*]',
+        r'get dtype() { return ["REFSPEC", \1] as Spec.Dtype; }',
+        catalog_obj,
+        flags=re.MULTILINE,
+    )
     # remove extranenous quotes to add live code into the json string
     return """
     import * as Spec from "../nwb/spec";
@@ -20,33 +32,33 @@ def write_nwbcore_ts(catalog, modules):
      * Do not edit.
      */
 
-    function coreQueryAsNWBType(id: string): Spec.NWBType {
-        let res = coreQuery(id);
-        switch (res[0]) {
-            case "GROUP":
-            return ["GROUP", ["Core", res[1]]];
-            case "DATASET":
-            return ["DATASET", ["Core", res[1]]];
-            default:
-            assertNever(res[0]);
-        }
+    function _never(_: never): never {
+      throw new Error("Function not implemented.");
     }
 
-    type CoreTypeId = ["GROUP" | "DATASET", string];
+    function coreQueryAsNWBType(id: string): Spec.NWBType {
+      let res = coreQuery(id);
+      switch (res[0]) {
+        case "GROUP":
+          return ["GROUP", ["Core", res[1]]];
+        case "DATASET":
+          return ["DATASET", ["Core", res[1]]];
+        default:
+          return _never(res[0]);
+      }
+    }
+
+
+    export type CoreTypeId = ["GROUP" | "DATASET", string];
     export function coreQuery(id: string): Spec.CoreType {
         const catalog: { [keyof: string]: Spec.CoreType } = %s;
         return catalog[id];
     }
     
     export const modules: { [keyof: string]: CoreTypeId[] } = %s;
-    """ % (
-        re.sub(
-            r"\"coreQuery\(([^\)]*)\)\"",
-            r"coreQuery(\1)",
-            json.dumps(catalog, indent=2),
-        ),
-        json.dumps(modules, indent=2),
-    )
+    """ % (catalog_obj,
+           json.dumps(modules, indent=2),
+           )
 
 
 core_group = "GROUP"
@@ -106,7 +118,7 @@ def parse_dtype(t: str | list):
         return ("COMPOUND", [parse_compoundtype(innerty) for innerty in t])
 
     if isinstance(t, dict):
-        return ("REFSPEC", ("CORE", f'coreQuery(\'{t["target_type"]}\')'))
+        return ("REFSPEC", f'coreQueryAsNWBType(\'{t["target_type"]}\')')
 
     return (
         "PRIMITIVE",
@@ -223,7 +235,8 @@ def main():
     yamls = read_core_yaml("nwb-schema/core")
     catalog = {}
     modules = {}
-    for y in list(yamls):
+    yamls = [y for y in list(yamls) if not str(y).endswith("namespace.yaml")]
+    for y in yamls:
         mod = re.sub("nwb-schema/core/nwb.([^\.]*).yaml", "\\1", str(y))
         eprint("MODULE: " + mod)
         module_catalog = parse_yaml(y)
