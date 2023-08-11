@@ -17,7 +17,7 @@ import { symbols } from "./styles";
 
 abstract class NdxInputElem<T> extends LitElement {
   isValid = () => true;
-  abstract firstElement?: HTMLElement;
+  abstract firstFocusable?: HTMLElement;
   abstract fill(val: T): void;
   abstract value(): T | null;
   abstract clear(): void;
@@ -26,7 +26,7 @@ abstract class NdxInputElem<T> extends LitElement {
 @customElement("radio-input")
 export class RadioInputWrapper extends NdxInputElem<string> {
   @query("div.first")
-  firstElement: HTMLElement | undefined;
+  firstFocusable: HTMLElement | undefined;
 
   @property()
   options: string[] = [];
@@ -107,7 +107,7 @@ export class RadioInputWrapper extends NdxInputElem<string> {
 
 @customElement("quantity-or-name-input")
 export class QuantityOrNameInput extends NdxInputElem<Quantity | string> {
-  firstElement?: HTMLElement | undefined;
+  firstFocusable?: HTMLElement | undefined;
 
   fill(val: string | Quantity): void {
     if (typeof val == typeof "") {
@@ -197,7 +197,7 @@ export class ValueInput extends NdxInputElem<string> {
   @property({ type: Function })
   isValid = super.isValid;
 
-  firstElement = this.inputElem;
+  firstFocusable = this.inputElem;
 
   fill(val: string): void {
     if (val) this.inputElem.value = val;
@@ -233,7 +233,7 @@ export class ShapeInput extends NdxInputElem<Shape[]> {
   };
 
   @query("shape-wrapper > input:first-child")
-  firstElement!: HTMLElement;
+  firstFocusable!: HTMLElement;
 
   fill(val: Shape[]): void {
     if (val.length != 0) this.shapes = val;
@@ -380,7 +380,7 @@ export class ShapeInput extends NdxInputElem<Shape[]> {
 export class ShapeOrScalarInput extends NdxInputElem<
   ["SHAPE", Shape[]] | ["SCALAR", Defaultable<string>]
 > {
-  firstElement?: HTMLElement | undefined;
+  firstFocusable?: HTMLElement | undefined;
   @query("radio-input")
   radioInput!: RadioInputWrapper;
 
@@ -483,7 +483,7 @@ export class CheckboxInput extends NdxInputElem<boolean> {
   @property()
   default: boolean = false;
 
-  firstElement?: HTMLElement = this.checkboxInput;
+  firstFocusable?: HTMLElement = this.checkboxInput;
 
   render() {
     return html`
@@ -552,7 +552,7 @@ export class CheckboxInput extends NdxInputElem<boolean> {
 
 @customElement("dtype-input")
 export class DtypeInput extends NdxInputElem<Dtype> {
-  firstElement?: HTMLElement | undefined;
+  firstFocusable?: HTMLElement | undefined;
   fill(val: Dtype): void {
     this.dtypeOption = val[0] == "PRIMITIVE" ? 0 : 1;
     if (val[0] == "PRIMITIVE") {

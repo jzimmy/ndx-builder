@@ -1,4 +1,4 @@
-import { LitElement, html, css, CSSResultGroup, PropertyValueMap } from "lit";
+import { LitElement, html, css, CSSResultGroup } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { map } from "lit/directives/map.js";
@@ -282,15 +282,17 @@ export class Navbar extends LitElement {
 
       span.material-symbols-outlined {
         font-size: 2em;
-        padding: 0.2em 0.2em;
+        padding: 0.2em;
         margin: 0 0.8em;
         cursor: pointer;
         border-bottom: 1px solid var(--color-background-alt);
-        border-radius: 0.1em;
+        border-radius: 0.3em;
       }
 
       span.material-symbols-outlined:hover {
-        border-bottom: 1px solid var(--color-border-alt);
+        color: var(--clickable);
+        background: var(--background-light-button);
+        padding: 0.3em;
       }
 
       :host([hideQuit]) span:last-child {

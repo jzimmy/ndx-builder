@@ -515,6 +515,7 @@ export class GroupInctypeForm extends InctypeForm<HasGroupIncType, GroupType> {
         }),
     ]);
   }
+
   @state()
   inctype: GroupType = ["None", null];
 

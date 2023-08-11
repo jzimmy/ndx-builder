@@ -4,7 +4,7 @@
 import { LitElement } from "lit";
 import { AttribInfoForm, AttribValueForm } from "./attrib";
 import { CodegenForm } from "./codegen";
-import { FormChain } from "./hofs";
+import { CPSForm, FormChain } from "./hofs";
 import {
   GenericInctypeForm,
   GroupInctypeForm,
@@ -23,11 +23,15 @@ import {
   Namespace,
   LinkDec,
   GroupDec,
+  AnonymousGroupTypeDec,
+  IncGroupDec,
 } from "./nwb/spec";
 import { AxesForm, TypenameForm, DatasetDefVizForm } from "./defs";
 import { AttributeAndShape } from "./parent";
 import { Initializers } from "./nwb/spec-defaults";
 import { GroupTypeVizForm } from "./typeviz-form";
+import { AnonGroupDecInfo, IncGroupDecInfo } from "./decs";
+import { LinkInfoForm } from "./link";
 
 const namespaceBuilderSteps = [
   "Add custom types",
@@ -56,29 +60,45 @@ const groupTypeDefBuilderSteps = [
   ...typeDefSteps.slice(2),
 ];
 
-export function buildFormChains(parent: LitElement) {
-  let linkBuilderTrigger = new FormChain<LinkDec>(new TargetIncTypeForm());
+// alias for `new FormChain<T>(...)`
+function fc<T>(f?: CPSForm<T>, stps?: string[], index = -1) {
+  return new FormChain(f, stps, index);
+}
 
-  let groupDecBuilderTrigger = new FormChain(
-    new GroupInctypeForm()
-  ).convert<GroupDec>(
-    (v) => {
-      return v.neurodataTypeInc[0] == "None"
-        ? ["ANONYMOUS", { ...Initializers.anonymousGroupDec }]
-        : [
-            "INC",
-            {
-              ...Initializers.incGroupDec,
-              neurodataTypeInc: v.neurodataTypeInc,
-            },
-          ];
-    },
-    (v) => {
-      return v[0] == "ANONYMOUS"
-        ? { ...v[1], neurodataTypeInc: ["None", null] }
-        : { ...v[1] };
-    }
+// all logic is in here, then when ready, build it with the parent
+export function buildFormChains(parent: LitElement) {
+  let linkBuilderTrigger = fc<LinkDec>(new TargetIncTypeForm())
+    .then(new LinkInfoForm())
+    .withParent(parent);
+
+  let anonGroupDecChain = fc(new AnonGroupDecInfo(), [], 0).convert<GroupDec>(
+    (v) => ["ANONYMOUS", v],
+    ([_, v]) => v as AnonymousGroupTypeDec
   );
+
+  let incGroupDecChain = fc(new IncGroupDecInfo()).convert<GroupDec>(
+    (v) => ["INC", v],
+    ([_, v]) => v as IncGroupDec
+  );
+
+  let groupDecBuilderTrigger = fc(new GroupInctypeForm())
+    .convert<GroupDec>(
+      ({ neurodataTypeInc }) =>
+        neurodataTypeInc[0] == "None"
+          ? ["ANONYMOUS", { ...Initializers.anonymousGroupDec }]
+          : ["INC", { ...Initializers.incGroupDec, neurodataTypeInc }],
+      (v) => {
+        return v[0] == "ANONYMOUS"
+          ? { ...v[1], neurodataTypeInc: ["None", null] }
+          : { ...v[1] };
+      }
+    )
+    .branch(
+      (v: GroupDec) => v[0] == "ANONYMOUS",
+      anonGroupDecChain,
+      incGroupDecChain
+    )
+    .withParent(parent);
 
   let attributeBuilderTrigger = new FormChain<AttributeDec>(
     new AttribInfoForm(),
@@ -87,41 +107,34 @@ export function buildFormChains(parent: LitElement) {
   )
     .branch(
       (v: AttributeDec) => v.data[0] === "SHAPE",
-      new FormChain<AttributeAndShape>(
+      fc<AttributeAndShape>(
         new AxesForm(),
         attributeBuilderSteps,
         1
       ).convert<AttributeDec>(
-        (v: AttributeAndShape) => {
-          return { ...v.att, data: ["SHAPE", v.shape], dtype: v.dtype };
-        },
-        (v: AttributeDec) => {
-          return {
-            att: v,
-            shape: v.data[0] === "SHAPE" ? v.data[1] : [],
-            dtype: v.dtype,
-          };
-        }
+        // because attribute doesn't have shape, we need to carry around some extra info
+        (v) => ({ ...v.att, data: ["SHAPE", v.shape], dtype: v.dtype }),
+        (v) => ({
+          att: v,
+          shape: v.data[0] === "SHAPE" ? v.data[1] : [],
+          dtype: v.dtype,
+        })
       ),
-      new FormChain<AttributeDec>(
-        new AttribValueForm(),
-        attributeBuilderSteps,
-        1
-      )
+      fc<AttributeDec>(new AttribValueForm(), attributeBuilderSteps, 1)
     )
     .withParent(parent);
 
-  let groupBuilderFormChain = new FormChain<GroupTypeDef>(
+  let groupBuilderFormChain = fc<GroupTypeDef>(
     new TypenameForm(),
     groupTypeDefBuilderSteps,
     1
   ).then(
-    new GroupTypeVizForm(attributeBuilderTrigger),
+    new GroupTypeVizForm(attributeBuilderTrigger, linkBuilderTrigger),
     groupTypeDefBuilderSteps,
     3
   );
 
-  let datasetBuilderFormChain = new FormChain<DatasetTypeDef>(
+  let datasetBuilderFormChain = fc<DatasetTypeDef>(
     new TypenameForm(),
     datasetTypeDefBuilderSteps,
     1
@@ -133,7 +146,7 @@ export function buildFormChains(parent: LitElement) {
       3
     );
 
-  let typedefBuilderTrigger = new FormChain<TypeDef>()
+  let typedefBuilderTrigger = fc<TypeDef>()
     .then(new GenericInctypeForm(), typeDefSteps, 0)
     .branch(
       ([k, _]) => k === "GROUP",
@@ -149,7 +162,7 @@ export function buildFormChains(parent: LitElement) {
     )
     .withParent(parent);
 
-  let namespaceBuilderForm = new FormChain<Namespace>(new NamespaceStartForm())
+  let namespaceBuilderForm = fc<Namespace>(new NamespaceStartForm())
     .then(
       new NamespaceTypesForm(typedefBuilderTrigger),
       namespaceBuilderSteps,

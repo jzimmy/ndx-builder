@@ -82,7 +82,7 @@ const datasetDec: DatasetDec = ["Anonymous", anonymousDatasetDec];
 
 const linkDec: LinkDec = {
   doc: "",
-  targetType: ["Typedef", datasetTypeDef],
+  targetType: ["GROUP", ["None", null]],
   quantityOrName: "",
 };
 

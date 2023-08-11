@@ -265,8 +265,6 @@ export class FormChain<T> {
 
   withParent(parent: HTMLElement): Trigger<T> {
     return (val: T, abandon: () => void, complete: (v: T) => void) => {
-      this.mapElems((f) => parent.appendChild(f));
-
       const quitFn = () => {
         this.mapElems((f) => parent.removeChild(f));
         this.mapElems((f) => (f.onQuit = () => {}));
@@ -283,6 +281,7 @@ export class FormChain<T> {
         });
       };
 
+      this.mapElems((f) => parent.appendChild(f));
       Promise.all(this.mapElems((f) => f.updateComplete)).then(triggerForm);
     };
   }

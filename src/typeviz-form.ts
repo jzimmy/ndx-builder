@@ -1,16 +1,18 @@
 import { customElement, query, state } from "lit/decorators.js";
 import { NDXBuilderDefaultShowAndFocus } from "./basic-form";
-import { AttributeDec, DatasetTypeDef, GroupTypeDef } from "./nwb/spec";
+import {
+  AttributeDec,
+  DatasetTypeDef,
+  GroupTypeDef,
+  LinkDec,
+} from "./nwb/spec";
 import { TemplateResult, html } from "lit";
 import { CPSForm, CPSFormController, ProgressState, Trigger } from "./hofs";
 import { Initializers } from "./nwb/spec-defaults";
 import "./typeviz";
 import { FormStepBar } from "./basic-elems";
 
-function wrapTrigger<T>(
-  prev: CPSFormController,
-  trigger: Trigger<T>
-): Trigger<T> {
+function subform<T>(prev: CPSFormController, trigger: Trigger<T>): Trigger<T> {
   return (i, a, c) => {
     prev.showAndFocus(false);
     trigger(
@@ -47,7 +49,7 @@ abstract class TypevizForm<T> extends CPSForm<T> {
 
   render() {
     return html`
-      <back-or-quit-bar>
+      <back-or-quit-bar .back=${() => this.back()} .next=${() => this.next()}>
         <step-bar></step-bar>
       </back-or-quit-bar>
       ${this.body()}
@@ -59,22 +61,22 @@ abstract class TypevizForm<T> extends CPSForm<T> {
 @customElement("group-typeviz-form")
 export class GroupTypeVizForm extends TypevizForm<GroupTypeDef> {
   constructor(
-    attributeBuilderForm: Trigger<AttributeDec>
+    attributeBuilderForm: Trigger<AttributeDec>,
     // datasetBuilderForm: Trigger<DatasetDec>,
     // groupBuilderForm: Trigger<GroupDec>,
-    // linkBuilderForm: Trigger<LinkDec>
+    linkBuilderForm: Trigger<LinkDec>
   ) {
     super();
-    this.triggerAttribDecBuilderForm = wrapTrigger(this, attributeBuilderForm);
+    this.triggerAttribDecBuilderForm = subform(this, attributeBuilderForm);
+    this.triggerLinkDecBuilderForm = subform(this, linkBuilderForm);
     // this.triggerDatasetDecBuilderForm = datasetBuilderForm;
     // this.triggerGroupDecBuilderForm = groupBuilderForm;
-    // this.triggerLinkDecBuilderForm = linkBuilderForm;
   }
 
   triggerAttribDecBuilderForm: Trigger<AttributeDec>;
+  triggerLinkDecBuilderForm: Trigger<LinkDec>;
   //   triggerDatasetDecBuilderForm: Trigger<DatasetDec>;
   //   triggerGroupDecBuilderForm: Trigger<GroupDec>;
-  //   triggerLinkDecBuilderForm: Trigger<LinkDec>;
 
   @state()
   groupDef: GroupTypeDef = { ...Initializers.groupTypeDef };
@@ -84,6 +86,7 @@ export class GroupTypeVizForm extends TypevizForm<GroupTypeDef> {
       <group-def-elem
         .data=${this.groupDef}
         .triggerAttribDecBuilderForm=${this.triggerAttribDecBuilderForm}
+        .triggerLinkDecBuilderForm=${this.triggerLinkDecBuilderForm}
       ></group-def-elem>
     `;
   }
@@ -120,7 +123,7 @@ export class GroupTypeVizForm extends TypevizForm<GroupTypeDef> {
 export class DatasetTypevizForm extends TypevizForm<DatasetTypeDef> {
   constructor(attributeBuilderForm: Trigger<AttributeDec>) {
     super();
-    this.triggerAttribDecBuilderForm = wrapTrigger(this, attributeBuilderForm);
+    this.triggerAttribDecBuilderForm = subform(this, attributeBuilderForm);
   }
 
   triggerAttribDecBuilderForm: Trigger<AttributeDec>;
