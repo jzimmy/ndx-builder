@@ -9,14 +9,7 @@ import {
 import { BasicFormPage, NDXBuilderDefaultShowAndFocus } from "./basic-form";
 import { CPSForm, Trigger, ProgressState } from "./hofs";
 import { FormStepBar } from "./basic-elems";
-import {
-  GroupTypeDef,
-  GroupDec,
-  DatasetDec,
-  AttributeDec,
-  LinkDec,
-  DatasetTypeDef,
-} from "./nwb/spec";
+import { AttributeDec, DatasetTypeDef } from "./nwb/spec";
 import { Initializers } from "./nwb/spec-defaults";
 import { map } from "lit/directives/map.js";
 import "./subtree";

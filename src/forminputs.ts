@@ -2,14 +2,8 @@ import { LitElement, TemplateResult, css, html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import {
   CompoundDtype,
-  CoreDatasetType,
-  CoreGroupType,
-  DatasetType,
-  DatasetTypeDef,
   Defaultable,
   Dtype,
-  GroupType,
-  GroupTypeDef,
   PrimitiveDtype,
   Quantity,
   Shape,
@@ -45,7 +39,7 @@ export class RadioInputWrapper extends NdxInputElem<string> {
   }
 
   @property({ type: Function })
-  onSelect = (v: number) => {};
+  onSelect = (_i: number) => {};
 
   value(): string | null {
     return this.options[this.selected] || null;
@@ -81,9 +75,7 @@ export class RadioInputWrapper extends NdxInputElem<string> {
       }
 
       div {
-        // margin: 0 0.5em;
         padding: 0.5em;
-        // border-radius: 0.3em;
         border-bottom: 2px solid var(--color-border-alt);
         transition: 0.2s;
         cursor: pointer;
@@ -102,7 +94,7 @@ export class RadioInputWrapper extends NdxInputElem<string> {
         color: var(--color-border);
       }
 
-      .selected {
+      div.selected {
         color: var(--clickable);
         border-color: var(--clickable);
         text-decoration: underline;
@@ -382,33 +374,6 @@ export class ShapeInput extends NdxInputElem<Shape[]> {
       }
     `,
   ];
-}
-
-@customElement("inctype-input")
-export class IncTypeInput extends NdxInputElem<GroupType | DatasetType> {
-  firstElement?: HTMLElement | undefined;
-  fill(
-    val:
-      | ["Core", CoreGroupType]
-      | ["Typedef", GroupTypeDef]
-      | ["None", null]
-      | ["Core", CoreDatasetType]
-      | ["Typedef", DatasetTypeDef]
-  ): void {
-    throw new Error("Method not implemented.");
-  }
-  value():
-    | ["Core", CoreGroupType]
-    | ["Typedef", GroupTypeDef]
-    | ["None", null]
-    | ["Core", CoreDatasetType]
-    | ["Typedef", DatasetTypeDef]
-    | null {
-    throw new Error("Method not implemented.");
-  }
-  clear(): void {
-    throw new Error("Method not implemented.");
-  }
 }
 
 @customElement("shape-or-scalar-input")

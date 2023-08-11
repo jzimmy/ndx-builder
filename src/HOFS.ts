@@ -203,6 +203,17 @@ export class FormChain<T> {
     return this;
   }
 
+  chain(formChain: FormChain<T>) {
+    const oldMapElems = this.mapElems;
+    const oldTrigger = this.trigger;
+    this.mapElems = (apply) => [
+      ...oldMapElems(apply),
+      ...formChain.mapElems(apply),
+    ];
+    this.trigger = then(oldTrigger, formChain.trigger);
+    return this;
+  }
+
   branch(
     test: (v: T) => boolean,
     trueForm: FormChain<T>,
@@ -254,19 +265,19 @@ export class FormChain<T> {
 
   withParent(parent: HTMLElement): Trigger<T> {
     return (val: T, abandon: () => void, complete: (v: T) => void) => {
+      this.mapElems((f) => parent.appendChild(f));
+
       const quitFn = () => {
-        // this.mapElems((f) => f.clearAndHide());
         this.mapElems((f) => parent.removeChild(f));
         this.mapElems((f) => (f.onQuit = () => {}));
         abandon();
       };
 
-      this.mapElems((f) => parent.appendChild(f));
       this.mapElems((f) => (f.onQuit = quitFn));
 
       const triggerForm = () => {
+        this.mapElems((f) => f.clearAndHide());
         this.trigger(val, quitFn, (v, _) => {
-          //   this.mapElems((f) => f.clearAndHide());
           this.mapElems((f) => parent.removeChild(f));
           complete(v);
         });

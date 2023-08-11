@@ -1,5 +1,5 @@
-import { customElement, property, query, state } from "lit/decorators.js";
-import { BasicFormPage } from "./basic-form";
+import { customElement, query, state } from "lit/decorators.js";
+import { BasicFormPage, NDXBuilderDefaultShowAndFocus } from "./basic-form";
 import {
   AttributeDec,
   DatasetDec,
@@ -10,9 +10,9 @@ import {
 } from "./nwb/spec";
 import { TemplateResult, html } from "lit";
 import { CPSForm, CPSFormController, ProgressState, Trigger } from "./hofs";
-import { GroupTypeDefElem } from "./typeviz";
 import { Initializers } from "./nwb/spec-defaults";
 import "./typeviz";
+import { FormStepBar } from "./basic-elems";
 
 function wrapTrigger<T>(
   prev: CPSFormController,
@@ -34,9 +34,32 @@ function wrapTrigger<T>(
   };
 }
 
-abstract class TypevizForm<T> extends BasicFormPage<T> {
+abstract class TypevizForm<T> extends CPSForm<T> {
   get firstInput(): HTMLElement | undefined {
     return undefined;
+  }
+
+  abstract body(): TemplateResult<1>;
+
+  showAndFocus(visible: boolean): void {
+    NDXBuilderDefaultShowAndFocus(this, visible);
+  }
+
+  @query("step-bar")
+  stepBar!: FormStepBar;
+
+  drawProgressBar(progress?: ProgressState | undefined): void {
+    this.stepBar.setProgressState(progress);
+  }
+
+  render() {
+    return html`
+      <back-or-quit-bar>
+        <step-bar></step-bar>
+      </back-or-quit-bar>
+      ${this.body()}
+      <continue-bar .continue=${() => this.next()}></continue-bar>
+    `;
   }
 }
 
@@ -62,12 +85,6 @@ export class GroupTypeVizForm extends TypevizForm<GroupTypeDef> {
 
   @state()
   groupDef: GroupTypeDef = { ...Initializers.groupTypeDef };
-
-  formTitle: string = "";
-
-  isValid(): boolean {
-    return true;
-  }
 
   body(): TemplateResult<1> {
     return html`
@@ -108,22 +125,42 @@ export class GroupTypeVizForm extends TypevizForm<GroupTypeDef> {
 }
 
 export class DatasetTypevizForm extends TypevizForm<DatasetTypeDef> {
-  formTitle: string = "";
-  isValid(): boolean {
-    throw new Error("Method not implemented.");
+  constructor(attributeBuilderForm: Trigger<AttributeDec>) {
+    super();
+    this.triggerAttribDecBuilderForm = wrapTrigger(this, attributeBuilderForm);
   }
+
+  triggerAttribDecBuilderForm: Trigger<AttributeDec>;
+
+  @state()
+  datasetDef: DatasetTypeDef = { ...Initializers.datasetTypeDef };
+
   body(): TemplateResult<1> {
-    throw new Error("Method not implemented.");
+    return html`
+      <dataset-def-elem
+        .data=${this.datasetDef}
+        .triggerAttribDecBuilderForm=${this.triggerAttribDecBuilderForm}
+      ></dataset-def-elem>
+    `;
   }
 
   fill(val: DatasetTypeDef, progress?: ProgressState | undefined): void {
-    throw new Error("Method not implemented.");
+    this.drawProgressBar(progress);
+    if (this.datasetDef.attributes.length == 0) {
+      this.datasetDef = {
+        ...val,
+        attributes: this.datasetDef.attributes,
+      };
+    } else {
+      this.datasetDef = val;
+    }
   }
 
-  transform(val: DatasetTypeDef): DatasetTypeDef {
-    throw new Error("Method not implemented.");
+  transform(_val: DatasetTypeDef): DatasetTypeDef {
+    return { ...this.datasetDef };
   }
+
   clear(): void {
-    throw new Error("Method not implemented.");
+    this.datasetDef = { ...Initializers.datasetTypeDef };
   }
 }

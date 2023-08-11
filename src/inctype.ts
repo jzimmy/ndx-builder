@@ -1,5 +1,5 @@
-import { TemplateResult, html, css } from "lit";
-import { query, customElement, property, state } from "lit/decorators.js";
+import { html, css } from "lit";
+import { query, customElement, state } from "lit/decorators.js";
 import { ProgressState, assertNever } from "./hofs";
 import {
   HasGroupIncType,
@@ -9,83 +9,101 @@ import {
   //   HasInstanceNameAndDescription,
   //   HasAxes,
 } from "./parent";
-import {
-  AttributeDec,
-  DatasetType,
-  DatasetTypeDef,
-  GroupType,
-  GroupTypeDef,
-  LinkDec,
-  TypeDef,
-} from "./nwb/spec";
+import { DatasetType, GroupType, LinkDec, NWBType, TypeDef } from "./nwb/spec";
 import { BasicFormPage } from "./basic-form";
 import { map } from "lit/directives/map.js";
 import { classMap } from "lit/directives/class-map.js";
 import { symbols } from "./styles";
 import { choose } from "lit/directives/choose.js";
+import { NamespaceTypesForm } from "./namespace";
+import { when } from "lit/directives/when.js";
+import { Initializers } from "./nwb/spec-defaults";
 
-abstract class InctypeForm<T> extends BasicFormPage<T> {
+type Inctype<T> = {
+  id: string;
+  inctype: T;
+};
+
+abstract class InctypeForm<T, U> extends BasicFormPage<T> {
   formTitle: string = "Choose a base type to extend";
+
+  abstract inctype: U;
+
+  abstract fromTypedef(typedef: TypeDef): Inctype<U> | null;
 
   @state()
   selectedModule: number = 0;
 
-  @property({ reflect: true })
-  private _category: "Core" | "Typedef" | "None" = "Core";
-  get category() {
-    return this._category;
-  }
-
-  set category(val: "Core" | "Typedef" | "None") {
-    this._category = val;
-    this._selfValidate();
-    if (val != "None") this.selectedType = -1;
-  }
-
   @state()
   private _selectedType: number = -1;
+
   get selectedType() {
     return this._selectedType;
   }
+
   set selectedType(val: number) {
     this._selectedType = val;
     this._selfValidate();
   }
 
-  isValid(): boolean {
-    return this.category == "None" || this.selectedType != -1;
-  }
+  static coreCategory = 0;
+  static myTypeCategory = 1;
+  static noBaseCategory = 2;
 
-  clear(): void {
-    this.selectedType = -1;
-    this.category = "Core";
-  }
+  categories: ("Core" | "My Types" | "No Base")[] = [
+    "Core",
+    "My Types",
+    "No Base",
+  ];
+
+  @state()
+  category = 0;
 
   @query("input[name=inctype-name]")
   firstInput!: HTMLElement;
 
-  myTypes: string[] = [
-    "mytype1",
-    "mytype2",
-    "mytype3",
-    "mytype5",
-    "mytype7",
-    "mytype8",
-  ];
-
   // pynwb core module names
-  modules = [
-    "core",
-    "device",
-    "ecephys",
-    "file",
-    "misc",
-    "ophys",
-    "processing",
-    "time_series",
-    "behavior",
-    "ecephys",
-  ];
+  abstract modules: [name: string, inctype: Inctype<U>[]][];
+
+  get myTypes(): Inctype<U>[] {
+    return (
+      document.querySelector("namespace-types-form") as NamespaceTypesForm
+    ).types
+      .map(this.fromTypedef)
+      .filter((t) => t !== null) as Inctype<U>[];
+  }
+
+  abstract noneTypes: Inctype<U>[];
+
+  //   noneTypes: {
+  //     inctype: NWBType;
+  //     name: string;
+  //   }[] = [
+  //     {
+  //       inctype: ["GROUP", ["None", null]],
+  //       name: "Empty Group",
+  //     },
+  //     {
+  //       inctype: ["DATASET", ["None", null]],
+  //       name: "Empty Dataset",
+  //     },
+  //   ];
+
+  isValid(): boolean {
+    return this.selectedType != -1;
+  }
+
+  clear(): void {
+    this.selectedType = -1;
+    this.category = 0;
+  }
+
+  fill(
+    _val: T,
+    progress?: { states: string[]; currState: number } | undefined
+  ): void {
+    this.drawProgressBar(progress);
+  }
 
   private coreMenu() {
     return html`
@@ -94,7 +112,7 @@ abstract class InctypeForm<T> extends BasicFormPage<T> {
           <h3>Modules</h3>
           ${map(
             this.modules,
-            (module, i) =>
+            ([modname, _modtypes], i) =>
               html`<div
                 class=${classMap({ selected: i == this.selectedModule })}
                 @click=${() => {
@@ -102,19 +120,22 @@ abstract class InctypeForm<T> extends BasicFormPage<T> {
                   this.selectedType = -1;
                 }}
               >
-                ${module}
+                ${modname}
               </div>`
           )}
         </div>
         <div class="typelist">
           ${map(
-            this.modules.slice(0, this.modules[this.selectedModule].length),
-            (module, i) =>
+            this.modules[this.selectedModule][1],
+            ({ id, inctype }, i) =>
               html`<div
                 class=${classMap({ selected: i == this.selectedType })}
-                @click=${() => (this.selectedType = i)}
+                @click=${() => {
+                  this.selectedType = i;
+                  this.inctype = inctype;
+                }}
               >
-                ${module}
+                ${id}
               </div>`
           )}
         </div>
@@ -125,18 +146,31 @@ abstract class InctypeForm<T> extends BasicFormPage<T> {
   private mineMenu() {
     return html`
       <div class="coremenu-grid">
-        <div class="typelist">
-          ${map(
-            this.myTypes,
-            (type, i) =>
-              html`<div
-                class=${classMap({ selected: i == this.selectedType })}
-                @click=${() => (this.selectedType = i)}
-              >
-                ${type}
-              </div>`
-          )}
-        </div>
+        ${when(
+          this.myTypes.length == 0,
+          () =>
+            html`<div style="color: var(--color-border-alt);">
+              No types defined
+            </div>`,
+          () =>
+            html`
+              <div class="typelist">
+                ${map(
+                  this.myTypes,
+                  ({ id, inctype }, i) =>
+                    html`<div
+                      class=${classMap({ selected: i == this.selectedType })}
+                      @click=${() => {
+                        this.selectedType = i;
+                        this.inctype = inctype;
+                      }}
+                    >
+                      ${id}
+                    </div>`
+                )}
+              </div>
+            `
+        )}
       </div>
     `;
   }
@@ -144,65 +178,44 @@ abstract class InctypeForm<T> extends BasicFormPage<T> {
   private noneMenu() {
     return html`
       <div class="typelist">
-        <div class="dummy selected">None</div>
+        ${map(
+          this.noneTypes,
+          ({ id, inctype }, i) =>
+            html`<div
+              class=${classMap({ selected: i == this.selectedType })}
+              @click=${() => {
+                this.selectedType = i;
+                this.inctype = inctype;
+              }}
+            >
+              ${id}
+            </div>`
+        )}
       </div>
     `;
   }
 
-  private changeCategory(category: "Core" | "Typedef" | "None") {
-    this.category = category;
-    if (category != "None") this.selectedType = -1;
-  }
-
-  highlightGroupType(type: GroupType) {
-    switch (type[0]) {
-      case "Core":
-        this.changeCategory("Core");
-        // todo find module and inctype
-        break;
-      case "None":
-        this.changeCategory("None");
-        // todo find module and inctype
-        break;
-      case "Typedef":
-        this.changeCategory("Typedef");
-        break;
-      default:
-        assertNever(type[0]);
-    }
+  setIncType(_inctype: NWBType) {
+    // TODO
   }
 
   body() {
     return html`
       <div>
-        <h3 class=${classMap({ selected: this.category == "Core" })}
-            @click=${() => this.changeCategory("Core")}
-        >
-          Core Types
-        </h3>
-        ${
-          this.myTypes.length > 0
-            ? html`
-                <h3
-                  class=${classMap({ selected: this.category == "Typedef" })}
-                  @click=${() => this.changeCategory("Typedef")}
-                >
-                  My Types
-                </h3>
-              `
-            : html``
-        }
-        <h3 class=${classMap({ selected: this.category == "None" })}
-            @click=${() => this.changeCategory("None")}
-        >
-          No Base
-        </h3>
-        <hr></hr>
+        <radio-input
+          .options=${this.categories}
+          .selected=${this.category}
+          .onSelect=${(i: number) => {
+            this.category = i;
+            this.selectedType = -1;
+            this._selfValidate();
+          }}
+        ></radio-input>
       </div>
       ${choose(this.category, [
-        ["Core", () => this.coreMenu()],
-        ["Typedef", () => this.mineMenu()],
-        ["None", () => this.noneMenu()],
+        [InctypeForm.coreCategory, () => this.coreMenu()],
+        [InctypeForm.myTypeCategory, () => this.mineMenu()],
+        [InctypeForm.noBaseCategory, () => this.noneMenu()],
       ])}
     `;
   }
@@ -236,6 +249,13 @@ abstract class InctypeForm<T> extends BasicFormPage<T> {
         margin: 0.5em;
       }
 
+      div.body > div:first-child {
+        // padding-bottom: 1em;
+        border-bottom: 1px solid var(--color-border-alt);
+        margin-bottom: 1em;
+        width: 80%;
+      }
+
       div.body > div {
         display: flex;
         flex-direction: row;
@@ -256,13 +276,6 @@ abstract class InctypeForm<T> extends BasicFormPage<T> {
 
       div.body > div > h3:hover {
         color: var(--clickable);
-      }
-
-      hr {
-        position: absolute;
-        top: 70%;
-        width: 80%;
-        transition: 0.3s;
       }
 
       .selected {
@@ -347,6 +360,7 @@ abstract class InctypeForm<T> extends BasicFormPage<T> {
       .typelist > div.selected {
         border: 2px solid var(--clickable);
         color: var(--clickable);
+        background: var(--background-light-button);
       }
 
       div.body > div:last-child {
@@ -369,42 +383,114 @@ abstract class InctypeForm<T> extends BasicFormPage<T> {
 }
 
 @customElement("generic-inctype-form")
-export class GenericInctypeForm extends InctypeForm<TypeDef> {
-  fill(val: TypeDef, progress?: ProgressState | undefined): void {
-    this.drawProgressBar(progress);
+export class GenericInctypeForm extends InctypeForm<TypeDef, NWBType> {
+  @state()
+  inctype: NWBType = ["GROUP", ["None", null]];
+
+  fromTypedef(typedef: TypeDef): Inctype<NWBType> {
+    let inctype: NWBType =
+      typedef[0] == "GROUP"
+        ? ["GROUP", ["Typedef", typedef[1]]]
+        : ["DATASET", ["Typedef", typedef[1]]];
+    return { id: typedef[1].neurodataTypeDef, inctype };
   }
-  transform(val: TypeDef): TypeDef {
-    let [kind, def] = val;
-    switch (kind) {
+
+  modules: [name: string, inctype: Inctype<NWBType>[]][] = [];
+
+  noneTypes: Inctype<NWBType>[] = [
+    {
+      inctype: ["GROUP", ["None", null]],
+      id: "Empty Group",
+    },
+    {
+      inctype: ["DATASET", ["None", null]],
+      id: "Empty Dataset",
+    },
+  ];
+
+  //   modules = [
+  //     "core",
+  //     "device",
+  //     "ecephys",
+  //     "file",
+  //     "misc",
+  //     "ophys",
+  //     "processing",
+  //     "time_series",
+  //     "behavior",
+  //     "ecephys",
+  //   ];
+
+  fill(val: TypeDef, progress?: ProgressState | undefined): void {
+    super.fill(val, progress);
+    this.drawProgressBar(progress);
+    switch (val[0]) {
       case "GROUP":
-        let groupInc: GroupType = ["None", null];
-        let groupDef: GroupTypeDef = {
-          ...(def as GroupTypeDef),
-          neurodataTypeInc: groupInc,
-        };
-        return [kind, groupDef];
+        this.setIncType(["GROUP", val[1].neurodataTypeInc]);
+        break;
       case "DATASET":
-        let datasetInc: DatasetType = ["None", null];
+        this.setIncType(["DATASET", val[1].neurodataTypeInc]);
+        break;
+      default:
+        assertNever(val[0]);
+    }
+  }
+
+  transform(val: TypeDef): TypeDef {
+    switch (this.inctype[0]) {
+      case "GROUP":
         return [
-          kind,
-          { ...(def as DatasetTypeDef), neurodataTypeInc: datasetInc },
+          "GROUP",
+          {
+            ...(val[0] == "GROUP" ? val[1] : Initializers.groupTypeDef),
+            neurodataTypeInc: this.inctype[1],
+          },
+        ];
+      case "DATASET":
+        return [
+          "DATASET",
+          {
+            ...(val[0] == "DATASET" ? val[1] : Initializers.datasetTypeDef),
+            neurodataTypeInc: this.inctype[1],
+          },
         ];
       default:
-        assertNever(kind);
+        assertNever(this.inctype[0]);
     }
   }
 }
 
 @customElement("group-inctype-form")
-export class GroupInctypeForm extends InctypeForm<HasGroupIncType> {
-  transform = (data: HasGroupIncType) => {
-    return {
-      ...data,
-      neurodataTypeInc: ["None", null] as GroupType,
-    };
+export class GroupInctypeForm extends InctypeForm<HasGroupIncType, GroupType> {
+  @state()
+  inctype: GroupType = ["None", null];
+
+  fromTypedef(typedef: TypeDef): Inctype<GroupType> | null {
+    if (typedef[0] == "GROUP") {
+      return {
+        id: typedef[1].neurodataTypeDef,
+        inctype: ["Typedef", typedef[1]],
+      };
+    } else {
+      return null;
+    }
+  }
+
+  modules: [name: string, inctype: Inctype<GroupType>[]][] = [];
+
+  noneTypes: Inctype<GroupType>[] = [
+    {
+      inctype: ["None", null],
+      id: "Empty Group",
+    },
+  ];
+
+  transform = (val: HasGroupIncType) => {
+    return { ...val, neurodataTypeInc: this.inctype };
   };
 
-  fill(val: HasGroupIncType): void {
+  fill(val: HasGroupIncType, prog?: ProgressState): void {
+    super.fill(val, prog);
     const [kind, incType] = val.neurodataTypeInc;
     switch (kind) {
       case "Core":
@@ -422,13 +508,36 @@ export class GroupInctypeForm extends InctypeForm<HasGroupIncType> {
 }
 
 @customElement("dataset-inctype-form")
-export class DatasetInctypeForm<
-  T extends HasDatasetIncType
-> extends InctypeForm<T> {
-  transform = (data: T) => {
-    return { ...data, neurodataTypeInc: ["None", null] };
-  };
-  fill(data: T): this {
+export class DatasetInctypeForm extends InctypeForm<
+  HasDatasetIncType,
+  DatasetType
+> {
+  inctype: DatasetType = ["None", null];
+
+  fromTypedef(typedef: TypeDef): Inctype<DatasetType> | null {
+    if (typedef[0] == "DATASET") {
+      return {
+        id: typedef[1].neurodataTypeDef,
+        inctype: ["Typedef", typedef[1]],
+      };
+    } else {
+      return null;
+    }
+  }
+
+  modules: [name: string, inctype: Inctype<DatasetType>[]][] = [];
+  noneTypes: Inctype<DatasetType>[] = [
+    {
+      inctype: ["None", null],
+      id: "Empty Dataset",
+    },
+  ];
+
+  transform(val: HasDatasetIncType): HasDatasetIncType {
+    return { ...val, neurodataTypeInc: this.inctype };
+  }
+  fill(data: HasDatasetIncType, prog?: ProgressState): this {
+    super.fill(data, prog);
     const [kind, incType] = data.neurodataTypeInc;
     switch (kind) {
       case "Core":
@@ -447,22 +556,29 @@ export class DatasetInctypeForm<
 }
 
 @customElement("target-inctype-browser")
-export class TargetIncTypeForm extends InctypeForm<LinkDec> {
-  fill(val: LinkDec, progress?: ProgressState | undefined): void {
-    this.drawProgressBar(progress);
-  }
-  transform(val: LinkDec): LinkDec {
-    const target = ["None", null] as GroupType;
-    switch (this.category) {
-      case "Core":
-        break;
-      case "Typedef":
-        break;
-      case "None":
-        break;
-      default:
-        assertNever(this.category);
+export class TargetIncTypeForm extends InctypeForm<LinkDec, NWBType> {
+  inctype: NWBType = ["GROUP", ["None", null]];
+  fromTypedef(typedef: TypeDef): Inctype<NWBType> | null {
+    if (typedef[0] == "GROUP") {
+      return {
+        id: typedef[1].neurodataTypeDef,
+        inctype: ["GROUP", ["Typedef", typedef[1]]],
+      };
     }
-    return { ...val, targetType: target };
+    return {
+      id: typedef[1].neurodataTypeDef,
+      inctype: ["DATASET", ["Typedef", typedef[1]]],
+    };
+  }
+  modules: [name: string, inctype: Inctype<NWBType>[]][] = [];
+  noneTypes: Inctype<NWBType>[] = [];
+
+  fill(val: LinkDec, progress?: ProgressState | undefined): void {
+    super.fill(val, progress);
+    this.setIncType(val.targetType);
+  }
+
+  transform(val: LinkDec): LinkDec {
+    return { ...val, targetType: this.inctype };
   }
 }

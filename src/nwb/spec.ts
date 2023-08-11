@@ -62,7 +62,7 @@ export type Namespace = {
   typedefs: TypeDef[];
 };
 
-export type NWBType = ["CORE", CoreType] | ["TYPEDEF", TypeDef];
+export type NWBType = ["GROUP", GroupType] | ["DATASET", DatasetType];
 
 export type CoreType = ["GROUP", CoreGroupType] | ["DATASET", CoreDatasetType];
 export type TypeDef = ["GROUP", GroupTypeDef] | ["DATASET", DatasetTypeDef];
@@ -220,7 +220,7 @@ export type AttributeDec = {
 
 export type LinkDec = {
   doc: string;
-  targetType: GroupType | DatasetType;
+  targetType: NWBType;
   quantityOrName: Quantity | string; // if named, quantity is one
 };
 

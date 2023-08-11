@@ -24,10 +24,10 @@ import {
   LinkDec,
   GroupDec,
 } from "./nwb/spec";
-import { AxesForm, TypenameForm, DatasetDefVizForm } from "./typedef";
+import { AxesForm, TypenameForm, DatasetDefVizForm } from "./defs";
 import { AttributeAndShape } from "./parent";
 import { Initializers } from "./nwb/spec-defaults";
-import { GroupTypevizForm } from "./typeviz-form";
+import { GroupTypeVizForm } from "./typeviz-form";
 
 const namespaceBuilderSteps = [
   "Add custom types",
@@ -116,7 +116,7 @@ export function buildFormChains(parent: LitElement) {
     groupTypeDefBuilderSteps,
     1
   ).then(
-    new GroupTypevizForm(attributeBuilderTrigger),
+    new GroupTypeVizForm(attributeBuilderTrigger),
     groupTypeDefBuilderSteps,
     3
   );
@@ -133,11 +133,8 @@ export function buildFormChains(parent: LitElement) {
       3
     );
 
-  let typedefBuilderTrigger = new FormChain<TypeDef>(
-    new GenericInctypeForm(),
-    typeDefSteps,
-    0
-  )
+  let typedefBuilderTrigger = new FormChain<TypeDef>()
+    .then(new GenericInctypeForm(), typeDefSteps, 0)
     .branch(
       ([k, _]) => k === "GROUP",
       // branch guarantees safety, so `as` cast is okay here

@@ -1,7 +1,6 @@
 import { LitElement, html, css } from "lit";
-import { customElement, property } from "lit/decorators.js";
-import { when } from "lit/directives/when.js";
-import { FormChain, ProgressState } from "./hofs";
+import { customElement } from "lit/decorators.js";
+import { FormChain } from "./hofs";
 import {
   GroupType,
   DatasetType,
@@ -15,7 +14,7 @@ import {
   Shape,
   Quantity,
 } from "./nwb/spec";
-import { AxesForm, DatasetDefVizForm, TypenameForm } from "./typedef";
+import { AxesForm, DatasetDefVizForm, TypenameForm } from "./defs";
 import {
   NamespaceMetadataForm,
   NamespaceStartForm,

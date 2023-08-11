@@ -1,15 +1,9 @@
 import { TemplateResult, html } from "lit";
-import { CPSForm, ProgressState } from "./hofs";
+import { ProgressState } from "./hofs";
 import { BasicFormPage } from "./basic-form";
-import {
-  HasInstanceNameAndDescription,
-  HasRequired,
-  MaybeHasValue,
-} from "./parent";
 import { customElement, property, query } from "lit/decorators.js";
 import { AttributeDec } from "./nwb/spec";
 import { classMap } from "lit/directives/class-map.js";
-import { styleMap } from "lit/directives/style-map.js";
 
 @customElement("attrib-info-form")
 export class AttribInfoForm extends BasicFormPage<AttributeDec> {

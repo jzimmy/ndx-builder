@@ -219,7 +219,7 @@ export class NamespaceTypesForm extends CPSForm<Namespace> {
     };
   }
 
-  @state()
+  @property()
   types: TypeDef[] = [];
 
   @query("step-bar")
