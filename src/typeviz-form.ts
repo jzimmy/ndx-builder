@@ -1,13 +1,6 @@
 import { customElement, query, state } from "lit/decorators.js";
-import { BasicFormPage, NDXBuilderDefaultShowAndFocus } from "./basic-form";
-import {
-  AttributeDec,
-  DatasetDec,
-  DatasetTypeDef,
-  GroupDec,
-  GroupTypeDef,
-  LinkDec,
-} from "./nwb/spec";
+import { NDXBuilderDefaultShowAndFocus } from "./basic-form";
+import { AttributeDec, DatasetTypeDef, GroupTypeDef } from "./nwb/spec";
 import { TemplateResult, html } from "lit";
 import { CPSForm, CPSFormController, ProgressState, Trigger } from "./hofs";
 import { Initializers } from "./nwb/spec-defaults";

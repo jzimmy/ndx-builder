@@ -16,6 +16,7 @@ import {
   IncDatasetDec,
   IncGroupDec,
   LinkDec,
+  NWBType,
   Quantity,
   Shape,
 } from "./nwb/spec";
@@ -50,9 +51,9 @@ export function quantityOrNameString(qOrS: Quantity | string): string {
   }
 }
 
-function targetTypeNameString(targetType: GroupType | DatasetType) {
-  if (targetType[0] == "None") return "None";
-  let [kind, ty] = targetType;
+function targetTypeNameString(targetType: NWBType) {
+  if (targetType[1][0] == "None") return "None";
+  let [kind, ty] = targetType[1];
   switch (kind) {
     case "Core":
     case "Typedef":
@@ -68,8 +69,11 @@ export class LinkDecElem extends BasicTypeElem {
   data: LinkDec = {
     doc: "Some example documentation",
     targetType: [
-      "Typedef",
-      { ...Initializers.groupTypeDef, neurodataTypeDef: "MyTarget" },
+      "GROUP",
+      [
+        "Typedef",
+        { ...Initializers.groupTypeDef, neurodataTypeDef: "MyTarget" },
+      ],
     ],
     quantityOrName: ["*", null],
   };
@@ -545,7 +549,7 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
           .triggerAttribDecBuilderForm=${this.triggerAttribDecBuilderForm}
           .triggerLinkDecBuilderForm=${this.triggerLinkDecBuilderForm}
           .triggerGroupDecBuilderForm=${this.triggerGroupDecBuilderForm}
-          .triggerDatasetDecBuilderForm=${this.triggerDatasetDecBuilderForm}
+          .triggerAttribDecBuilderForm=${this.triggerAttribDecBuilderForm}
         ></group-subtree>
       </type-elem>
     `;
