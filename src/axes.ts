@@ -10,7 +10,7 @@ export interface HasAxes {
   dtype: Dtype;
 }
 
-@customElement("axes-form-2")
+@customElement("axes-form")
 export class AxesForm<T extends HasAxes> extends BasicTypeBuilderFormPage<T> {
   formTitle: string = "Specify the axes of the data to be stored";
   @query("shape-input")

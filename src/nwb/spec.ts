@@ -190,8 +190,8 @@ export type DatasetTypeDef = {
 // DatasetDec is an instantiation of a DatasetType. It is used in the
 // subfields of a GroupType
 export type DatasetDec =
-  | ["Inc", IncDatasetDec]
-  | ["Anonymous", AnonymousDatasetDec];
+  | ["INC", IncDatasetDec]
+  | ["ANONYMOUS", AnonymousDatasetDec];
 
 // An instance of an existing DatasetDec
 export type IncDatasetDec = {

@@ -22,6 +22,9 @@ abstract class NdxInputElem<T> extends LitElement {
   abstract value(): T | null;
   abstract clear(): void;
 
+  @property({ type: Boolean })
+  required: boolean = true;
+
   @property({ type: Function })
   input: () => void = () => {};
 }
@@ -144,7 +147,7 @@ export class QuantityOrNameInput extends NdxInputElem<Quantity | string> {
     if (this.quantityNotName) {
       if (this.quantity != "Num") return true;
       let num = this.numInput?.value();
-      return num != null && num >= 0;
+      return num != null && num > 0;
     } else {
       return this.nameInput?.isValid() || false;
     }
@@ -200,28 +203,31 @@ export class QuantityOrNameInput extends NdxInputElem<Quantity | string> {
         ? html` <radio-input
               style="font-size: 0.8em;"
               .options=${this.quantityOptions}
-              .selected=${choose(this.quantity[0], [
+              .selected=${choose(this.quantity, [
                 ["Num", () => 0],
                 ["*", () => 1],
                 ["?", () => 2],
                 ["+", () => 3],
               ])}
               .onSelect=${(i: number) => this.setQuantity(i)}
-              .input=${() => this.input()}
+              .input=${() =>
+                Promise.resolve(this.updateComplete).then(() => this.input())}
             ></radio-input>
             ${when(
-              this.quantity[0] == "Num",
+              this.quantity == "Num",
               () =>
                 html`<number-input
                   label="Number of instances"
-                  .init=${this.quantity[1]}
                   .input=${() => this.input()}
                 ></number-input>`
             )}`
         : html`<name-input
             label="Name"
             id="name"
-            .input=${() => this.setQuantity(0)}
+            .input=${() => {
+              this.setQuantity(0);
+              this.input();
+            }}
           ></name-input>`}
     `;
   }
@@ -274,7 +280,10 @@ export class StringInput extends ValueInput<string> {
 @customElement("name-input")
 export class NameInput extends ValueInput<string> {
   isValid: () => boolean = () => {
-    return this.inputElem.value != "";
+    return (
+      (!this.required && this.inputElem.value == "") ||
+      this.inputElem.value.match(/^[a-zA-Z]+$/) != null
+    );
   };
 
   fill(val: string): void {

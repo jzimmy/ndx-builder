@@ -111,11 +111,17 @@ export class NdxFormParent extends LitElement {
         margin-bottom: 3em;
       }
 
-      div > a {
+      a {
         position: absolute;
         right: 10%;
         font-weight: bold;
         color: var(--clickable);
+        transition: 0.2s;
+      }
+
+      a:hover {
+        color: var(--clickable-hover);
+        font-size: 1.05em;
       }
 
       h1 {

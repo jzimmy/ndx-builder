@@ -10,6 +10,7 @@ import {
 import { CodegenForm } from "./codegen";
 import { CPSForm, FormChain, Trigger } from "./hofs";
 import {
+  DatasetInctypeForm,
   GenericInctypeForm,
   GroupInctypeForm,
   TargetIncTypeForm,
@@ -30,14 +31,16 @@ import {
   AnonymousGroupTypeDec,
   IncGroupDec,
   DatasetDec,
+  AnonymousDatasetDec,
+  IncDatasetDec,
 } from "./nwb/spec";
 import { AxesForm } from "./axes";
-import { TypenameForm } from "./defs";
+import { TypenameForm } from "./names";
 import { Initializers } from "./nwb/spec-defaults";
 import { DatasetTypeVizForm, GroupTypeVizForm } from "./typeviz-form";
-import { AnonGroupDecInfo, IncGroupDecInfo } from "./decs";
 import { LinkInfoForm } from "./link";
 import { DtypeForm } from "./dtype";
+import { AnonDecNameForm, IncDecNameForm } from "./names";
 
 // this good place to get a sense of overall workflow
 export const namespaceBuilderSteps = [
@@ -78,17 +81,40 @@ export function buildFormChains(parent: LitElement): Trigger<Namespace> {
     .then(new LinkInfoForm())
     .withParent(parent);
 
-  let anonGroupDecChain = fc(new AnonGroupDecInfo(), [], 0).convert<GroupDec>(
+  let anonGroupDecChain = fc(
+    new AnonDecNameForm<AnonymousGroupTypeDec>(),
+    [],
+    0
+  ).convert<GroupDec>(
     (v) => ["ANONYMOUS", v],
     ([_, v]) => v as AnonymousGroupTypeDec
   );
 
-  let incGroupDecChain = fc(new IncGroupDecInfo()).convert<GroupDec>(
+  let incGroupDecChain = fc(
+    new IncDecNameForm<IncGroupDec>()
+  ).convert<GroupDec>(
     (v) => ["INC", v],
     ([_, v]) => v as IncGroupDec
   );
 
-  let datasetDecBuilderTrigger = fc<DatasetDec>().withParent(parent);
+  let anonDatasetDecChain = fc(
+    new AnonDecNameForm<AnonymousDatasetDec>(),
+    [],
+    0
+  )
+    .then(new AxesForm(), [], 0)
+    .then(new DtypeForm(), [], 0)
+    .convert<DatasetDec>(
+      (v) => ["ANONYMOUS", v],
+      ([_, v]) => v as AnonymousDatasetDec
+    );
+
+  let incDatasetDecChain = fc(
+    new IncDecNameForm<IncDatasetDec>()
+  ).convert<DatasetDec>(
+    (v) => ["INC", v],
+    ([_, v]) => v as IncDatasetDec
+  );
 
   let groupDecBuilderTrigger = fc(new GroupInctypeForm())
     .convert<GroupDec>(
@@ -96,16 +122,33 @@ export function buildFormChains(parent: LitElement): Trigger<Namespace> {
         neurodataTypeInc[0] == "None"
           ? ["ANONYMOUS", { ...Initializers.anonymousGroupDec }]
           : ["INC", { ...Initializers.incGroupDec, neurodataTypeInc }],
-      (v) => {
-        return v[0] == "ANONYMOUS"
+      (v) =>
+        v[0] == "ANONYMOUS"
           ? { ...v[1], neurodataTypeInc: ["None", null] }
-          : { ...v[1] };
-      }
+          : { ...v[1] }
     )
     .branch(
       (v: GroupDec) => v[0] == "ANONYMOUS",
       anonGroupDecChain,
       incGroupDecChain
+    )
+    .withParent(parent);
+
+  let datasetDecBuilderTrigger = fc(new DatasetInctypeForm())
+    .convert<DatasetDec>(
+      ({ neurodataTypeInc }) =>
+        neurodataTypeInc[0] == "None"
+          ? ["ANONYMOUS", { ...Initializers.anonymousDatasetDec }]
+          : ["INC", { ...Initializers.incDatasetDec, neurodataTypeInc }],
+      (v) =>
+        v[0] == "ANONYMOUS"
+          ? { ...v[1], neurodataTypeInc: ["None", null] }
+          : { ...v[1] }
+    )
+    .branch(
+      (v: DatasetDec) => v[0] == "ANONYMOUS",
+      anonDatasetDecChain,
+      incDatasetDecChain
     )
     .withParent(parent);
 
@@ -172,8 +215,8 @@ export function buildFormChains(parent: LitElement): Trigger<Namespace> {
 
   let namespaceBuilderTrigger = fc<Namespace>(
     new NamespaceStartForm().addDebugTrigger(
-      attributeBuilderTrigger,
-      Initializers.attributeDec
+      linkBuilderTrigger,
+      Initializers.linkDec
     )
   )
     .then(

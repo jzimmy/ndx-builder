@@ -21,8 +21,14 @@ export class LinkInfoForm extends BasicTypeBuilderFormPage<LinkDec> {
 
   body(): TemplateResult<1> {
     return html`
-      <doc-input id="doc" label="Description"></doc-input>
-      <quantity-or-name-input></quantity-or-name-input>
+      <doc-input
+        id="doc"
+        label="Description"
+        .input=${() => this._selfValidate()}
+      ></doc-input>
+      <quantity-or-name-input
+        .input=${() => this._selfValidate()}
+      ></quantity-or-name-input>
     `;
   }
 

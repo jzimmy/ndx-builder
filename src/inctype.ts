@@ -420,37 +420,41 @@ abstract class InctypeForm<T, U> extends BasicTypeBuilderFormPage<T> {
   ];
 }
 
+function collectModulesAsNWBTypes(): [string, Inctype<() => NWBType>[]][] {
+  return grabAllModules().map(([name, module]) => [
+    name,
+    module.map((i) => {
+      let { inctype, id, kind } = i;
+      switch (kind) {
+        case "DATASET":
+          const incDst: Inctype<() => NWBType> = {
+            id,
+            kind,
+            inctype: () => [
+              "DATASET",
+              ["Core", inctype()[1] as CoreDatasetType],
+            ],
+          };
+          return incDst;
+        case "GROUP":
+          const incGrp: Inctype<() => NWBType> = {
+            id,
+            kind,
+            inctype: () => ["GROUP", ["Core", inctype()[1] as CoreGroupType]],
+          };
+          return incGrp;
+        default:
+          throw new Error(`Unknown kind: ${kind}`);
+      }
+    }),
+  ]);
+}
+
 @customElement("generic-inctype-form")
 export class GenericInctypeForm extends InctypeForm<TypeDef, NWBType> {
   constructor() {
     super();
-    this.modules = grabAllModules().map(([name, module]) => [
-      name,
-      module.map((i) => {
-        let { inctype, id, kind } = i;
-        switch (kind) {
-          case "DATASET":
-            const incDst: Inctype<() => NWBType> = {
-              id,
-              kind,
-              inctype: () => [
-                "DATASET",
-                ["Core", inctype()[1] as CoreDatasetType],
-              ],
-            };
-            return incDst;
-          case "GROUP":
-            const incGrp: Inctype<() => NWBType> = {
-              id,
-              kind,
-              inctype: () => ["GROUP", ["Core", inctype()[1] as CoreGroupType]],
-            };
-            return incGrp;
-          default:
-            throw new Error(`Unknown kind: ${kind}`);
-        }
-      }),
-    ]);
+    this.modules = collectModulesAsNWBTypes();
   }
   @state()
   inctype: NWBType = ["GROUP", ["None", null]];
@@ -627,6 +631,7 @@ export class DatasetInctypeForm extends InctypeForm<
   transform(val: HasDatasetIncType): HasDatasetIncType {
     return { ...val, neurodataTypeInc: this.inctype };
   }
+
   fill(data: HasDatasetIncType, prog?: ProgressState): this {
     super.fill(data, prog);
     const [kind, incType] = data.neurodataTypeInc;
@@ -648,6 +653,11 @@ export class DatasetInctypeForm extends InctypeForm<
 
 @customElement("target-inctype-browser")
 export class TargetIncTypeForm extends InctypeForm<LinkDec, NWBType> {
+  constructor() {
+    super();
+    this.modules = collectModulesAsNWBTypes();
+  }
+
   inctype: NWBType = ["GROUP", ["None", null]];
   fromTypedef(typedef: TypeDef): Inctype<NWBType> | null {
     if (typedef[0] == "GROUP") {
@@ -661,6 +671,7 @@ export class TargetIncTypeForm extends InctypeForm<LinkDec, NWBType> {
       inctype: ["DATASET", ["Typedef", typedef[1]]],
     };
   }
+
   modules: [name: string, inctype: Inctype<() => NWBType>[]][] = [];
   noneTypes: Inctype<NWBType>[] = [];
 
