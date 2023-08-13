@@ -200,6 +200,8 @@ export class FormStepBar extends LitElement {
                   color:
                     i == this.currStep
                       ? "var(--clickable)"
+                      : i < this.currStep
+                      ? "var(--color-border)"
                       : "var(--color-border-alt)",
                 })}
                 class="material-symbols-outlined"
@@ -216,6 +218,7 @@ export class FormStepBar extends LitElement {
       :host {
         display: flex;
         flex-direction: row;
+        justify-content: center;
       }
 
       :host[hidden] {

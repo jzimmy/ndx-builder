@@ -2,7 +2,11 @@
  * All the logic for the app is in here, this is where the forms are glued together
  */
 import { LitElement } from "lit";
-import { AttribInfoForm, AttribValueForm } from "./attrib";
+import {
+  AttribInfoForm,
+  AttribValueForm,
+  attribDtypeFormTitle,
+} from "./attrib";
 import { CodegenForm } from "./codegen";
 import { CPSForm, FormChain, Trigger } from "./hofs";
 import {
@@ -25,15 +29,18 @@ import {
   GroupDec,
   AnonymousGroupTypeDec,
   IncGroupDec,
+  DatasetDec,
 } from "./nwb/spec";
-import { AxesForm, TypenameForm, DatasetDefVizForm } from "./defs";
-import { AttributeAndShape } from "./parent";
+import { AxesForm } from "./axes";
+import { TypenameForm } from "./defs";
 import { Initializers } from "./nwb/spec-defaults";
-import { GroupTypeVizForm } from "./typeviz-form";
+import { DatasetTypeVizForm, GroupTypeVizForm } from "./typeviz-form";
 import { AnonGroupDecInfo, IncGroupDecInfo } from "./decs";
 import { LinkInfoForm } from "./link";
+import { DtypeForm } from "./dtype";
 
-const namespaceBuilderSteps = [
+// this good place to get a sense of overall workflow
+export const namespaceBuilderSteps = [
   "Add custom types",
   "Define extension namespace",
   "Export extension generator script",
@@ -41,35 +48,32 @@ const namespaceBuilderSteps = [
 
 const typeDefSteps = [
   "Pick a base type",
+  "Name type",
   "Define type properties",
   "Add subcomponents",
 ];
 
-const attributeBuilderSteps = ["Name attribute", "Define axes"];
-
+const groupTypeDefBuilderSteps = [...typeDefSteps];
 const datasetTypeDefBuilderSteps = [
-  ...typeDefSteps.slice(0, 1),
-  "Name dataset type",
+  ...typeDefSteps.slice(0, 2),
   "Define axes",
-  ...typeDefSteps.slice(2),
+  "Data type",
+  ...typeDefSteps.slice(3),
 ];
 
-const groupTypeDefBuilderSteps = [
-  ...typeDefSteps.slice(0, 1),
-  "Name group type",
-  ...typeDefSteps.slice(2),
-];
+const attributeBuilderSteps = ["Name attribute", "Define axes"];
 
 // alias for `new FormChain<T>(...)`
 function fc<T>(f?: CPSForm<T>, stps?: string[], index = -1) {
   return new FormChain(f, stps, index);
 }
 
+// Empty chain a.k.a. unit. Like nullptr in C++
+// Needs to be type `any` to allow generalization during inference
+const nullform = fc<any>();
+
 // all logic is in here, then when ready, build it with the parent
-export function buildFormChains(
-  parent: LitElement,
-  debug = false
-): Trigger<Namespace> {
+export function buildFormChains(parent: LitElement): Trigger<Namespace> {
   let linkBuilderTrigger = fc<LinkDec>(new TargetIncTypeForm())
     .then(new LinkInfoForm())
     .withParent(parent);
@@ -83,6 +87,8 @@ export function buildFormChains(
     (v) => ["INC", v],
     ([_, v]) => v as IncGroupDec
   );
+
+  let datasetDecBuilderTrigger = fc<DatasetDec>().withParent(parent);
 
   let groupDecBuilderTrigger = fc(new GroupInctypeForm())
     .convert<GroupDec>(
@@ -103,7 +109,7 @@ export function buildFormChains(
     )
     .withParent(parent);
 
-  let attributeBuilderTrigger = new FormChain<AttributeDec>(
+  let attributeBuilderTrigger = fc<AttributeDec>(
     new AttribInfoForm(),
     attributeBuilderSteps,
     0
@@ -111,20 +117,24 @@ export function buildFormChains(
     .then(new AttribValueForm(), attributeBuilderSteps, 1)
     .branch(
       (v: AttributeDec) => v.data[0] === "SHAPE",
-      fc(), // data type form
-      fc()
+      fc(
+        new DtypeForm<AttributeDec>().withTitle(attribDtypeFormTitle),
+        [...attributeBuilderSteps, "Data type"],
+        attributeBuilderSteps.length
+      ),
+      nullform
     )
     .withParent(parent);
 
   let groupBuilderFormChain = fc<GroupTypeDef>(
-    new TypenameForm(),
+    new TypenameForm<GroupTypeDef>().withTitle("Name your new group type"),
     groupTypeDefBuilderSteps,
     1
   ).then(
     new GroupTypeVizForm(
       attributeBuilderTrigger,
-      () => {},
-      () => {},
+      datasetDecBuilderTrigger,
+      groupDecBuilderTrigger,
       linkBuilderTrigger
     ),
     groupTypeDefBuilderSteps,
@@ -132,15 +142,16 @@ export function buildFormChains(
   );
 
   let datasetBuilderFormChain = fc<DatasetTypeDef>(
-    new TypenameForm(),
+    new TypenameForm<DatasetTypeDef>().withTitle("Name your new dataset type"),
     datasetTypeDefBuilderSteps,
     1
   )
     .then(new AxesForm(), datasetTypeDefBuilderSteps, 2)
+    .then(new DtypeForm(), datasetTypeDefBuilderSteps, 3)
     .then(
-      new DatasetDefVizForm(attributeBuilderTrigger),
+      new DatasetTypeVizForm(attributeBuilderTrigger),
       datasetTypeDefBuilderSteps,
-      3
+      4
     );
 
   let typedefBuilderTrigger = fc<TypeDef>()

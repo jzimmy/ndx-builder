@@ -1,10 +1,10 @@
+import "./basic-elems";
 import { TemplateResult, css, html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { map } from "lit/directives/map.js";
 import { Namespace, TypeDef } from "./nwb/spec";
 import { CPSForm, Trigger, ProgressState } from "./hofs";
 import { BasicFormPage, NDXBuilderDefaultShowAndFocus } from "./basic-form";
-import "./basic-elems";
 import { FormStepBar, iconOf } from "./basic-elems";
 import { Initializers } from "./nwb/spec-defaults";
 import { when } from "lit/directives/when.js";
@@ -26,9 +26,7 @@ export class NamespaceStartForm extends CPSForm<Namespace> {
   }
 
   @property({ type: Function })
-  triggerUpload: () => void = () => {
-    console.log("hi");
-  };
+  triggerUpload: () => void = () => {};
 
   addDebugTrigger<T>(trigger: Trigger<T>, init: T) {
     this.triggerUpload = () => {
@@ -155,7 +153,6 @@ export class NamespaceMetadataForm extends BasicFormPage<Namespace> {
                   type="button"
                   value="remove"
                   @click=${() => {
-                    console.log("removing", i);
                     this.authors = [
                       ...this.authors.slice(0, i),
                       ...this.authors.slice(i + 1),
@@ -280,7 +277,6 @@ export class NamespaceTypesForm extends CPSForm<Namespace> {
       <back-or-quit-bar
         .back=${() => this.back()}
         .hideQuit=${true}
-        .quit=${() => console.log("FUCK")}
       >
         <step-bar></step-bar>
       </back-or-quit-bar>

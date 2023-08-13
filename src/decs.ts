@@ -1,16 +1,16 @@
 import { customElement, query } from "lit/decorators.js";
-import { BasicFormPage } from "./basic-form";
+import { BasicTypeBuilderFormPage } from "./basic-form";
 import { AnonymousGroupTypeDec, IncGroupDec } from "./nwb/spec";
 import { TemplateResult, html } from "lit";
 import { ProgressState } from "./hofs";
-import { ValueInput } from "./forminputs";
+import { DocInput, NameInput } from "./forminputs";
 
 @customElement("anon-group-dec-info")
-export class AnonGroupDecInfo extends BasicFormPage<AnonymousGroupTypeDec> {
-  @query("value-input#name")
-  nameInput!: ValueInput;
-  @query("value-input#doc")
-  docInput!: ValueInput;
+export class AnonGroupDecInfo extends BasicTypeBuilderFormPage<AnonymousGroupTypeDec> {
+  @query("name-input")
+  nameInput!: NameInput;
+  @query("doc-input")
+  docInput!: DocInput;
 
   formTitle: string = "Anonymous-typed Group Declaration";
   isValid(): boolean {
@@ -19,8 +19,16 @@ export class AnonGroupDecInfo extends BasicFormPage<AnonymousGroupTypeDec> {
 
   body(): TemplateResult<1> {
     return html`
-      <value-input id="name" label="Instance name"></value-input>
-      <value-input id="doc" label="Description"></value-input>
+      <name-input
+        .input=${() => this._selfValidate()}
+        id="name"
+        label="Instance name"
+      ></name-input>
+      <doc-input
+        .input=${() => this._selfValidate()}
+        id="doc"
+        label="Description"
+      ></doc-input>
     `;
   }
 
@@ -50,17 +58,23 @@ export class AnonGroupDecInfo extends BasicFormPage<AnonymousGroupTypeDec> {
 }
 
 @customElement("inc-group-dec-info")
-export class IncGroupDecInfo extends BasicFormPage<IncGroupDec> {
+export class IncGroupDecInfo extends BasicTypeBuilderFormPage<IncGroupDec> {
   formTitle: string = "Group instance declaration";
-  @query("value-input#doc")
-  docInput!: ValueInput;
+  @query("doc-input")
+  docInput!: DocInput;
 
   isValid(): boolean {
     return this.docInput.isValid();
   }
 
   body(): TemplateResult<1> {
-    return html` <value-input id="doc" label="Description"></value-input> `;
+    return html`
+      <doc-input
+        id="doc"
+        label="Description"
+        .input=${() => this._selfValidate()}
+      ></doc-input>
+    `;
   }
   get firstInput(): HTMLElement | undefined {
     return this.docInput.firstFocusable;

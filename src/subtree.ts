@@ -483,8 +483,6 @@ export class DatasetSubtree extends LitElement {
   setAttributeDecs: (attribs: AttributeDec[]) => void = (_) => {};
 
   render() {
-    console.log(this.minimized);
-    console.log(this.attribs.length);
     const allBranchesFilled = this.attribs.length > 0 || !this.minimized;
     return html` ${when(
       allBranchesFilled,

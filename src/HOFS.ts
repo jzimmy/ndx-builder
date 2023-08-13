@@ -195,6 +195,8 @@ export class FormChain<T> {
     this.mapElems = (apply) => [apply(form)];
   }
 
+  alreadyHasTitles = false;
+
   then(f: CPSForm<T>, titles?: string[], index?: number): this {
     const oldMapElems = this.mapElems;
     const oldTrigger = this.trigger;

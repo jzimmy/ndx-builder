@@ -1,20 +1,24 @@
 import { TemplateResult, html } from "lit";
 import { ProgressState } from "./hofs";
-import { BasicFormPage } from "./basic-form";
-import { customElement, property, query } from "lit/decorators.js";
-import { AttributeDec } from "./nwb/spec";
-import { classMap } from "lit/directives/class-map.js";
-import { CheckboxInput, ShapeOrScalarInput, ValueInput } from "./forminputs";
+import { BasicTypeBuilderFormPage } from "./basic-form";
+import { customElement, query } from "lit/decorators.js";
+import { AttributeDec, Dtype } from "./nwb/spec";
+import {
+  CheckboxInput,
+  DocInput,
+  NameInput,
+  ShapeOrScalarInput,
+} from "./forminputs";
 
 @customElement("attrib-info-form")
-export class AttribInfoForm extends BasicFormPage<AttributeDec> {
+export class AttribInfoForm extends BasicTypeBuilderFormPage<AttributeDec> {
   formTitle: string = "Include a new attribute";
 
-  @query("value-input#name")
-  nameInput!: ValueInput;
+  @query("name-input#name")
+  nameInput!: NameInput;
 
-  @query("value-input#doc")
-  docInput!: ValueInput;
+  @query("doc-input#doc")
+  docInput!: DocInput;
 
   @query("checkbox-input#required")
   requiredInput!: CheckboxInput;
@@ -25,20 +29,20 @@ export class AttribInfoForm extends BasicFormPage<AttributeDec> {
 
   body(): TemplateResult<1> {
     return html`
-      <value-input
+      <name-input
         id="name"
         label="Attribute name"
-        .input=${this._selfValidate}
-      ></value-input>
-      <value-input
+        .input=${() => this._selfValidate()}
+      ></name-input>
+      <doc-input
         id="doc"
         label="Description"
-        .input=${this._selfValidate}
-      ></value-input>
+        .input=${() => this._selfValidate()}
+      ></doc-input>
       <checkbox-input
         id="required"
         label="Required"
-        .input=${this._selfValidate}
+        .input=${() => this._selfValidate()}
       ></checkbox-input>
     `;
   }
@@ -72,7 +76,7 @@ export class AttribInfoForm extends BasicFormPage<AttributeDec> {
 }
 
 @customElement("attrib-value-form")
-export class AttribValueForm extends BasicFormPage<AttributeDec> {
+export class AttribValueForm extends BasicTypeBuilderFormPage<AttributeDec> {
   @query("shape-or-scalar-input")
   shapeOrScalarInput!: ShapeOrScalarInput;
 
@@ -81,7 +85,11 @@ export class AttribValueForm extends BasicFormPage<AttributeDec> {
   }
 
   body(): TemplateResult<1> {
-    return html` <shape-or-scalar-input></shape-or-scalar-input> `;
+    return html`
+      <shape-or-scalar-input
+        .input=${() => this._selfValidate()}
+      ></shape-or-scalar-input>
+    `;
   }
 
   get firstInput(): HTMLElement | undefined {
@@ -95,13 +103,11 @@ export class AttribValueForm extends BasicFormPage<AttributeDec> {
 
   transform(val: AttributeDec): AttributeDec {
     let shapeOrScalar = this.shapeOrScalarInput.value();
-    let dtype = val.dtype;
-    if (!shapeOrScalar) {
+    if (shapeOrScalar == null) {
       return val;
     }
-    if (shapeOrScalar[0] == "SCALAR") {
-      dtype = ["PRIMITIVE", "Text"];
-    }
+    let dtype: Dtype =
+      shapeOrScalar[0] == "SCALAR" ? ["PRIMITIVE", "Text"] : val.dtype;
     return { ...val, data: shapeOrScalar, dtype };
   }
 
@@ -111,3 +117,5 @@ export class AttribValueForm extends BasicFormPage<AttributeDec> {
 
   formTitle: string = "Add a value to the attribute";
 }
+
+export const attribDtypeFormTitle = "Data type of values in attribute";

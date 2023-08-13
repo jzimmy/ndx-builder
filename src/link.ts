@@ -1,14 +1,14 @@
 import { customElement, query } from "lit/decorators.js";
-import { BasicFormPage } from "./basic-form";
+import { BasicTypeBuilderFormPage } from "./basic-form";
 import { LinkDec } from "./nwb/spec";
 import { TemplateResult, html } from "lit";
 import { ProgressState } from "./hofs";
-import { QuantityOrNameInput, ValueInput } from "./forminputs";
+import { DocInput, QuantityOrNameInput } from "./forminputs";
 
 @customElement("link-info-form")
-export class LinkInfoForm extends BasicFormPage<LinkDec> {
-  @query("value-input#doc")
-  docInput!: ValueInput;
+export class LinkInfoForm extends BasicTypeBuilderFormPage<LinkDec> {
+  @query("doc-input")
+  docInput!: DocInput;
 
   @query("quantity-or-name-input")
   quantityOrNameInput!: QuantityOrNameInput;
@@ -21,7 +21,7 @@ export class LinkInfoForm extends BasicFormPage<LinkDec> {
 
   body(): TemplateResult<1> {
     return html`
-      <value-input id="doc" label="Description"></value-input>
+      <doc-input id="doc" label="Description"></doc-input>
       <quantity-or-name-input></quantity-or-name-input>
     `;
   }

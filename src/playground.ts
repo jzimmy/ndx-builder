@@ -634,8 +634,7 @@ export class InctypeBrowser extends LitElement {
   }
 
   @property({ type: Function })
-  continuation: (incType: string) => void = (t) => {
-    console.log(t);
+  continuation: (incType: string) => void = (_t) => {
     throw new Error("inctype browser form continuation unset");
   };
 

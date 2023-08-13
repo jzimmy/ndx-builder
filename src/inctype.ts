@@ -12,7 +12,7 @@ import {
   NWBType,
   TypeDef,
 } from "./nwb/spec";
-import { BasicFormPage } from "./basic-form";
+import { BasicTypeBuilderFormPage } from "./basic-form";
 import { map } from "lit/directives/map.js";
 import { classMap } from "lit/directives/class-map.js";
 import { symbols } from "./styles";
@@ -43,15 +43,13 @@ function grabAllModules(): [
   return res;
 }
 
-console.log(grabAllModules());
-
 type Inctype<T> = {
   id: string;
   kind?: "GROUP" | "DATASET";
   inctype: T;
 };
 
-abstract class InctypeForm<T, U> extends BasicFormPage<T> {
+abstract class InctypeForm<T, U> extends BasicTypeBuilderFormPage<T> {
   formTitle: string = "Choose a base type to extend";
 
   abstract inctype: U;
@@ -91,7 +89,10 @@ abstract class InctypeForm<T, U> extends BasicFormPage<T> {
 
   // types within modules are retrieved lazily
   abstract modules: [name: string, inctype: Inctype<() => U>[]][];
+  abstract noneTypes: Inctype<U>[];
 
+  // beware this one is hacky!
+  // To do properly, bundle the data with the environment in the formchain
   get myTypes(): Inctype<U>[] {
     return (
       document.querySelector("namespace-types-form") as NamespaceTypesForm
@@ -99,8 +100,6 @@ abstract class InctypeForm<T, U> extends BasicFormPage<T> {
       .map(this.fromTypedef)
       .filter((t) => t !== null) as Inctype<U>[];
   }
-
-  abstract noneTypes: Inctype<U>[];
 
   isValid(): boolean {
     return this.selectedType != -1;
@@ -118,6 +117,13 @@ abstract class InctypeForm<T, U> extends BasicFormPage<T> {
     this.drawProgressBar(progress);
   }
 
+  private renderIcon(kind?: "GROUP" | "DATASET") {
+    if (kind == undefined) return html``;
+    return html`<span class="material-symbols-outlined"
+      >${kind == "GROUP" ? "folder" : "dataset"}</span
+    >`;
+  }
+
   private coreMenu() {
     return html`
       <div class="coremenu-grid">
@@ -127,7 +133,10 @@ abstract class InctypeForm<T, U> extends BasicFormPage<T> {
             this.modules,
             ([modname, _modtypes], i) =>
               html`<div
-                class=${classMap({ selected: i == this.selectedModule })}
+                class=${classMap({
+                  inctype: true,
+                  selected: i == this.selectedModule,
+                })}
                 @click=${() => {
                   this.selectedModule = i;
                   this.selectedType = -1;
@@ -143,15 +152,19 @@ abstract class InctypeForm<T, U> extends BasicFormPage<T> {
             () => html`
               ${map(
                 this.modules[this.selectedModule][1],
-                ({ id, inctype }, i) =>
+                ({ id, inctype, kind }, i) =>
                   html`<div
-                    class=${classMap({ selected: i == this.selectedType })}
+                    class=${classMap({
+                      inctype: true,
+                      selected: i == this.selectedType,
+                    })}
                     @click=${() => {
                       this.selectedType = i;
                       this.inctype = inctype();
                     }}
                   >
-                    ${id}
+                    ${this.renderIcon(kind)}
+                    <div>${id}</div>
                   </div>`
               )}
             `
@@ -175,15 +188,19 @@ abstract class InctypeForm<T, U> extends BasicFormPage<T> {
               <div class="typelist">
                 ${map(
                   this.myTypes,
-                  ({ id, inctype }, i) =>
+                  ({ id, kind, inctype }, i) =>
                     html`<div
-                      class=${classMap({ selected: i == this.selectedType })}
+                      class=${classMap({
+                        inctype: true,
+                        selected: i == this.selectedType,
+                      })}
                       @click=${() => {
                         this.selectedType = i;
                         this.inctype = inctype;
                       }}
                     >
-                      ${id}
+                      ${this.renderIcon(kind)}
+                      <div>${id}</div>
                     </div>`
                 )}
               </div>
@@ -198,15 +215,19 @@ abstract class InctypeForm<T, U> extends BasicFormPage<T> {
       <div class="typelist">
         ${map(
           this.noneTypes,
-          ({ id, inctype }, i) =>
+          ({ id, kind, inctype }, i) =>
             html`<div
-              class=${classMap({ selected: i == this.selectedType })}
+              class=${classMap({
+                selected: i == this.selectedType,
+                inctype: true,
+              })}
               @click=${() => {
                 this.selectedType = i;
                 this.inctype = inctype;
               }}
             >
-              ${id}
+              ${this.renderIcon(kind)}
+              <div>${id}</div>
             </div>`
         )}
       </div>
@@ -260,10 +281,9 @@ abstract class InctypeForm<T, U> extends BasicFormPage<T> {
         right: 50%;
         transform: translate(1150%, 75%);
         cursor: pointer;
-        border: 2px solid red;
       }
 
-      h2 {
+      .body > h2 {
         margin: 0.5em;
       }
 
@@ -294,10 +314,6 @@ abstract class InctypeForm<T, U> extends BasicFormPage<T> {
 
       div.body > div > h3:hover {
         color: var(--clickable);
-      }
-
-      .selected {
-        text-decoration: underline;
       }
 
       div.body > div > h3:not(:hover).selected {
@@ -355,27 +371,36 @@ abstract class InctypeForm<T, U> extends BasicFormPage<T> {
       .typelist {
         box-sizing: border-box;
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        grid-template-columns: repeat(3, auto);
         margin-bottom: auto;
-        width: 400px;
+        width: 100%;
+        height: 100%;
         padding: 2em;
       }
 
-      .typelist > div {
+      .typelist > .inctype {
+        display: flex;
         padding: 0.3em 0.5em;
         border-radius: 0.2em;
-        height: 1.5em;
         cursor: pointer;
         margin: 0.4em;
         border: 1px solid var(--color-border-alt);
       }
 
-      .typelist > div:hover {
+      .typelist > .inctype > div {
+        margin-left: 0.5em;
+      }
+
+      .typelist > .inctype.selected > div {
+        text-decoration: underline;
+      }
+
+      .typelist > .inctype:hover {
         color: var(--clickable);
         border: 1px solid var(--clickable);
       }
 
-      .typelist > div.selected {
+      .typelist > .inctype.selected {
         border: 2px solid var(--clickable);
         color: var(--clickable);
         background: var(--background-light-button);
@@ -390,11 +415,6 @@ abstract class InctypeForm<T, U> extends BasicFormPage<T> {
 
       div.body > div:last-child > dark-button {
         margin-left: auto;
-      }
-
-      .dummy {
-        width: 80px;
-        margin: 1em;
       }
     `,
   ];
@@ -440,7 +460,7 @@ export class GenericInctypeForm extends InctypeForm<TypeDef, NWBType> {
       typedef[0] == "GROUP"
         ? ["GROUP", ["Typedef", typedef[1]]]
         : ["DATASET", ["Typedef", typedef[1]]];
-    return { id: typedef[1].neurodataTypeDef, inctype };
+    return { id: typedef[1].neurodataTypeDef, inctype, kind: typedef[0] };
   }
 
   modules: [name: string, inctype: Inctype<() => NWBType>[]][];
@@ -453,7 +473,7 @@ export class GenericInctypeForm extends InctypeForm<TypeDef, NWBType> {
     },
     {
       inctype: ["DATASET", ["None", null]],
-      kind: "GROUP",
+      kind: "DATASET",
       id: "Empty Dataset",
     },
   ];

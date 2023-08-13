@@ -1,11 +1,5 @@
 import { LitElement, TemplateResult, css, html } from "lit";
-import {
-  customElement,
-  property,
-  query,
-  queryAll,
-  state,
-} from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import {
   CompoundDtype,
   Defaultable,
@@ -20,7 +14,6 @@ import { when } from "lit/directives/when.js";
 import { choose } from "lit/directives/choose.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { symbols } from "./styles";
-import { range } from "lit/directives/range.js";
 
 abstract class NdxInputElem<T> extends LitElement {
   isValid = () => true;
@@ -34,7 +27,7 @@ abstract class NdxInputElem<T> extends LitElement {
 }
 
 @customElement("radio-input")
-export class RadioInputWrapper extends NdxInputElem<string> {
+export class RadioInput extends NdxInputElem<string> {
   @query("div.first")
   firstFocusable: HTMLElement | undefined;
 
@@ -92,6 +85,7 @@ export class RadioInputWrapper extends NdxInputElem<string> {
         cursor: pointer;
         font-size: 1.2em;
         user-select: none;
+        color: var(--color-border-alt);
       }
 
       div:hover,
@@ -256,8 +250,24 @@ abstract class ValueInput<T> extends NdxInputElem<T> {
   render() {
     return html`
       <div>${this.label}</div>
-      <input type="text" @input=${() => this.input()} />
+      <input class="inputelem" type="text" @input=${() => this.input()} />
     `;
+  }
+}
+
+@customElement("string-input")
+export class StringInput extends ValueInput<string> {
+  isValid: () => boolean = () => {
+    return this.inputElem.value != "";
+  };
+
+  fill(val: string): void {
+    this.inputElem.value = val;
+  }
+
+  value(): string | null {
+    if (!this.isValid()) return null;
+    return this.inputElem.value;
   }
 }
 
@@ -274,6 +284,27 @@ export class NameInput extends ValueInput<string> {
   value(): string | null {
     if (!this.isValid()) return null;
     return this.inputElem.value;
+  }
+}
+
+@customElement("doc-input")
+export class DocInput extends ValueInput<string> {
+  @query("textarea")
+  inputElem!: HTMLInputElement;
+
+  isValid: () => boolean = () => this.inputElem.value != "";
+  fill(val: string): void {
+    this.inputElem.value = val;
+  }
+  value(): string | null {
+    if (!this.isValid()) return null;
+    return this.inputElem.value;
+  }
+  render() {
+    return html`
+      <div>${this.label}</div>
+      <textarea @input=${() => this.input()}></textarea>
+    `;
   }
 }
 
@@ -313,239 +344,43 @@ export class DimensionInput extends ValueInput<number | "None"> {
   }
 }
 
-@customElement("shape-input")
-export class ShapeInput extends NdxInputElem<Shape[]> {
-  isValid: () => boolean = () => {
-    return (
-      this.dimensionInputs.every((d) => d.isValid()) &&
-      this.nameInputs.every((n) => n.isValid())
-    );
-  };
-
-  firstFocusable!: HTMLElement;
-
-  @queryAll("dimension-input")
-  dimensionInputs!: DimensionInput[];
-
-  @queryAll("name-input")
-  nameInputs!: NameInput[];
-
-  fill(val: Shape[]): void {
-    if (val.length == 0) return;
-
-    this.listOfAxes = val.map((s: Shape) =>
-      s.map((d) => (d[0] == "None" ? -1 : d[0]))
-    );
-
-    let counter = 0;
-
-    Promise.resolve(this.updateComplete).then(() =>
-      val.map((axes) =>
-        axes.map(([dim, label]) => {
-          counter = counter + 1;
-          this.dimensionInputs[counter].fill(dim);
-          this.nameInputs[counter].fill(label);
-        })
-      )
-    );
-  }
-
-  value(): Shape[] | null {
-    if (!this.isValid()) return null;
-
-    let counter = 0;
-    let shapes: Shape[] = [];
-    this.listOfAxes.map((axes) =>
-      axes.map((_) => {
-        [
-          this.dimensionInputs[counter++].value() || "None",
-          this.nameInputs[counter].value() || "",
-        ];
-      })
-    );
-    return shapes;
-  }
-
-  clear(): void {
-    this.fill([this.defaultShape]);
-  }
-
-  defaultShape: Shape = [
-    [2, ""],
-    ["None", ""],
-  ];
-
-  @state()
-  listOfAxes: number[][] = [];
-
-  @state()
-  listOfNames: string[][] = [];
-
-  render() {
-    return html`<div>Stored data axes</div>
-      <div class="note">Use 'any' to indicate unlimited axis length</div>
-      ${map(
-        this.listOfAxes,
-        (axes, i) =>
-          html`
-            <div class="shape-wrapper">
-              <div class="toprow">Axis Length</div>
-              <div class="toprow">
-                Axis Label
-                <div class="addremove">
-                  <light-button
-                    .disabled=${axes.length <= 1}
-                    @click=${() => {
-                      this.listOfAxes = [
-                        ...this.listOfAxes.slice(0, i),
-                        axes.slice(0, -1),
-                        ...this.listOfAxes.slice(i + 1),
-                      ];
-                      this.input();
-                    }}
-                  >
-                    <span class="material-symbols-outlined">remove</span>
-                  </light-button>
-                  <light-button
-                    @click=${() => {
-                      this.listOfAxes = [
-                        ...this.listOfAxes.slice(0, i),
-                        [...axes, 2],
-                        ...this.listOfAxes.slice(i + 1),
-                      ];
-                      this.input();
-                    }}
-                  >
-                    <span class="material-symbols-outlined">add</span>
-                  </light-button>
-                </div>
-              </div>
-              ${map(
-                axes,
-                (axis, j) => html`
-                  <dimension-input
-                    id="dim${i}"
-                    .init=${axis == -1 ? "any" : String(axis)}
-                  ></dimension-input>
-                  <name-input
-                    id="label${i}"
-                    label=""
-                    .init=${this.listOfNames[i][j]}
-                  ></name-input>
-                `
-              )}
-            </div>
-            ${when(
-              i + 1 < this.listOfAxes.length,
-              () => html`<div class="or-bar">
-                <div>OR</div>
-                <light-button
-                  @click=${() => {
-                    this.listOfAxes = [
-                      ...this.listOfAxes.slice(0, i + 1),
-                      ...this.listOfAxes.slice(i + 2),
-                    ];
-                    this.input();
-                  }}
-                >
-                  <span class="material-symbols-outlined">close</span>
-                </light-button>
-              </div>`
-            )}
-          `
-      )}
-      <light-button
-        @click=${() => {
-          this.listOfAxes = [
-            ...this.listOfAxes,
-            this.defaultShape.map((d) => (d[0] == "None" ? -1 : d[0])),
-          ];
-          this.input();
-        }}
-        >Add another shape option</light-button
-      > `;
-  }
-
-  static styles = [
-    symbols,
-    css`
-      :host {
-      }
-
-      .shape-wrapper {
-        display: grid;
-        grid-template-columns: 1fr 2fr;
-      }
-
-      .toprow {
-        margin-bottom: 0.5em;
-        display: flex;
-        align-items: center;
-      }
-
-      .dim {
-        width: 6em;
-      }
-
-      .or-bar {
-        margin: 0.5em 0;
-        display: flex;
-        align-items: center;
-        font-weight: bold;
-      }
-
-      .or-bar > div {
-        margin-right: 0.5em;
-      }
-
-      .addremove {
-        margin-left: auto;
-        display: flex;
-      }
-      .addremove light-button,
-      .or-bar light-button {
-        font-size: 0.1em;
-        margin: 0 2em;
-      }
-      .addremove span.material-symbols-outlined,
-      .or-bar span.material-symbols-outlined {
-        font-size: 20px;
-      }
-    `,
-  ];
-}
-
 @customElement("shape-or-scalar-input")
 export class ShapeOrScalarInput extends NdxInputElem<
   ["SHAPE", Shape[]] | ["SCALAR", Defaultable<string>]
 > {
   firstFocusable?: HTMLElement | undefined;
   @query("radio-input")
-  radioInput!: RadioInputWrapper;
+  radioInput!: RadioInput;
 
   @query("shape-input")
   shapeInput!: ShapeInput;
 
-  @query("name-input")
+  @query("string-input")
   scalarInput!: NameInput;
 
   @query("checkbox-input")
   defaultInput!: CheckboxInput;
 
-  // firstElement?: HTMLElement = this.radioInput.firstElement;
-
   isValid: () => boolean = () => {
-    return !this.shapeNotScalar == true && this.scalarInput.isValid();
+    return (
+      (this.shapeNotScalar == false && this.scalarInput.isValid()) ||
+      (this.shapeNotScalar == true && this.shapeInput.isValid()) ||
+      false
+    );
   };
 
   fill(val: ["SHAPE", Shape[]] | ["SCALAR", Defaultable<string>]): void {
     if (val[0] == "SCALAR") {
       this.shapeNotScalar = false;
-      this.scalarInput.fill(val[1][0]);
-      this.defaultInput.fill(val[1][1]);
+      Promise.resolve(this.updateComplete).then(() => {
+        this.scalarInput.fill(val[1][0]);
+        this.defaultInput.fill(val[1][1]);
+      });
     } else {
       this.shapeNotScalar = true;
-      this.shapeInput.fill(val[1]);
+      Promise.resolve(this.updateComplete).then(() => {
+        this.shapeInput.fill(val[1]);
+      });
     }
   }
 
@@ -564,24 +399,32 @@ export class ShapeOrScalarInput extends NdxInputElem<
   shapeNotScalar = true;
 
   render() {
-    return html` <radio-input
-        .options=${["Shape", "Scalar"]}
-        .selected=${this.shapeNotScalar ? 0 : 1}
-        .onSelect=${(i: number) => (this.shapeNotScalar = i == 0)}
+    return html`
+      <radio-input
+        .options=${["Scalar", "Multidimensional"]}
+        .selected=${this.shapeNotScalar ? 1 : 0}
+        .onSelect=${(i: number) => {
+          this.shapeNotScalar = i == 1;
+          Promise.resolve(this.updateComplete).then(() => this.input());
+        }}
       ></radio-input>
-      ${when(
-        !this.shapeNotScalar,
-        () => html`
-          <name-input
-            style=${styleMap(this.shapeNotScalar ? { display: "None" } : {})}
-            label="Attribute value"
-          ></name-input>
-          <checkbox-input
-            style=${styleMap(this.shapeNotScalar ? { display: "None" } : {})}
-            label="Allow override"
-          ></checkbox-input>
-        `
-      )}`;
+      <string-input
+        style=${styleMap(this.shapeNotScalar ? { display: "None" } : {})}
+        label="Attribute value"
+        .input=${() => this.input()}
+      ></string-input>
+      <checkbox-input
+        style=${styleMap(this.shapeNotScalar ? { display: "None" } : {})}
+        label="Allow override"
+        .input=${() => this.input()}
+      ></checkbox-input>
+      <shape-input
+        style=${styleMap(this.shapeNotScalar ? {} : { display: "None" })}
+        .input=${() => {
+          this.input();
+        }}
+      ></shape-input>
+    `;
   }
 }
 
@@ -682,15 +525,23 @@ export class CheckboxInput extends NdxInputElem<boolean> {
 @customElement("dtype-input")
 export class DtypeInput extends NdxInputElem<Dtype> {
   firstFocusable?: HTMLElement | undefined;
+
+  isValid: () => boolean = () => {
+    return (
+      this.dtypeOptions[this.dtypeOption] == "Primitive" ||
+      (this.compoundType.length > 0 &&
+        this.compoundType.every(({ name, doc }) => name != "" && doc != ""))
+    );
+  };
+
   fill(val: Dtype): void {
     this.dtypeOption = val[0] == "PRIMITIVE" ? 0 : 1;
     if (val[0] == "PRIMITIVE") {
-      this.dtypeOption = 0;
       this.primitive = val[1];
-      this.dtypeOption = 1;
     } else if (val[0] == "COMPOUND" && val[1].length > 0) {
       this.compoundType = val[1];
     }
+    this.input();
   }
 
   value(): Dtype | null {
@@ -708,7 +559,10 @@ export class DtypeInput extends NdxInputElem<Dtype> {
     this.primitive = "Any";
   }
 
-  primitiveOptions(selected: string = ""): TemplateResult<1> {
+  primitiveOptions(
+    selected: string = "",
+    withGenerics = true
+  ): TemplateResult<1> {
     return html`
       <option value="i8" ?selected=${selected == "i8"}>int8</option>
       <option value="i6" ?selected=${selected == "i16"}>int16</option>
@@ -726,14 +580,22 @@ export class DtypeInput extends NdxInputElem<Dtype> {
       <option value="IsoDatetime" ?selected=${selected == "IsoDateTime"}>
         ISO Datetime
       </option>
-      <option value="Numeric" ?selected=${selected == "Numeric"}>
-        Numeric
-      </option>
-      <option value="Any" ?selected=${selected == "Any"}>Any</option>
+      ${when(
+        withGenerics,
+        () => html`
+          <option value="Numeric" ?selected=${selected == "Numeric"}>
+            Numeric
+          </option>
+          <option value="Any" ?selected=${selected == "Any"}>Any</option>
+        `
+      )}
     `;
   }
 
-  dtypeOptions = ["Primitive", "Compound"];
+  dtypeOptions: ("Primitive" | "Compound" | "Refspec")[] = [
+    "Primitive",
+    "Compound",
+  ];
   primitive: PrimitiveDtype = "Any";
 
   @state()
@@ -747,18 +609,18 @@ export class DtypeInput extends NdxInputElem<Dtype> {
   render() {
     return html`
       <radio-input
-        .selected=${0}
+        .selected=${this.dtypeOption}
         .options=${this.dtypeOptions}
         .onSelect=${(i: number) => {
           this.dtypeOption = i;
+          Promise.resolve(this.updateComplete).then(() => this.input());
         }}
       ></radio-input>
-
       ${choose(this.dtypeOptions[this.dtypeOption], [
         [
           "Primitive",
           () => html`
-            <select>
+            <select @change=${() => this.input()}>
               ${this.primitiveOptions(this.primitive)}
             </select>
           `,
@@ -769,17 +631,21 @@ export class DtypeInput extends NdxInputElem<Dtype> {
             <div class="addremove">
               <light-button
                 .disabled=${this.compoundType.length <= 1}
-                @click=${() =>
-                  (this.compoundType = [...this.compoundType.slice(0, -1)])}
+                @click=${() => {
+                  this.compoundType = [...this.compoundType.slice(0, -1)];
+                  this.input();
+                }}
               >
                 <span class="material-symbols-outlined">remove</span>
               </light-button>
               <light-button
-                @click=${() =>
-                  (this.compoundType = [
+                @click=${() => {
+                  this.compoundType = [
                     ...this.compoundType,
                     { name: "", doc: "", dtype: ["PRIMITIVE", "Any"] },
-                  ])}
+                  ];
+                  this.input();
+                }}
               >
                 <span class="material-symbols-outlined">add</span>
               </light-button>
@@ -791,12 +657,27 @@ export class DtypeInput extends NdxInputElem<Dtype> {
               <div>Type</div>
               ${map(
                 this.compoundType,
-                ({ name, doc, dtype }) => html`
-                  <input type="text" value=${name} />
-                  <input type="text" value=${doc} />
-                  <select>
+                ({ name, doc, dtype }, i) => html`
+                  <input
+                    type="text"
+                    .value=${name}
+                    @input=${({ target: t }: Event) => {
+                      this.compoundType[i].name = (t as HTMLInputElement).value;
+                      this.input();
+                    }}
+                  />
+                  <input
+                    type="text"
+                    .value=${doc}
+                    @input=${({ target: t }: Event) => {
+                      this.compoundType[i].doc = (t as HTMLInputElement).value;
+                      this.input();
+                    }}
+                  />
+                  <select @change=${() => this.input()}>
                     ${this.primitiveOptions(
-                      dtype[0] == "PRIMITIVE" ? dtype[1] : ""
+                      dtype[0] == "PRIMITIVE" ? dtype[1] : "",
+                      false
                     )}
                   </select>
                 `
@@ -824,6 +705,203 @@ export class DtypeInput extends NdxInputElem<Dtype> {
         margin: 0 2em;
       }
       .addremove span.material-symbols-outlined {
+        font-size: 20px;
+      }
+    `,
+  ];
+}
+
+@customElement("shape-input")
+export class ShapeInput extends NdxInputElem<Shape[]> {
+  @query("shape-wrapper > input:first-child")
+  firstFocusable?: HTMLElement;
+
+  isValid: () => boolean = () => {
+    if (this.shapes.length == 0) return false;
+
+    function invalidDimension(d: string | number) {
+      return (
+        (typeof d != "number" && (d as string) != "any") || (d as number) < 1
+      );
+    }
+
+    for (const shape of this.shapes) {
+      for (const axis of shape) {
+        if (axis[1] == "" || invalidDimension(axis[0])) {
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
+  fill(val: Shape[]): void {
+    if (val.length != 0)
+      this.shapes = val.map((shape) =>
+        shape.map((axis) => [axis[0] == "None" ? "any" : axis[0], axis[1]])
+      );
+  }
+
+  value(): Shape[] | null {
+    if (!this.isValid()) return null;
+    const s: Shape[] = this.shapes.map((shape) =>
+      shape.map((axis) => [axis[0] as number | "None", axis[1]])
+    );
+    return s;
+  }
+
+  clear(): void {
+    this.shapes = [this.defaultShape];
+  }
+
+  defaultShape: [number | string, string][] = [
+    [2, ""],
+    ["any", ""],
+  ];
+
+  @state()
+  shapes: [number | string, string][][] = [this.defaultShape];
+
+  render() {
+    return html`<div>Stored data axes</div>
+      <div class="note">Use 'any' to indicate unlimited axis length</div>
+      ${map(
+        this.shapes,
+        (shape, i) =>
+          html`
+            <div class="shape-wrapper">
+              <div class="toprow">Axis Length</div>
+              <div class="toprow">
+                Axis Label
+                <div class="addremove">
+                  <light-button
+                    .disabled=${shape.length <= 1}
+                    @click=${() => {
+                      this.shapes = [
+                        ...this.shapes.slice(0, i),
+                        shape.slice(0, -1),
+                        ...this.shapes.slice(i + 1),
+                      ];
+                      this.input();
+                    }}
+                  >
+                    <span class="material-symbols-outlined">remove</span>
+                  </light-button>
+                  <light-button
+                    @click=${() => {
+                      this.shapes = [
+                        ...this.shapes.slice(0, i),
+                        [...shape, [2, ""]],
+                        ...this.shapes.slice(i + 1),
+                      ];
+                      this.input();
+                    }}
+                  >
+                    <span class="material-symbols-outlined">add</span>
+                  </light-button>
+                </div>
+              </div>
+              ${map(
+                shape,
+                ([dim, label], j) =>
+                  html`
+                    <input
+                      type="text"
+                      class="dim"
+                      .value=${dim}
+                      @input=${({ target: t }: InputEvent) => {
+                        let dimstr = (
+                          t as HTMLInputElement
+                        ).value.toLocaleLowerCase();
+                        let dimnum = parseInt(dimstr);
+                        this.shapes[i][j][0] = isNaN(dimnum) ? dimstr : dimnum;
+                        this.input();
+                      }}
+                    />
+                    <input
+                      type="text"
+                      class="label"
+                      .value=${label}
+                      @input=${({ target: t }: InputEvent) => {
+                        // no need to re-render
+                        this.shapes[i][j][1] = (t as HTMLInputElement)?.value;
+                        this.input();
+                      }}
+                    />
+                  `
+              )}
+            </div>
+            ${when(
+              i + 1 < this.shapes.length,
+              () => html`<div class="or-bar">
+                <div>OR</div>
+                <light-button
+                  @click=${() => {
+                    this.shapes = [
+                      ...this.shapes.slice(0, i + 1),
+                      ...this.shapes.slice(i + 2),
+                    ];
+                    this.input();
+                  }}
+                >
+                  <span class="material-symbols-outlined">close</span>
+                </light-button>
+              </div>`
+            )}
+          `
+      )}
+      <light-button
+        @click=${() => {
+          this.shapes = [...this.shapes, this.defaultShape];
+          this.input();
+        }}
+        >Add another shape option</light-button
+      > `;
+  }
+
+  static styles = [
+    symbols,
+    css`
+      :host {
+      }
+
+      .shape-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+      }
+
+      .toprow {
+        margin-bottom: 0.5em;
+        display: flex;
+        align-items: center;
+      }
+
+      .dim {
+        width: 6em;
+      }
+
+      .or-bar {
+        margin: 0.5em 0;
+        display: flex;
+        align-items: center;
+        font-weight: bold;
+      }
+
+      .or-bar > div {
+        margin-right: 0.5em;
+      }
+
+      .addremove {
+        margin-left: auto;
+        display: flex;
+      }
+      .addremove light-button,
+      .or-bar light-button {
+        font-size: 0.1em;
+        margin: 0 2em;
+      }
+      .addremove span.material-symbols-outlined,
+      .or-bar span.material-symbols-outlined {
         font-size: 20px;
       }
     `,

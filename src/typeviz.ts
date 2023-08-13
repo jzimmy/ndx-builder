@@ -84,7 +84,6 @@ export class LinkDecElem extends BasicTypeElem {
   render() {
     // careful runtime type check
     const hasQuantity = typeof this.data.quantityOrName != typeof "";
-    console.log(hasQuantity);
     return html`
       <type-elem .noProperties=${false} .noOptions=${true}>
         <type-header
@@ -144,8 +143,6 @@ export class AttribDecElem extends BasicTypeElem {
       shape = data[1];
     }
 
-    console.log(this.data.data, shape);
-
     return html`
       <type-elem .noProperties=${false} .noOptions=${false}>
         <type-header slot="topinput" .icon=${this.icon} .name=${this.data.name}>
@@ -201,32 +198,6 @@ function renderShape(shapes: Shape[]): TemplateResult<1> {
       : html``;
   return html` ${map(shapes, renderOneShape)} `;
 }
-// export abstract class GroupDecElem extends BasicTypeElem {
-//   protected icon: string = "folder";
-//   abstract incTypeName: () => string;
-//   abstract instanceName: () => string;
-
-//   protected topInput(): TemplateResult<1> {
-//     return html`
-//       ${this.renderIcon()}
-//       <div slot="topinput" class="instancename">${this.instanceName()}</div>
-//       <div id="keyword" slot="bottominput">of</div>
-//       <div slot="bottominput" class="inctype">${this.incTypeName()}</div>
-//     `;
-//   }
-// }
-
-// export abstract class DatasetDecElem extends BasicTypeElem {
-//   abstract incTypeName: () => string;
-//   protected icon: string = "dataset";
-//   protected topInput(): TemplateResult<1> {
-//     return html`
-//       ${this.renderIcon()}
-//       <div id="keyword" slot="topinput">of</div>
-//       <light-button slot="topinput">${this.incTypeName()}</light-button>
-//     `;
-//   }
-// }
 
 @customElement("group-anondec-elem")
 export class AnonGroupDecElem extends BasicTypeElem {
@@ -567,6 +538,8 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
   }
 
   protected icon: string = "dataset";
+
+  @property()
   data: DatasetTypeDef = {
     neurodataTypeDef: "ExampleName",
     dtype: ["PRIMITIVE", "f32"],

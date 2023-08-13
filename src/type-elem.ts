@@ -157,7 +157,7 @@ export class TypeElem extends LitElement {
   hideEditBtn: boolean = false;
 
   @property({ type: Function })
-  onEdit = () => {
+  onEdit: () => void = () => {
     throw new Error(`On edit not implemented.`);
   };
 
@@ -311,6 +311,9 @@ export abstract class BasicTypeElem extends LitElement {
     throw new Error(`On delete not implemented.`);
   };
 
+  @property({ type: Function })
+  onEdit: (target?: EventTarget) => void = () => {};
+
   @query("type-elem")
   typeElem!: TypeElem;
 
@@ -319,6 +322,7 @@ export abstract class BasicTypeElem extends LitElement {
   ): void {
     if (!this.typeElem) return;
     this.typeElem.onDelete = this.onDelete;
+    this.typeElem.onEdit = this.onEdit;
   }
 
   static styles = [

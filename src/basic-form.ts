@@ -4,6 +4,8 @@ import { CPSForm, ProgressState } from "./hofs";
 import { symbols } from "./styles";
 import { FormStepBar } from "./basic-elems";
 import { styleMap } from "lit/directives/style-map.js";
+import { when } from "lit/directives/when.js";
+import { namespaceBuilderSteps } from "./formchains";
 
 /* BasicFormPage
  * A good template a for a basic input 'quiz' style form,
@@ -34,6 +36,16 @@ export abstract class BasicFormPage<T> extends CPSForm<T> {
     this.stepBar.setProgressState(progress);
   }
 
+  withTitle(title: string): BasicFormPage<T> {
+    this.formTitle = title;
+    return this;
+  }
+
+  withMetaStepBar(metaStepBar: ProgressState): BasicFormPage<T> {
+    this.metaStepBar = metaStepBar;
+    return this;
+  }
+
   showAndFocus(show: boolean): void {
     NDXBuilderDefaultShowAndFocus(this, show, this.firstInput);
   }
@@ -48,13 +60,20 @@ export abstract class BasicFormPage<T> extends CPSForm<T> {
     this.ready = this.isValid();
   }
 
+  metaStepBar?: ProgressState;
+
   render() {
     return html`
-      <step-bar
-        .steps=${["add types", "namespace metadata", "export script"]}
-        style="opacity:0.8"
-        .currStep=${0}
-      ></step-bar>
+      ${when(
+        this.metaStepBar,
+        () => html`
+          <step-bar
+            .steps=${this.metaStepBar?.states}
+            .currStep=${this.metaStepBar?.currState}
+            style="opacity:0.6;margin-bottom:0.5em;"
+          ></step-bar>
+        `
+      )}
       <back-or-quit-bar
         .hideQuit=${this.hideQuit}
         .back=${() => this.back()}
@@ -169,4 +188,11 @@ export function NDXBuilderDefaultShowAndFocus(
 ) {
   elem.slot = visibility ? "currForm" : "";
   if (firstInput) firstInput.focus();
+}
+
+export abstract class BasicTypeBuilderFormPage<T> extends BasicFormPage<T> {
+  metaStepBar: ProgressState = {
+    states: namespaceBuilderSteps,
+    currState: 0,
+  };
 }

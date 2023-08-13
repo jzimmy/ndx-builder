@@ -32,11 +32,6 @@ export interface HasInstanceNameAndDescription {
   doc: string;
 }
 
-export interface HasAxes {
-  shape: Shape[];
-  dtype: Dtype;
-}
-
 export interface HasDefaultName {
   name?: Defaultable<string>;
 }
@@ -79,8 +74,10 @@ export class NdxFormParent extends LitElement {
 
   render() {
     return html`
-      <h1>NWB Extension Builder</h1>
-      <a href="">Need help?</a>
+      <div>
+        <h1>NWB Extension Builder</h1>
+        <a href="">Need help?</a>
+      </div>
       <form>
         <slot name="currForm"></slot>
       </form>
@@ -102,6 +99,28 @@ export class NdxFormParent extends LitElement {
         margin: auto;
         display: flex;
         justify-content: center;
+      }
+
+      div {
+        display: flex;
+        align-items: center;
+        background: var(--background-light-button);
+        color: var(--clickable);
+        border-bottom: 1px solid var(--clickable);
+        position: relative;
+        margin-bottom: 3em;
+      }
+
+      div > a {
+        position: absolute;
+        right: 10%;
+        font-weight: bold;
+        color: var(--clickable);
+      }
+
+      h1 {
+        margin: 0;
+        margin-left: 10%;
       }
     `,
   ];
