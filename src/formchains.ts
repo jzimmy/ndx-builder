@@ -4,7 +4,7 @@
 import { LitElement } from "lit";
 import { AttribInfoForm, AttribValueForm } from "./attrib";
 import { CodegenForm } from "./codegen";
-import { CPSForm, FormChain } from "./hofs";
+import { CPSForm, FormChain, Trigger } from "./hofs";
 import {
   GenericInctypeForm,
   GroupInctypeForm,
@@ -66,7 +66,10 @@ function fc<T>(f?: CPSForm<T>, stps?: string[], index = -1) {
 }
 
 // all logic is in here, then when ready, build it with the parent
-export function buildFormChains(parent: LitElement) {
+export function buildFormChains(
+  parent: LitElement,
+  debug = false
+): Trigger<Namespace> {
   let linkBuilderTrigger = fc<LinkDec>(new TargetIncTypeForm())
     .then(new LinkInfoForm())
     .withParent(parent);
@@ -105,22 +108,11 @@ export function buildFormChains(parent: LitElement) {
     attributeBuilderSteps,
     0
   )
+    .then(new AttribValueForm(), attributeBuilderSteps, 1)
     .branch(
       (v: AttributeDec) => v.data[0] === "SHAPE",
-      fc<AttributeAndShape>(
-        new AxesForm(),
-        attributeBuilderSteps,
-        1
-      ).convert<AttributeDec>(
-        // because attribute doesn't have shape, we need to carry around some extra info
-        (v) => ({ ...v.att, data: ["SHAPE", v.shape], dtype: v.dtype }),
-        (v) => ({
-          att: v,
-          shape: v.data[0] === "SHAPE" ? v.data[1] : [],
-          dtype: v.dtype,
-        })
-      ),
-      fc<AttributeDec>(new AttribValueForm(), attributeBuilderSteps, 1)
+      fc(), // data type form
+      fc()
     )
     .withParent(parent);
 
@@ -129,7 +121,12 @@ export function buildFormChains(parent: LitElement) {
     groupTypeDefBuilderSteps,
     1
   ).then(
-    new GroupTypeVizForm(attributeBuilderTrigger, linkBuilderTrigger),
+    new GroupTypeVizForm(
+      attributeBuilderTrigger,
+      () => {},
+      () => {},
+      linkBuilderTrigger
+    ),
     groupTypeDefBuilderSteps,
     3
   );
@@ -162,7 +159,12 @@ export function buildFormChains(parent: LitElement) {
     )
     .withParent(parent);
 
-  let namespaceBuilderForm = fc<Namespace>(new NamespaceStartForm())
+  let namespaceBuilderTrigger = fc<Namespace>(
+    new NamespaceStartForm().addDebugTrigger(
+      attributeBuilderTrigger,
+      Initializers.attributeDec
+    )
+  )
     .then(
       new NamespaceTypesForm(typedefBuilderTrigger),
       namespaceBuilderSteps,
@@ -172,5 +174,5 @@ export function buildFormChains(parent: LitElement) {
     .then(new CodegenForm(), namespaceBuilderSteps, 2)
     .withParent(parent);
 
-  return namespaceBuilderForm;
+  return namespaceBuilderTrigger;
 }

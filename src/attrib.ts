@@ -4,154 +4,110 @@ import { BasicFormPage } from "./basic-form";
 import { customElement, property, query } from "lit/decorators.js";
 import { AttributeDec } from "./nwb/spec";
 import { classMap } from "lit/directives/class-map.js";
+import { CheckboxInput, ShapeOrScalarInput, ValueInput } from "./forminputs";
 
 @customElement("attrib-info-form")
 export class AttribInfoForm extends BasicFormPage<AttributeDec> {
-  formTitle: string = "Define a new attribute";
+  formTitle: string = "Include a new attribute";
+
+  @query("value-input#name")
+  nameInput!: ValueInput;
+
+  @query("value-input#doc")
+  docInput!: ValueInput;
+
+  @query("checkbox-input#required")
+  requiredInput!: CheckboxInput;
 
   isValid(): boolean {
-    return this.nameInput.value !== "" && this.descriptionInput.value !== "";
+    return this.nameInput.isValid() && this.docInput.isValid();
   }
-
-  @query("input[name=attrib-name]")
-  nameInput!: HTMLInputElement;
-
-  @query("textarea[name=description]")
-  descriptionInput!: HTMLTextAreaElement;
-
-  @query("input[name=required]")
-  isRequiredInput!: HTMLInputElement;
-
-  @query("input[name=defaultval]")
-  defaultValInput!: HTMLInputElement;
-
-  @query("input[name=fixedval]")
-  fixedValInput!: HTMLInputElement;
-
-  @property({ type: Boolean })
-  hasValueNotShape: boolean = true;
 
   body(): TemplateResult<1> {
     return html`
-      <label for="attrib-name">New attribute name</label>
-      <input name="attrib-name" @input=${this._selfValidate} placeholder="" />
-      <label for="description">Description</label>
-      <textarea name="description" @input=${this._selfValidate}></textarea>
-      <h3>Optional</h3>
-      <label for="required">This attribute is required</label>
-      <input type="checkbox" name="required" />
-      <label>Value stored</label>
-      <div class="clickbox-wrapper">
-        <div
-          @click=${() => (this.hasValueNotShape = true)}
-          tabindex="0"
-          class=${classMap({
-            clickbox: true,
-            selected: this.hasValueNotShape,
-          })}
-        >
-          Single Value
-        </div>
-        <div
-          @click=${() => (this.hasValueNotShape = false)}
-          tabindex="0"
-          class=${classMap({
-            clickbox: true,
-            selected: !this.hasValueNotShape,
-          })}
-        >
-          Multidimensional Values
-        </div>
-      </div>
+      <value-input
+        id="name"
+        label="Attribute name"
+        .input=${this._selfValidate}
+      ></value-input>
+      <value-input
+        id="doc"
+        label="Description"
+        .input=${this._selfValidate}
+      ></value-input>
+      <checkbox-input
+        id="required"
+        label="Required"
+        .input=${this._selfValidate}
+      ></checkbox-input>
     `;
   }
 
-  get firstInput(): HTMLElement {
-    return this.nameInput;
+  get firstInput(): HTMLElement | undefined {
+    return this.nameInput.firstFocusable;
   }
 
-  fill(attribDec: AttributeDec, progress?: ProgressState): void {
+  fill(val: AttributeDec, progress?: ProgressState | undefined): void {
     this.drawProgressBar(progress);
-    if (attribDec.name) this.nameInput.value = attribDec.name;
-    if (attribDec.doc) this.descriptionInput.value = attribDec.doc;
-    this.isRequiredInput.checked = attribDec.required;
-    if (attribDec.data[0]) {
-      this.hasValueNotShape = true;
-      // const [defaultVal, fixedVal] = attribDec.value;
-      // if (defaultVal) this.defaultValInput.value = defaultVal;
-      // this.fixedValInput.checked = fixedVal;
-    }
+    this.nameInput.fill(val.name);
+    this.docInput.fill(val.doc);
+    this.requiredInput.fill(val.required);
   }
 
   transform(val: AttributeDec): AttributeDec {
-    return {
-      ...val,
-      name: this.nameInput.value,
-      doc: this.descriptionInput.value,
-      required: this.isRequiredInput.checked,
-    };
+    let name = this.nameInput.value();
+    let doc = this.docInput.value();
+    let required = this.requiredInput.value();
+    if (!name || !doc || required == undefined) {
+      return val;
+    }
+    return { ...val, name, doc, required };
   }
 
   clear(): void {
-    this.nameInput.value = "";
-    this.descriptionInput.value = "";
-    this.isRequiredInput.checked = false;
-    this.defaultValInput.value = "";
-    this.fixedValInput.checked = false;
+    this.nameInput.clear();
+    this.docInput.clear();
+    this.requiredInput.clear();
   }
 }
 
 @customElement("attrib-value-form")
 export class AttribValueForm extends BasicFormPage<AttributeDec> {
-  formTitle: string = "Add a value to the attribute";
+  @query("shape-or-scalar-input")
+  shapeOrScalarInput!: ShapeOrScalarInput;
 
   isValid(): boolean {
-    return true;
+    return this.shapeOrScalarInput.isValid();
   }
 
-  get firstInput(): HTMLElement {
-    return this.defaultValInput;
+  body(): TemplateResult<1> {
+    return html` <shape-or-scalar-input></shape-or-scalar-input> `;
+  }
+
+  get firstInput(): HTMLElement | undefined {
+    return this.shapeOrScalarInput.firstFocusable;
   }
 
   fill(val: AttributeDec, progress?: ProgressState | undefined): void {
     this.drawProgressBar(progress);
-    if (val.data[0] == "SCALAR" && val.data[1][0] != "") {
-      this.defaultValInput.value = val.data[1][0];
-      this.fixedValInput.checked = val.data[1][1];
-    }
+    this.shapeOrScalarInput.fill(val.data);
   }
 
   transform(val: AttributeDec): AttributeDec {
-    return {
-      ...val,
-      data: [
-        "SCALAR",
-        [this.defaultValInput.value, this.fixedValInput.checked],
-      ],
-    };
+    let shapeOrScalar = this.shapeOrScalarInput.value();
+    let dtype = val.dtype;
+    if (!shapeOrScalar) {
+      return val;
+    }
+    if (shapeOrScalar[0] == "SCALAR") {
+      dtype = ["PRIMITIVE", "Text"];
+    }
+    return { ...val, data: shapeOrScalar, dtype };
   }
 
   clear(): void {
-    this.defaultValInput.value = "";
-    this.fixedValInput.checked = false;
+    this.shapeOrScalarInput.clear();
   }
 
-  @query("input[name=defaultval]")
-  defaultValInput!: HTMLInputElement;
-
-  @query("input[name=fixedval]")
-  fixedValInput!: HTMLInputElement;
-
-  body() {
-    return html`
-      <label for="defaultval">Default value</label>
-      <input
-        @input=${this._selfValidate}
-        name="defaultval"
-        placeholder="Volts"
-      />
-      <label for="fixedval">Fixed value</label>
-      <input @input=${this._selfValidate} type="checkbox" name="fixedval" />
-    `;
-  }
+  formTitle: string = "Add a value to the attribute";
 }

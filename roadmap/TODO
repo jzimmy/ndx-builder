@@ -8,3 +8,10 @@ edit or visualize from mytypes-bar
 codegen
 
 upload existing
+
+value getter/setter for input
+
+NameInput
+DimensionInput
+NumberInput
+DocInput

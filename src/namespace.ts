@@ -25,12 +25,34 @@ export class NamespaceStartForm extends CPSForm<Namespace> {
     return true;
   }
 
+  @property({ type: Function })
+  triggerUpload: () => void = () => {
+    console.log("hi");
+  };
+
+  addDebugTrigger<T>(trigger: Trigger<T>, init: T) {
+    this.triggerUpload = () => {
+      this.showAndFocus(false);
+      trigger(
+        init,
+        () => {
+          this.showAndFocus(true);
+        },
+        (v) => {
+          this.showAndFocus(true);
+          console.log(v);
+        }
+      );
+    };
+    return this;
+  }
+
   render() {
     return html`
       <big-button .icon=${"feed"} @click=${this.next}
         >Create new NWB extension</big-button
       >
-      <big-button .icon=${"upload"} @click=${this.next}
+      <big-button .icon=${"upload"} @click=${() => this.triggerUpload()}
         >Upload existing extension</big-button
       >
     `;

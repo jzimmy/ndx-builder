@@ -2,7 +2,9 @@ import { customElement, query, state } from "lit/decorators.js";
 import { NDXBuilderDefaultShowAndFocus } from "./basic-form";
 import {
   AttributeDec,
+  DatasetDec,
   DatasetTypeDef,
+  GroupDec,
   GroupTypeDef,
   LinkDec,
 } from "./nwb/spec";
@@ -62,21 +64,21 @@ abstract class TypevizForm<T> extends CPSForm<T> {
 export class GroupTypeVizForm extends TypevizForm<GroupTypeDef> {
   constructor(
     attributeBuilderForm: Trigger<AttributeDec>,
-    // datasetBuilderForm: Trigger<DatasetDec>,
-    // groupBuilderForm: Trigger<GroupDec>,
+    datasetBuilderForm: Trigger<DatasetDec>,
+    groupBuilderForm: Trigger<GroupDec>,
     linkBuilderForm: Trigger<LinkDec>
   ) {
     super();
     this.triggerAttribDecBuilderForm = subform(this, attributeBuilderForm);
     this.triggerLinkDecBuilderForm = subform(this, linkBuilderForm);
-    // this.triggerDatasetDecBuilderForm = datasetBuilderForm;
-    // this.triggerGroupDecBuilderForm = groupBuilderForm;
+    this.triggerDatasetDecBuilderForm = datasetBuilderForm;
+    this.triggerGroupDecBuilderForm = groupBuilderForm;
   }
 
   triggerAttribDecBuilderForm: Trigger<AttributeDec>;
   triggerLinkDecBuilderForm: Trigger<LinkDec>;
-  //   triggerDatasetDecBuilderForm: Trigger<DatasetDec>;
-  //   triggerGroupDecBuilderForm: Trigger<GroupDec>;
+  triggerDatasetDecBuilderForm: Trigger<DatasetDec>;
+  triggerGroupDecBuilderForm: Trigger<GroupDec>;
 
   @state()
   groupDef: GroupTypeDef = { ...Initializers.groupTypeDef };
@@ -87,6 +89,8 @@ export class GroupTypeVizForm extends TypevizForm<GroupTypeDef> {
         .data=${this.groupDef}
         .triggerAttribDecBuilderForm=${this.triggerAttribDecBuilderForm}
         .triggerLinkDecBuilderForm=${this.triggerLinkDecBuilderForm}
+        .triggerDatasetDecBuilderForm=${this.triggerDatasetDecBuilderForm}
+        .triggerGroupDecBuilderForm=${this.triggerGroupDecBuilderForm}
       ></group-def-elem>
     `;
   }
