@@ -76,8 +76,8 @@ export class GroupTypeVizForm extends TypeVizForm<GroupTypeDef> {
     super();
     this.triggerAttribDecBuilderForm = subform(this, attributeBuilderForm);
     this.triggerLinkDecBuilderForm = subform(this, linkBuilderForm);
-    this.triggerDatasetDecBuilderForm = datasetBuilderForm;
-    this.triggerGroupDecBuilderForm = groupBuilderForm;
+    this.triggerDatasetDecBuilderForm = subform(this, datasetBuilderForm);
+    this.triggerGroupDecBuilderForm = subform(this, groupBuilderForm);
   }
 
   triggerAttribDecBuilderForm: Trigger<AttributeDec>;

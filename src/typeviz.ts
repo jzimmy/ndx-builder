@@ -1,6 +1,6 @@
 // todo implement onDelete for all
 import { css, CSSResultGroup, html, TemplateResult } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { BasicTypeElem, TypeElem } from "./type-elem";
 import "./type-elem";
 import {
@@ -203,6 +203,7 @@ function renderShape(shapes: Shape[]): TemplateResult<1> {
 export class AnonGroupDecElem extends BasicTypeElem {
   protected icon = "folder";
 
+  @property()
   data: AnonymousGroupTypeDec = {
     doc: "This is a description of my group it measures temperature",
     name: "AnonGroup",
@@ -218,6 +219,15 @@ export class AnonGroupDecElem extends BasicTypeElem {
   get valid(): boolean {
     return false;
   }
+
+  @property({ type: Function })
+  triggerAttribDecBuilderForm: Trigger<AttributeDec> = (_v, _a, _c) => {};
+  @property({ type: Function })
+  triggerDatasetDecBuilderForm: Trigger<DatasetDec> = (_v, _a, _c) => {};
+  @property({ type: Function })
+  triggerGroupDecBuilderForm: Trigger<GroupDec> = (_v, _a, _c) => {};
+  @property({ type: Function })
+  triggerLinkDecBuilderForm: Trigger<LinkDec> = (_v, _a, _c) => {};
 
   @property()
   subtreeMinimize = true;
@@ -256,6 +266,10 @@ export class AnonGroupDecElem extends BasicTypeElem {
             (this.data = { ...this.data, attributes })}
           .setLinkDecs=${(links: LinkDec[]) =>
             (this.data = { ...this.data, links })}
+          .triggerAttribDecBuilderForm=${this.triggerAttribDecBuilderForm}
+          .triggerLinkDecBuilderForm=${this.triggerLinkDecBuilderForm}
+          .triggerGroupDecBuilderForm=${this.triggerGroupDecBuilderForm}
+          .triggerDatasetDecBuilderForm=${this.triggerDatasetDecBuilderForm}
         ></group-subtree>
       </type-elem>
     `;
@@ -518,7 +532,7 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
           .triggerAttribDecBuilderForm=${this.triggerAttribDecBuilderForm}
           .triggerLinkDecBuilderForm=${this.triggerLinkDecBuilderForm}
           .triggerGroupDecBuilderForm=${this.triggerGroupDecBuilderForm}
-          .triggerAttribDecBuilderForm=${this.triggerAttribDecBuilderForm}
+          .triggerDatasetDecBuilderForm=${this.triggerDatasetDecBuilderForm}
         ></group-subtree>
       </type-elem>
     `;
@@ -536,6 +550,9 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
   get valid(): boolean {
     return false;
   }
+
+  @property({ type: Function })
+  triggerAttribDecBuilderForm: Trigger<AttributeDec> = (_v, _a, _c) => {};
 
   protected icon: string = "dataset";
 
@@ -606,6 +623,7 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
           .attribs=${this.data.attributes}
           .setAttributeDecs=${(attributes: AttributeDec[]) =>
             (this.data = { ...this.data, attributes })}
+          .triggerAttribDecBuilderForm=${this.triggerAttribDecBuilderForm}
         ></dataset-subtree>
       </type-elem>
     `;

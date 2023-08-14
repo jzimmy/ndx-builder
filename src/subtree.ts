@@ -282,6 +282,14 @@ export class GroupSubtree extends LitElement {
                               ...this.groups.slice(i + 1),
                             ])
                         )}
+                      .triggerAttribDecBuilderForm=${this
+                        .triggerAttribDecBuilderForm}
+                      .triggerDatasetDecBuilderForm=${this
+                        .triggerDatasetDecBuilderForm}
+                      .triggerGroupDecBuilderForm=${this
+                        .triggerGroupDecBuilderForm}
+                      .triggerLinkDecBuilderForm=${this
+                        .triggerLinkDecBuilderForm}
                     ></group-anondec-elem>
                   `,
                 ],
@@ -309,7 +317,7 @@ export class GroupSubtree extends LitElement {
             (dset, i) =>
               html` ${choose(dset[0], [
                   [
-                    "Inc",
+                    "INC",
                     () => html`
                       <dataset-incdec-elem
                         .slot=${"elems"}
@@ -334,7 +342,7 @@ export class GroupSubtree extends LitElement {
                     `,
                   ],
                   [
-                    "Anonymous",
+                    "ANONYMOUS",
                     () => html`
                       <dataset-anondec-elem
                         .slot=${"elems"}
@@ -355,6 +363,8 @@ export class GroupSubtree extends LitElement {
                                 ...this.datasets.slice(i + 1),
                               ])
                           )}
+                        .triggerAttribDecBuilderForm=${this
+                          .triggerAttribDecBuilderForm}
                       ></dataset-anondec-elem>
                     `,
                   ],

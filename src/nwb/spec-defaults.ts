@@ -78,7 +78,7 @@ const incDatasetDec: IncDatasetDec = {
   quantityOrName: "",
 };
 
-const datasetDec: DatasetDec = ["Anonymous", anonymousDatasetDec];
+const datasetDec: DatasetDec = ["ANONYMOUS", anonymousDatasetDec];
 
 const linkDec: LinkDec = {
   doc: "",

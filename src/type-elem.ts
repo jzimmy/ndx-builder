@@ -317,6 +317,7 @@ export abstract class BasicTypeElem extends LitElement {
   @query("type-elem")
   typeElem!: TypeElem;
 
+  // using firstUpdated because I don't want to overwrite the render function
   protected firstUpdated(
     _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
   ): void {

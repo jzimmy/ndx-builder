@@ -3,7 +3,6 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import "./type-elem";
 import "./typeviz";
 import "./basic-elems";
-import "./playground";
 import "./forminputs";
 import { choose } from "lit/directives/choose.js";
 import { DatasetTypeDefElem, GroupTypeDefElem } from "./typeviz";
