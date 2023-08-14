@@ -15,7 +15,7 @@ import { choose } from "lit/directives/choose.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { symbols } from "./styles";
 
-abstract class NdxInputElem<T> extends LitElement {
+export abstract class NdxInputElem<T> extends LitElement {
   isValid = () => true;
   abstract firstFocusable?: HTMLElement;
   abstract fill(val: T): void;

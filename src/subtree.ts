@@ -7,8 +7,9 @@ import { AttributeDec, DatasetDec, GroupDec, LinkDec } from "./nwb/spec";
 import { symbols } from "./styles";
 import { Trigger } from "./hofs";
 import { Initializers } from "./nwb/spec-defaults";
+import { NdxInputElem } from "./forminputs";
 
-@customElement("subtree-branchh")
+@customElement("subtree-branch")
 export class SubtreeBranchh extends LitElement {
   @property({ type: Boolean })
   lastBranch = false;
@@ -173,8 +174,47 @@ export class HiddenSubtree extends LitElement {
   ];
 }
 
+interface HasGroupSubtree {
+  attribs: AttributeDec[];
+  datasets: DatasetDec[];
+  groups: GroupDec[];
+  links: LinkDec[];
+}
+
 @customElement("group-subtree")
-export class GroupSubtree extends LitElement {
+export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
+  firstFocusable?: HTMLElement | undefined;
+  fill(val: HasGroupSubtree): void {
+    if (
+      this.attribs.length == 0 &&
+      this.links.length == 0 &&
+      this.datasets.length == 0 &&
+      this.groups.length == 0
+    ) {
+      this.attribs = val.attribs;
+      this.links = val.links;
+      this.datasets = val.datasets;
+      this.groups = val.groups;
+    }
+  }
+
+  value(): HasGroupSubtree | null {
+    let tree: HasGroupSubtree = {
+      attribs: this.attribs,
+      datasets: this.datasets,
+      groups: this.groups,
+      links: this.links,
+    };
+    return tree;
+  }
+
+  clear(): void {
+    this.groups = [];
+    this.links = [];
+    this.datasets = [];
+    this.groups = [];
+  }
+
   @property({ type: Boolean })
   disabled = true;
 
@@ -240,7 +280,7 @@ export class GroupSubtree extends LitElement {
                     <group-incdec-elem
                       .slot=${"elems"}
                       .onClose=${() =>
-                        this.setGroupDecs([
+                        (this.groups = [
                           ...this.groups.slice(0, i),
                           ...this.groups.slice(i + 1),
                         ])}
@@ -250,7 +290,7 @@ export class GroupSubtree extends LitElement {
                           grp,
                           () => {},
                           (g) =>
-                            this.setGroupDecs([
+                            (this.groups = [
                               ...this.groups.slice(0, i),
                               g,
                               ...this.groups.slice(i + 1),
@@ -269,7 +309,6 @@ export class GroupSubtree extends LitElement {
                           ...this.groups.slice(0, i),
                           ...this.groups.slice(i + 1),
                         ])}
-                      }
                       .data=${grp[1]}
                       .onEdit=${() =>
                         this.triggerGroupDecBuilderForm(
