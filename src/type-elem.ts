@@ -12,6 +12,7 @@ import { symbols } from "./styles";
 import { when } from "lit-html/directives/when.js";
 import { map } from "lit/directives/map.js";
 import { Shape } from "./nwb/spec";
+import { NdxInputElem } from "./forminputs";
 
 /* Wrapper element for a type elem, contains the minimize,
  * close button and slots for the body and subtree.
@@ -297,7 +298,8 @@ export class TypeElem extends LitElement {
 /* Adds some useful helper functions and styles to inherit.
  * This class has little semantic purpose beyond reducing boilerplate.
  */
-export abstract class BasicTypeElem extends LitElement {
+export abstract class BasicTypeElem<T> extends NdxInputElem<T> {
+  abstract data: T;
   protected abstract icon: string;
   protected subtreeDisabled = false;
   protected renderIcon() {
@@ -305,6 +307,8 @@ export abstract class BasicTypeElem extends LitElement {
       >${this.icon}</span
     >`;
   }
+
+  abstract value(): T;
 
   @property({ type: Function, reflect: true })
   onDelete: (target?: EventTarget) => void = () => {

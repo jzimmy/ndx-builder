@@ -159,7 +159,7 @@ export function buildFormChains(parent: LitElement): Trigger<Namespace> {
   )
     .then(new AttribValueForm(), attributeBuilderSteps, 1)
     .branch(
-      (v: AttributeDec) => v.data[0] === "SHAPE",
+      (v: AttributeDec) => v.value[0] === "SHAPE",
       fc(
         new DtypeForm<AttributeDec>().withTitle(attribDtypeFormTitle),
         [...attributeBuilderSteps, "Data type"],

@@ -214,7 +214,7 @@ export type AttributeDec = {
   name: string;
   doc: string;
   required: boolean;
-  data: ["SHAPE", Shape[]] | ["SCALAR", Defaultable<string>];
+  value: ["SHAPE", Shape[]] | ["SCALAR", Defaultable<string>];
   readonly dtype: Dtype;
 };
 

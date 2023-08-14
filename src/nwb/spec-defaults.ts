@@ -43,7 +43,7 @@ const attributeDec: AttributeDec = {
   name: "",
   doc: "",
   dtype: ["PRIMITIVE", "f32"],
-  data: ["SCALAR", ["", false]],
+  value: ["SCALAR", ["", false]],
   required: false,
 };
 

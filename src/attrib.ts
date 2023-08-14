@@ -98,7 +98,7 @@ export class AttribValueForm extends BasicTypeBuilderFormPage<AttributeDec> {
 
   fill(val: AttributeDec, progress?: ProgressState | undefined): void {
     this.drawProgressBar(progress);
-    this.shapeOrScalarInput.fill(val.data);
+    this.shapeOrScalarInput.fill(val.value);
   }
 
   transform(val: AttributeDec): AttributeDec {
@@ -108,7 +108,7 @@ export class AttribValueForm extends BasicTypeBuilderFormPage<AttributeDec> {
     }
     let dtype: Dtype =
       shapeOrScalar[0] == "SCALAR" ? ["PRIMITIVE", "Text"] : val.dtype;
-    return { ...val, data: shapeOrScalar, dtype };
+    return { ...val, value: shapeOrScalar, dtype };
   }
 
   clear(): void {

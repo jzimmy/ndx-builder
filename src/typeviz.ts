@@ -61,8 +61,38 @@ function targetTypeNameString(targetType: NWBType) {
   }
 }
 
+function renderShape(shapes: Shape[]): TemplateResult<1> {
+  if (shapes.length == 0) return html`<div>Not specified</div>`;
+  const renderOneShape = (shape: Shape, i: number) =>
+    shape.length > 0
+      ? html`
+          ${when(i > 0, () => "OR")}
+          <div class="shape-container">
+            ${shape.map(
+              ([k, v]) =>
+                html`<div>
+                  <div>${k == "None" ? "Any" : k}</div>
+                  <div>${v}</div>
+                </div> `
+            )}
+          </div>
+        `
+      : html``;
+  return html` ${map(shapes, renderOneShape)} `;
+}
+
 @customElement("link-dec-elem")
-export class LinkDecElem extends BasicTypeElem {
+export class LinkDecElem extends BasicTypeElem<LinkDec> {
+  firstFocusable?: HTMLElement | undefined;
+  fill(val: LinkDec): void {
+    throw new Error("Method not implemented.");
+  }
+  value(): LinkDec {
+    throw new Error("Method not implemented.");
+  }
+  clear(): void {
+    throw new Error("Method not implemented.");
+  }
   @property()
   data: LinkDec = {
     doc: "Some example documentation",
@@ -75,10 +105,6 @@ export class LinkDecElem extends BasicTypeElem {
     ],
     quantityOrName: ["*", null],
   };
-
-  get valid(): boolean {
-    return false;
-  }
 
   protected icon: string = "link";
   render() {
@@ -106,14 +132,25 @@ export class LinkDecElem extends BasicTypeElem {
 }
 
 @customElement("attrib-dec-elem")
-export class AttribDecElem extends BasicTypeElem {
+export class AttribDecElem extends BasicTypeElem<AttributeDec> {
+  firstFocusable?: HTMLElement | undefined;
+  fill(val: AttributeDec): void {
+    throw new Error("Method not implemented.");
+  }
+  value(): AttributeDec {
+    throw new Error("Method not implemented.");
+  }
+  clear(): void {
+    throw new Error("Method not implemented.");
+  }
+  @property()
   data: AttributeDec = {
     name: "MyAttributeName",
     doc: "This is a description of my attribute it measures temperature",
     required: false,
     dtype: ["PRIMITIVE", "f32"],
     // data: ["SCALAR", ["EmptyString", true]],
-    data: [
+    value: [
       "SHAPE",
       [
         [
@@ -125,30 +162,28 @@ export class AttribDecElem extends BasicTypeElem {
     ],
   };
 
-  get valid(): boolean {
-    return false;
-  }
-
   protected icon: string = "edit_note";
 
   render() {
-    const data = this.data.data;
+    const attribute = this.data;
+    const value = attribute.value;
+
     let scalar = "";
     let shape: Shape[] = [];
     let scalarRequired = false;
-    if (data[0] == "SCALAR") {
-      scalar = data[1][0];
-      scalarRequired = data[1][1];
+    if (value[0] == "SCALAR") {
+      scalar = value[1][0];
+      scalarRequired = value[1][1];
     } else {
-      shape = data[1];
+      shape = value[1];
     }
 
     return html`
       <type-elem .noProperties=${false} .noOptions=${false}>
-        <type-header slot="topinput" .icon=${this.icon} .name=${this.data.name}>
+        <type-header slot="topinput" .icon=${this.icon} .name=${attribute.name}>
         </type-header>
-        <div slot="first-fields">${this.data.doc}</div>
-        ${data[0] == "SCALAR"
+        <div slot="first-fields">${attribute.doc}</div>
+        ${value[0] == "SCALAR"
           ? html`
               <labeled-field-value
                 slot="properties"
@@ -171,7 +206,7 @@ export class AttribDecElem extends BasicTypeElem {
             `}
         <labeled-boolean-field
           slot="options"
-          .checked=${this.data.required}
+          .checked=${attribute.required}
           .label=${"Attribute required"}
         ></labeled-boolean-field>
       </type-elem>
@@ -179,28 +214,19 @@ export class AttribDecElem extends BasicTypeElem {
   }
 }
 
-function renderShape(shapes: Shape[]): TemplateResult<1> {
-  if (shapes.length == 0) return html`<div>Not specified</div>`;
-  const renderOneShape = (shape: Shape, i: number) =>
-    shape.length > 0
-      ? html`
-          ${when(i > 0, () => "OR")}
-          <div class="shape-container">
-            ${shape.map(
-              ([k, v]) =>
-                html`<div>
-                  <div>${k == "None" ? "Any" : k}</div>
-                  <div>${v}</div>
-                </div> `
-            )}
-          </div>
-        `
-      : html``;
-  return html` ${map(shapes, renderOneShape)} `;
-}
-
 @customElement("group-anondec-elem")
-export class AnonGroupDecElem extends BasicTypeElem {
+export class AnonGroupDecElem extends BasicTypeElem<AnonymousGroupTypeDec> {
+  firstFocusable?: HTMLElement | undefined;
+  fill(val: AnonymousGroupTypeDec): void {
+    throw new Error("Method not implemented.");
+  }
+  value(): AnonymousGroupTypeDec {
+    throw new Error("Method not implemented.");
+  }
+  clear(): void {
+    throw new Error("Method not implemented.");
+  }
+
   protected icon = "folder";
 
   @property()
@@ -215,10 +241,6 @@ export class AnonGroupDecElem extends BasicTypeElem {
 
   incTypeName = () => "None";
   instanceName = () => this.data.name;
-
-  get valid(): boolean {
-    return false;
-  }
 
   @property({ type: Function })
   triggerAttribDecBuilderForm: Trigger<AttributeDec> = (_v, _a, _c) => {};
@@ -277,7 +299,18 @@ export class AnonGroupDecElem extends BasicTypeElem {
 }
 
 @customElement("group-incdec-elem")
-export class IncGroupDecElem extends BasicTypeElem {
+export class IncGroupDecElem extends BasicTypeElem<IncGroupDec> {
+  firstFocusable?: HTMLElement | undefined;
+  fill(val: IncGroupDec): void {
+    throw new Error("Method not implemented.");
+  }
+  value(): IncGroupDec {
+    throw new Error("Method not implemented.");
+  }
+  clear(): void {
+    throw new Error("Method not implemented.");
+  }
+
   protected icon = "folder";
   @property()
   data: IncGroupDec = {
@@ -285,10 +318,6 @@ export class IncGroupDecElem extends BasicTypeElem {
     neurodataTypeInc: ["Typedef", Initializers.groupTypeDef],
     quantityOrName: "",
   };
-
-  get valid(): boolean {
-    return false;
-  }
 
   incTypeName: () => string = () =>
     this.data.neurodataTypeInc[1]?.neurodataTypeDef || "None";
@@ -315,13 +344,23 @@ export class IncGroupDecElem extends BasicTypeElem {
 }
 
 @customElement("dataset-anondec-elem")
-export class AnonDatasetDecElem extends BasicTypeElem {
+export class AnonDatasetDecElem extends BasicTypeElem<AnonymousDatasetDec> {
+  firstFocusable?: HTMLElement | undefined;
+  fill(val: AnonymousDatasetDec): void {
+    throw new Error("Method not implemented.");
+  }
+  value(): AnonymousDatasetDec {
+    throw new Error("Method not implemented.");
+  }
+  clear(): void {
+    throw new Error("Method not implemented.");
+  }
+
   protected icon: string = "dataset";
   incTypeName = () => "None";
 
-  get valid(): boolean {
-    return false;
-  }
+  @property({ type: Function })
+  triggerAttribDecBuilderForm: Trigger<AttributeDec> = (_v, _a, _c) => {};
 
   @property()
   data: AnonymousDatasetDec = {
@@ -373,13 +412,20 @@ export class AnonDatasetDecElem extends BasicTypeElem {
 }
 
 @customElement("dataset-incdec-elem")
-export class IncDatasetDecElem extends BasicTypeElem {
+export class IncDatasetDecElem extends BasicTypeElem<IncDatasetDec> {
+  firstFocusable?: HTMLElement | undefined;
+  fill(val: IncDatasetDec): void {
+    throw new Error("Method not implemented.");
+  }
+  value(): IncDatasetDec {
+    throw new Error("Method not implemented.");
+  }
+  clear(): void {
+    throw new Error("Method not implemented.");
+  }
+
   protected icon: string = "dataset";
   incTypeName = () => this.data.neurodataTypeInc[1]?.neurodataTypeDef || "None";
-
-  get valid(): boolean {
-    return false;
-  }
 
   data: IncDatasetDec = {
     doc: "",
@@ -412,7 +458,7 @@ abstract class TypeDefElem<
   T extends HasTypeNameAndDescription &
     HasDefaultName &
     (HasGroupIncType | HasDatasetIncType)
-> extends BasicTypeElem {
+> extends BasicTypeElem<T> {
   @property()
   abstract data: T;
   abstract type(): T;
@@ -445,7 +491,14 @@ abstract class TypeDefElem<
 
 @customElement("group-def-elem")
 export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
-  get valid(): boolean {
+  firstFocusable?: HTMLElement | undefined;
+  fill(val: GroupTypeDef): void {
+    throw new Error("Method not implemented.");
+  }
+  value(): GroupTypeDef {
+    throw new Error("Method not implemented.");
+  }
+  clear(): void {
     throw new Error("Method not implemented.");
   }
 
@@ -478,7 +531,7 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
         doc: "This is a description of my attribute it measures temperature",
         required: false,
         dtype: ["PRIMITIVE", "f32"],
-        data: ["SCALAR", ["EmptyString", true]],
+        value: ["SCALAR", ["EmptyString", true]],
       },
     ],
     links: [],
@@ -543,12 +596,19 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
 
 @customElement("dataset-def-elem")
 export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
-  type(): DatasetTypeDef {
-    return this.data;
+  firstFocusable?: HTMLElement | undefined;
+  fill(val: DatasetTypeDef): void {
+    throw new Error("Method not implemented.");
+  }
+  value(): DatasetTypeDef {
+    throw new Error("Method not implemented.");
+  }
+  clear(): void {
+    throw new Error("Method not implemented.");
   }
 
-  get valid(): boolean {
-    return false;
+  type(): DatasetTypeDef {
+    return this.data;
   }
 
   @property({ type: Function })
@@ -568,7 +628,7 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
         doc: "This is a description of my attribute it measures temperature",
         required: false,
         dtype: ["PRIMITIVE", "f32"],
-        data: ["SCALAR", ["EmptyString", true]],
+        value: ["SCALAR", ["EmptyString", true]],
       },
     ],
     shape: [

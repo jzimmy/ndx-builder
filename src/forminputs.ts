@@ -288,6 +288,7 @@ export class NameInput extends ValueInput<string> {
 
   fill(val: string): void {
     this.inputElem.value = val;
+    this.input();
   }
 
   value(): string | null {
@@ -304,6 +305,7 @@ export class DocInput extends ValueInput<string> {
   isValid: () => boolean = () => this.inputElem.value != "";
   fill(val: string): void {
     this.inputElem.value = val;
+    this.input();
   }
   value(): string | null {
     if (!this.isValid()) return null;
@@ -325,6 +327,7 @@ export class NumberInput extends ValueInput<number> {
 
   fill(val: number): void {
     this.inputElem.value = String(val);
+    this.input();
   }
 
   value(): number | null {
@@ -343,6 +346,7 @@ export class DimensionInput extends ValueInput<number | "None"> {
 
   fill(val: number | "None"): void {
     this.inputElem.value = val == "None" ? "any" : String(val);
+    this.input();
   }
 
   value(): number | "None" | null {
