@@ -525,7 +525,7 @@ export class GenericInctypeForm extends InctypeForm<TypeDef, NWBType> {
 export class GroupInctypeForm extends InctypeForm<HasGroupIncType, GroupType> {
   constructor() {
     super();
-    this.modules = grabAllModules().map((mod) => [
+    const modules: typeof this.modules = grabAllModules().map((mod) => [
       mod[0],
       mod[1]
         .filter(({ kind }) => kind == "GROUP")
@@ -538,6 +538,7 @@ export class GroupInctypeForm extends InctypeForm<HasGroupIncType, GroupType> {
           };
         }),
     ]);
+    this.modules = modules.filter((mod) => mod[1].length > 0);
   }
 
   @state()
@@ -592,7 +593,7 @@ export class DatasetInctypeForm extends InctypeForm<
 > {
   constructor() {
     super();
-    this.modules = grabAllModules().map((mod) => [
+    const modules: typeof this.modules = grabAllModules().map((mod) => [
       mod[0],
       mod[1]
         .filter(({ kind }) => kind == "DATASET")
@@ -605,6 +606,7 @@ export class DatasetInctypeForm extends InctypeForm<
           };
         }),
     ]);
+    this.modules = modules.filter((mod) => mod[1].length > 0);
   }
 
   inctype: DatasetType = ["None", null];

@@ -182,10 +182,14 @@ export class HiddenSubtree extends LitElement {
 }
 
 interface HasGroupSubtree {
-  attribs: AttributeDec[];
+  attributes: AttributeDec[];
   datasets: DatasetDec[];
   groups: GroupDec[];
   links: LinkDec[];
+}
+
+interface HasDatasetSubtree {
+  attributes: AttributeDec[];
 }
 
 type GroupDecElem = ["INC", IncGroupDecElem] | ["ANONYMOUS", AnonGroupDecElem];
@@ -193,21 +197,27 @@ type DatasetDecElem =
   | ["INC", IncDatasetDecElem]
   | ["ANONYMOUS", AnonDatasetDecElem];
 
+function setElemsSlot(elem: HTMLElement) {
+  elem.slot = "elems";
+}
+
 function groupDecSubtreeElem(g: GroupDec, tree: GroupSubtree) {
   let dec: GroupDecElem;
   switch (g[0]) {
     case "INC":
       dec = [
         g[0],
-        document.createElement("inc-group-dec-elem") as IncGroupDecElem,
+        document.createElement("group-incdec-elem") as IncGroupDecElem,
       ];
+      console.log(dec[1], dec[1].fill);
       dec[1].fill(g[1]);
       break;
     case "ANONYMOUS":
       dec = [
         g[0],
-        document.createElement("anon-group-dec-elem") as AnonGroupDecElem,
+        document.createElement("group-anondec-elem") as AnonGroupDecElem,
       ];
+      console.log(dec[1], dec[1].fill);
       dec[1].fill(g[1]);
       dec[1].triggerAttribDecBuilderForm = tree.triggerAttribDecBuilderForm;
       dec[1].triggerDatasetDecBuilderForm = tree.triggerDatasetDecBuilderForm;
@@ -217,7 +227,7 @@ function groupDecSubtreeElem(g: GroupDec, tree: GroupSubtree) {
     default:
       assertNever(g[0]);
   }
-  dec[1].slot = "elems";
+  setElemsSlot(dec[1]);
   return dec;
 }
 
@@ -230,14 +240,14 @@ function datasetDecSubtreeElem(
     case "INC":
       dec = [
         "INC",
-        document.createElement("inc-dataset-dec-elem") as IncDatasetDecElem,
+        document.createElement("dataset-incdec-elem") as IncDatasetDecElem,
       ];
       dec[1].fill(d[1]);
       break;
     case "ANONYMOUS":
       dec = [
         "ANONYMOUS",
-        document.createElement("anon-dataset-dec-elem") as AnonDatasetDecElem,
+        document.createElement("dataset-anondec-elem") as AnonDatasetDecElem,
       ];
       dec[1].fill(d[1]);
       dec[1].triggerAttribDecBuilderForm = tree.triggerAttribDecBuilderForm;
@@ -245,96 +255,103 @@ function datasetDecSubtreeElem(
     default:
       assertNever(d[0]);
   }
-  dec[1].slot = "elems";
+  setElemsSlot(dec[1]);
   return dec;
 }
 
 function attribDecSubtreeElem(a: AttributeDec) {
   let dec = document.createElement("attrib-dec-elem") as AttribDecElem;
   dec.fill(a);
-  dec.slot = "elems";
+  setElemsSlot(dec);
   return dec;
 }
 
 function linkDecSubtreeElem(l: LinkDec) {
   let dec = document.createElement("link-dec-elem") as LinkDecElem;
   dec.fill(l);
-  dec.slot = "elems";
+  setElemsSlot(dec);
   return dec;
 }
 
-function addAtIndex<T>(elem: T, branch: T[], index: number = -1) {
-  branch =
-    index == -1
-      ? [...branch, elem]
-      : [...branch.slice(0, index), elem, ...branch.slice(index)];
+function insertAtIndex<T>(elem: T, branch: T[], index: number = -1) {
+  return index == -1
+    ? [...branch, elem]
+    : [...branch.slice(0, index), elem, ...branch.slice(index)];
 }
 
 function removeElem<T>(branch: T[], elem: T) {
   let index = branch.indexOf(elem);
+  console.log("found at ", index);
   return [...branch.slice(0, index), ...branch.slice(index + 1)];
 }
 
 function addGroupDec(g: GroupDec, tree: GroupSubtree, index = -1) {
   const groupDecElem = groupDecSubtreeElem(g, tree);
-  groupDecElem[1].onDelete = () => removeElem(tree.groups, groupDecElem);
+  groupDecElem[1].onDelete = () =>
+    (tree.groups = removeElem(tree.groups, groupDecElem));
   groupDecElem[1].onEdit = () => {
+    console.log("EDITING");
     tree.triggerGroupDecBuilderForm(
       [groupDecElem[0], groupDecElem[1].value()] as GroupDec,
       () => {},
       (v) => {
         let i = tree.groups.indexOf(groupDecElem);
-        removeElem(tree.groups, groupDecElem);
+        tree.groups = removeElem(tree.groups, groupDecElem);
         addGroupDec(v, tree, i);
       }
     );
   };
-  addAtIndex(groupDecElem, tree.groups, index);
+  tree.groups = insertAtIndex(groupDecElem, tree.groups, index);
 }
 
 function addDatasetDec(d: DatasetDec, tree: GroupSubtree, index = -1) {
   const datasetDecElem = datasetDecSubtreeElem(d, tree);
-  datasetDecElem[1].onDelete = () => removeElem(tree.datasets, datasetDecElem);
+  datasetDecElem[1].onDelete = () =>
+    (tree.datasets = removeElem(tree.datasets, datasetDecElem));
   datasetDecElem[1].onEdit = () => {
     tree.triggerDatasetDecBuilderForm(
       [datasetDecElem[0], datasetDecElem[1].value()] as DatasetDec,
       () => {},
       (v) => {
         let i = tree.datasets.indexOf(datasetDecElem);
-        removeElem(tree.datasets, datasetDecElem);
+        tree.datasets = removeElem(tree.datasets, datasetDecElem);
         addDatasetDec(v, tree, i);
       }
     );
   };
-  addAtIndex(datasetDecElem, tree.datasets, index);
+  tree.datasets = insertAtIndex(datasetDecElem, tree.datasets, index);
 }
 
 function addAttributeDec(a: AttributeDec, tree: GroupSubtree | DatasetSubtree) {
   const attribDecElem = attribDecSubtreeElem(a);
-  attribDecElem.onDelete = () => removeElem(tree.attribs, attribDecElem);
+  attribDecElem.onDelete = () =>
+    (tree.attribs = removeElem(tree.attribs, attribDecElem));
   attribDecElem.onEdit = () =>
     tree.triggerAttribDecBuilderForm(
       attribDecElem.value(),
       () => {},
       (v) => {
         attribDecElem.fill(v);
+        tree.requestUpdate();
       }
     );
-  addAtIndex(attribDecElem, tree.attribs);
+  tree.attribs = insertAtIndex(attribDecElem, tree.attribs);
 }
 
 function addLinkDec(l: LinkDec, tree: GroupSubtree) {
   const linkDecElem = linkDecSubtreeElem(l);
-  linkDecElem.onDelete = () => removeElem(tree.links, linkDecElem);
+  linkDecElem.onDelete = () =>
+    (tree.links = removeElem(tree.links, linkDecElem));
   linkDecElem.onEdit = () =>
     tree.triggerLinkDecBuilderForm(
       linkDecElem.value(),
       () => {},
       (v) => {
         linkDecElem.fill(v);
+        tree.requestUpdate();
       }
     );
-  addAtIndex(linkDecElem, tree.links);
+  tree.links = insertAtIndex(linkDecElem, tree.links);
 }
 
 @customElement("group-subtree")
@@ -344,23 +361,24 @@ export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
   fill(val: HasGroupSubtree): void {
     // don't overwrite me if you are empty
     if (
-      this.attribs.length != 0 ||
-      this.links.length != 0 ||
-      this.datasets.length != 0 ||
-      this.groups.length != 0
+      val.attributes.length == 0 &&
+      val.links.length == 0 &&
+      val.datasets.length == 0 &&
+      val.groups.length == 0
     )
       return;
 
     this.clear();
-    for (let a of val.attribs) addAttributeDec(a, this);
+    for (let a of val.attributes) addAttributeDec(a, this);
     for (let l of val.links) addLinkDec(l, this);
     for (let d of val.datasets) addDatasetDec(d, this);
     for (let g of val.groups) addGroupDec(g, this);
+    this.requestUpdate();
   }
 
   value(): HasGroupSubtree {
     return {
-      attribs: this.attribs.map((a) => a.value()),
+      attributes: this.attribs.map((a) => a.value()),
       datasets: this.datasets.map((d) => [d[0], d[1].value()] as DatasetDec),
       groups: this.groups.map((g) => [g[0], g[1].value()] as GroupDec),
       links: this.links.map((l) => l.value()),
@@ -400,6 +418,11 @@ export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
   typedef = false;
 
   render() {
+    console.log("GROUPS", this.groups);
+    console.log("DATASETS", this.datasets);
+    console.log("ATTRIBS", this.attribs);
+    console.log("LINKS", this.links);
+
     let groups = [] as GroupDec[];
     let datasets = [] as DatasetDec[];
     let attribs = [] as AttributeDec[];
@@ -465,7 +488,10 @@ export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
             this.triggerAttribDecBuilderForm(
               Initializers.attributeDec,
               () => {},
-              (a) => addAttributeDec(a, this)
+              (a) => {
+                addAttributeDec(a, this);
+                this.requestUpdate();
+              }
             )}
         >
           <span slot="icon" class="material-symbols-outlined">edit_note</span>
@@ -483,8 +509,8 @@ export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
           <subtree-branch
             ?disabled=${this.disabled}
             slot="subtree"
-            lastBranch=${allBranchesFilled}
             id="links"
+            .lastBranch=${allBranchesFilled}
             .addElem=${() =>
               this.triggerLinkDecBuilderForm(
                 Initializers.linkDec,
@@ -520,7 +546,24 @@ export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
 }
 
 @customElement("dataset-subtree")
-export class DatasetSubtree extends LitElement {
+export class DatasetSubtree extends NdxInputElem<HasDatasetSubtree> {
+  firstFocusable?: HTMLElement | undefined;
+  fill(val: HasDatasetSubtree): void {
+    if (val.attributes.length == 0) return;
+
+    this.clear();
+    for (let a of val.attributes) addAttributeDec(a, this);
+    this.requestUpdate();
+  }
+
+  value(): HasDatasetSubtree {
+    const attribs = this.attribs.map((a) => a.value());
+    return { attributes: attribs };
+  }
+  clear(): void {
+    this.attribs = [];
+  }
+
   @property({ type: Boolean })
   disabled = false;
 
@@ -547,7 +590,10 @@ export class DatasetSubtree extends LitElement {
             this.triggerAttribDecBuilderForm(
               Initializers.attributeDec,
               () => {},
-              (a) => addAttributeDec(a, this)
+              (a) => {
+                addAttributeDec(a, this);
+                this.requestUpdate();
+              }
             )}
         >
           <span slot="icon" class="material-symbols-outlined">edit_note</span>

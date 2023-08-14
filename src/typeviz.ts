@@ -1,6 +1,6 @@
 // todo implement onDelete for all
 import { css, CSSResultGroup, html, TemplateResult } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { BasicTypeElem, TypeElem } from "./type-elem";
 import "./type-elem";
 import {
@@ -30,6 +30,7 @@ import { Initializers } from "./nwb/spec-defaults";
 import { when } from "lit-html/directives/when.js";
 import { map } from "lit-html/directives/map.js";
 import { assertNever, Trigger } from "./hofs";
+import { DatasetSubtree, GroupSubtree } from "./subtree";
 
 export function quantityOrNameString(qOrS: Quantity | string): string {
   if (typeof qOrS == "string") return qOrS || "None";
@@ -85,16 +86,19 @@ function renderShape(shapes: Shape[]): TemplateResult<1> {
 export class LinkDecElem extends BasicTypeElem<LinkDec> {
   firstFocusable?: HTMLElement | undefined;
   fill(val: LinkDec): void {
-    throw new Error("Method not implemented.");
+    this.data = val;
   }
+
   value(): LinkDec {
-    throw new Error("Method not implemented.");
+    return this.data;
   }
+
   clear(): void {
-    throw new Error("Method not implemented.");
+    this.data = Initializers.linkDec;
   }
-  @property()
-  data: LinkDec = {
+
+  @state()
+  protected data: LinkDec = {
     doc: "Some example documentation",
     targetType: [
       "GROUP",
@@ -135,16 +139,18 @@ export class LinkDecElem extends BasicTypeElem<LinkDec> {
 export class AttribDecElem extends BasicTypeElem<AttributeDec> {
   firstFocusable?: HTMLElement | undefined;
   fill(val: AttributeDec): void {
-    throw new Error("Method not implemented.");
+    this.data = val;
   }
   value(): AttributeDec {
-    throw new Error("Method not implemented.");
+    return this.data;
   }
+
   clear(): void {
-    throw new Error("Method not implemented.");
+    this.data = Initializers.attributeDec;
   }
-  @property()
-  data: AttributeDec = {
+
+  @state()
+  protected data: AttributeDec = {
     name: "MyAttributeName",
     doc: "This is a description of my attribute it measures temperature",
     required: false,
@@ -217,20 +223,27 @@ export class AttribDecElem extends BasicTypeElem<AttributeDec> {
 @customElement("group-anondec-elem")
 export class AnonGroupDecElem extends BasicTypeElem<AnonymousGroupTypeDec> {
   firstFocusable?: HTMLElement | undefined;
+
+  @query("group-subtree")
+  groupSubtree!: GroupSubtree;
+
   fill(val: AnonymousGroupTypeDec): void {
-    throw new Error("Method not implemented.");
+    this.data = val;
+    Promise.resolve(this.updateComplete).then(() =>
+      this.groupSubtree.fill(val)
+    );
   }
+
   value(): AnonymousGroupTypeDec {
-    throw new Error("Method not implemented.");
+    return { ...this.data, ...this.groupSubtree.value() };
   }
-  clear(): void {
-    throw new Error("Method not implemented.");
-  }
+
+  clear(): void {}
 
   protected icon = "folder";
 
-  @property()
-  data: AnonymousGroupTypeDec = {
+  @state()
+  protected data: AnonymousGroupTypeDec = {
     doc: "This is a description of my group it measures temperature",
     name: "AnonGroup",
     groups: [],
@@ -275,19 +288,7 @@ export class AnonGroupDecElem extends BasicTypeElem<AnonymousGroupTypeDec> {
         <group-subtree
           slot="subtree"
           .disabled=${false}
-          .groups=${this.data.groups}
-          .datasets=${this.data.datasets}
-          .attribs=${this.data.attributes}
-          .links=${this.data.links}
           .minimized=${this.subtreeMinimize}
-          .setGroupDecs=${(groups: GroupDec[]) =>
-            (this.data = { ...this.data, groups })}
-          .setDatasetDecs=${(datasets: DatasetDec[]) =>
-            (this.data = { ...this.data, datasets })}
-          .setAttributeDecs=${(attributes: AttributeDec[]) =>
-            (this.data = { ...this.data, attributes })}
-          .setLinkDecs=${(links: LinkDec[]) =>
-            (this.data = { ...this.data, links })}
           .triggerAttribDecBuilderForm=${this.triggerAttribDecBuilderForm}
           .triggerLinkDecBuilderForm=${this.triggerLinkDecBuilderForm}
           .triggerGroupDecBuilderForm=${this.triggerGroupDecBuilderForm}
@@ -302,18 +303,20 @@ export class AnonGroupDecElem extends BasicTypeElem<AnonymousGroupTypeDec> {
 export class IncGroupDecElem extends BasicTypeElem<IncGroupDec> {
   firstFocusable?: HTMLElement | undefined;
   fill(val: IncGroupDec): void {
-    throw new Error("Method not implemented.");
+    this.data = val;
   }
+
   value(): IncGroupDec {
-    throw new Error("Method not implemented.");
+    return this.data;
   }
+
   clear(): void {
-    throw new Error("Method not implemented.");
+    this.data = Initializers.incGroupDec;
   }
 
   protected icon = "folder";
-  @property()
-  data: IncGroupDec = {
+  @state()
+  protected data: IncGroupDec = {
     doc: "This is an example incdec elem",
     neurodataTypeInc: ["Typedef", Initializers.groupTypeDef],
     quantityOrName: "",
@@ -345,12 +348,19 @@ export class IncGroupDecElem extends BasicTypeElem<IncGroupDec> {
 
 @customElement("dataset-anondec-elem")
 export class AnonDatasetDecElem extends BasicTypeElem<AnonymousDatasetDec> {
+  @query("dataset-subtree")
+  datasetSubtree!: DatasetSubtree;
+
   firstFocusable?: HTMLElement | undefined;
   fill(val: AnonymousDatasetDec): void {
-    throw new Error("Method not implemented.");
+    this.data = val;
+    Promise.resolve(this.updateComplete).then(() =>
+      this.datasetSubtree.fill(val)
+    );
   }
+
   value(): AnonymousDatasetDec {
-    throw new Error("Method not implemented.");
+    return { ...this.data, ...this.datasetSubtree.value() };
   }
   clear(): void {
     throw new Error("Method not implemented.");
@@ -362,8 +372,8 @@ export class AnonDatasetDecElem extends BasicTypeElem<AnonymousDatasetDec> {
   @property({ type: Function })
   triggerAttribDecBuilderForm: Trigger<AttributeDec> = (_v, _a, _c) => {};
 
-  @property()
-  data: AnonymousDatasetDec = {
+  @state()
+  protected data: AnonymousDatasetDec = {
     doc: "example doc string for example anon datatype",
     name: "AnonDsetDec",
     shape: [],
@@ -415,19 +425,22 @@ export class AnonDatasetDecElem extends BasicTypeElem<AnonymousDatasetDec> {
 export class IncDatasetDecElem extends BasicTypeElem<IncDatasetDec> {
   firstFocusable?: HTMLElement | undefined;
   fill(val: IncDatasetDec): void {
-    throw new Error("Method not implemented.");
+    this.data = val;
   }
+
   value(): IncDatasetDec {
-    throw new Error("Method not implemented.");
+    return this.data;
   }
+
   clear(): void {
-    throw new Error("Method not implemented.");
+    this.data = Initializers.incDatasetDec;
   }
 
   protected icon: string = "dataset";
   incTypeName = () => this.data.neurodataTypeInc[1]?.neurodataTypeDef || "None";
 
-  data: IncDatasetDec = {
+  @state()
+  protected data: IncDatasetDec = {
     doc: "",
     neurodataTypeInc: ["Typedef", Initializers.datasetTypeDef],
     quantityOrName: "",
@@ -459,8 +472,9 @@ abstract class TypeDefElem<
     HasDefaultName &
     (HasGroupIncType | HasDatasetIncType)
 > extends BasicTypeElem<T> {
-  @property()
-  abstract data: T;
+  @state()
+  protected abstract data: T;
+
   abstract type(): T;
 
   @property()
@@ -491,15 +505,23 @@ abstract class TypeDefElem<
 
 @customElement("group-def-elem")
 export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
+  @query("group-subtree")
+  groupSubtree!: GroupSubtree;
+
   firstFocusable?: HTMLElement | undefined;
   fill(val: GroupTypeDef): void {
-    throw new Error("Method not implemented.");
+    this.data = val;
+    Promise.resolve(this.updateComplete).then(() =>
+      this.groupSubtree.fill(val)
+    );
   }
+
   value(): GroupTypeDef {
-    throw new Error("Method not implemented.");
+    return { ...this.data, ...this.groupSubtree.value() };
   }
+
   clear(): void {
-    throw new Error("Method not implemented.");
+    this.data = Initializers.groupTypeDef;
   }
 
   type(): GroupTypeDef {
@@ -515,8 +537,8 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
   @property({ type: Function })
   triggerLinkDecBuilderForm: Trigger<LinkDec> = (_v, _a, _c) => {};
 
-  @property()
-  data: GroupTypeDef = {
+  @state()
+  protected data: GroupTypeDef = {
     neurodataTypeDef: "Example",
     neurodataTypeInc: [
       "Typedef",
@@ -596,15 +618,24 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
 
 @customElement("dataset-def-elem")
 export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
+  @query("dataset-subtree")
+  datasetSubtree!: DatasetSubtree;
+
   firstFocusable?: HTMLElement | undefined;
+
   fill(val: DatasetTypeDef): void {
-    throw new Error("Method not implemented.");
+    this.data = val;
+    Promise.resolve(this.updateComplete).then(() =>
+      this.datasetSubtree.fill(val)
+    );
   }
+
   value(): DatasetTypeDef {
-    throw new Error("Method not implemented.");
+    return { ...this.data, ...this.datasetSubtree.value() };
   }
+
   clear(): void {
-    throw new Error("Method not implemented.");
+    this.data = Initializers.datasetTypeDef;
   }
 
   type(): DatasetTypeDef {
@@ -616,8 +647,8 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
 
   protected icon: string = "dataset";
 
-  @property()
-  data: DatasetTypeDef = {
+  @state()
+  protected data: DatasetTypeDef = {
     neurodataTypeDef: "ExampleName",
     dtype: ["PRIMITIVE", "f32"],
     neurodataTypeInc: ["None", null],

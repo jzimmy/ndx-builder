@@ -299,7 +299,7 @@ export class TypeElem extends LitElement {
  * This class has little semantic purpose beyond reducing boilerplate.
  */
 export abstract class BasicTypeElem<T> extends NdxInputElem<T> {
-  abstract data: T;
+  protected abstract data: T;
   protected abstract icon: string;
   protected subtreeDisabled = false;
   protected renderIcon() {
