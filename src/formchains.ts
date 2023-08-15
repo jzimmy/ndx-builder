@@ -67,15 +67,16 @@ const datasetTypeDefBuilderSteps = [
 const attributeBuilderSteps = ["Name attribute", "Define axes"];
 
 // alias for `new FormChain<T>(...)`
-function fc<T>(f?: CPSForm<T>, stps?: string[], index = -1) {
-  return new FormChain(f, stps, index);
+function fc<T>(f?: CPSForm<T>, steps?: string[], index = -1) {
+  return new FormChain(f, steps, index);
 }
 
 // Empty chain a.k.a. unit. Like nullptr in C++
 // Needs to be type `any` to allow generalization during inference
 const nullform = fc<any>();
 
-// all logic is in here, then when ready, build it with the parent
+// all logic is in built up here, then when ready, build it with the parent
+// look at hofs.ts to understand the internals
 export function buildFormChains(parent: LitElement): Trigger<Namespace> {
   let linkBuilderTrigger = fc<LinkDec>(new TargetIncTypeForm())
     .then(new LinkInfoForm())
@@ -213,14 +214,24 @@ export function buildFormChains(parent: LitElement): Trigger<Namespace> {
     )
     .withParent(parent);
 
-  let namespaceBuilderTrigger = fc<Namespace>(
-    new NamespaceStartForm().addDebugTrigger(
-      linkBuilderTrigger,
-      Initializers.linkDec
+  let typedefEditorTrigger = fc<TypeDef>()
+    .branch(
+      ([k, _]) => k === "GROUP",
+      // branch guarantees safety, so `as` cast is okay here
+      groupBuilderFormChain.convert(
+        (v) => ["GROUP", v] as TypeDef,
+        ([_, g]) => g as GroupTypeDef
+      ),
+      datasetBuilderFormChain.convert(
+        (v) => ["DATASET", v] as TypeDef,
+        ([_, d]) => d as DatasetTypeDef
+      )
     )
-  )
+    .withParent(parent);
+
+  let namespaceBuilderTrigger = fc<Namespace>(new NamespaceStartForm())
     .then(
-      new NamespaceTypesForm(typedefBuilderTrigger),
+      new NamespaceTypesForm(typedefBuilderTrigger, typedefEditorTrigger),
       namespaceBuilderSteps,
       0
     )

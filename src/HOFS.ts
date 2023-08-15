@@ -16,7 +16,7 @@ type NoOverride = {
 };
 
 export function assertNever(_: never): never {
-  throw new Error("Function not implemented.");
+  throw new Error("Unreacheable code encountered! Major bug!");
 }
 
 export function id<T>(x: T) {
@@ -98,7 +98,6 @@ function choose<T, U>(
   };
 }
 
-// TODO: document me
 export abstract class CPSForm<T>
   extends LitElement
   implements CPSFormController

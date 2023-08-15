@@ -111,7 +111,7 @@ export class GroupTypeVizForm extends TypeVizForm<GroupTypeDef> {
       this.groupDef.links.length == 0 &&
       this.groupDef.datasets.length == 0
     ) {
-      let internalData = this.groupDefElem.data;
+      let internalData = this.groupDefElem.value();
       this.groupDef = {
         ...val,
         links: internalData.links,
@@ -125,7 +125,7 @@ export class GroupTypeVizForm extends TypeVizForm<GroupTypeDef> {
   }
 
   transform(_: GroupTypeDef): GroupTypeDef {
-    return { ...this.groupDefElem.data };
+    return { ...this.groupDefElem.value() };
   }
 
   clear(): void {
@@ -162,7 +162,7 @@ export class DatasetTypeVizForm extends TypeVizForm<DatasetTypeDef> {
     if (this.attributes.length == 0) {
       this.datasetDef = {
         ...val,
-        attributes: this.datasetDefElem.data.attributes,
+        attributes: this.datasetDefElem.value().attributes,
       };
     } else {
       this.datasetDef = val;
@@ -171,7 +171,7 @@ export class DatasetTypeVizForm extends TypeVizForm<DatasetTypeDef> {
   }
 
   transform(_val: DatasetTypeDef): DatasetTypeDef {
-    return { ...this.datasetDefElem.data };
+    return { ...this.datasetDefElem.value() };
   }
 
   clear(): void {

@@ -1,15 +1,23 @@
 import "./basic-elems";
-import { TemplateResult, css, html } from "lit";
+import { PropertyValueMap, TemplateResult, css, html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { map } from "lit/directives/map.js";
-import { Namespace, TypeDef } from "./nwb/spec";
-import { CPSForm, Trigger, ProgressState } from "./hofs";
+import {
+  DatasetDec,
+  Dtype,
+  GroupDec,
+  LinkDec,
+  Namespace,
+  TypeDef,
+} from "./nwb/spec";
+import { CPSForm, Trigger, ProgressState, assertNever } from "./hofs";
 import { BasicFormPage, NDXBuilderDefaultShowAndFocus } from "./basic-form";
 import { FormStepBar, iconOf } from "./basic-elems";
 import { Initializers } from "./nwb/spec-defaults";
 import { when } from "lit/directives/when.js";
 import { symbols } from "./styles";
 import { classMap } from "lit/directives/class-map.js";
+import { NameInput, ValueInput } from "./forminputs";
 
 @customElement("new-or-existing-namespace-form")
 export class NamespaceStartForm extends CPSForm<Namespace> {
@@ -115,8 +123,8 @@ export class NamespaceMetadataForm extends BasicFormPage<Namespace> {
   isValid(): boolean {
     return (
       this.authors.every(([name, contact]) => name !== "" && contact !== "") &&
-      this.namespaceNameInput.value !== "" &&
-      this.namespaceVersionInput.value !== ""
+      this.namespaceNameInput.value()?.match(/^ndx-/) !== null &&
+      this.versionInput.value() !== null
     );
   }
 
@@ -166,20 +174,25 @@ export class NamespaceMetadataForm extends BasicFormPage<Namespace> {
     `;
   }
 
-  @query("input[name=namespace-name]")
-  namespaceNameInput!: HTMLInputElement;
+  @query("name-input")
+  namespaceNameInput!: NameInput;
 
-  @query("input[name=namespace-version]")
-  namespaceVersionInput!: HTMLInputElement;
+  @query("version-input")
+  versionInput!: VersionInput;
 
   body(): TemplateResult<1> {
     return html`
       <step-bar></step-bar>
-      <label for="namespace-name">Namespace name</label>
-      <input type="text" name="namespace-name" />
-
-      <label for="namespace-version">Namespace version</label>
-      <input type="text" name="namespace-version" />
+      <name-input
+        label="Name your namespace. Must start with 'ndx-'"
+        .input=${() => this._selfValidate()}
+      >
+      </name-input>
+      <version-input
+        name="namespace-version"
+        label="Namespace version"
+        .input=${() => this._selfValidate()}
+      ></version-input>
 
       <label for="namespace-authors">Namespace authors</label>
       ${this.authorTable()}
@@ -202,16 +215,17 @@ export class NamespaceMetadataForm extends BasicFormPage<Namespace> {
   ): void {
     this.drawProgressBar(progress);
     if (val.authors.length !== 0) this.authors = [...val.authors];
-    if (val.version.every((v) => v === -1)) {
-      this.namespaceVersionInput.value = val.version
-        .map((v) => v.toString())
-        .join(".");
-    }
-    if (val.name !== "") this.namespaceNameInput.value = val.name;
+    this.versionInput.fill(val.version);
+    if (val.name !== "") this.namespaceNameInput.fill(val.name);
+    this._selfValidate();
   }
 
-  transform(_val: Namespace): Namespace {
-    return _val;
+  transform(val: Namespace): Namespace {
+    let name = this.namespaceNameInput.value();
+    let version = this.versionInput.value();
+    let authors = this.authors;
+    if (name === null || version === null || authors.length == 0) return val;
+    return { ...val, name, version, authors };
   }
 
   clear(): void {
@@ -219,20 +233,61 @@ export class NamespaceMetadataForm extends BasicFormPage<Namespace> {
   }
 }
 
+@customElement("version-input")
+export class VersionInput extends ValueInput<[number, number, number]> {
+  protected firstUpdated(
+    _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
+  ): void {
+    this.inputElem.placeholder = "0.0.1";
+  }
+
+  isValid: () => boolean = () => {
+    return this.inputElem.value.match(/\d+\.\d+\.\d+/) !== null;
+  };
+
+  fill(val: [number, number, number]): void {
+    this.inputElem.value = val.join(".");
+  }
+
+  value(): [number, number, number] | null {
+    if (!this.isValid) return null;
+    const [major, minor, patch] = this.inputElem.value
+      .split(".")
+      .map((v) => parseInt(v));
+    return [major, minor, patch];
+  }
+}
+
 @customElement("namespace-types-form")
 export class NamespaceTypesForm extends CPSForm<Namespace> {
-  constructor(typeBuilderTrigger: Trigger<TypeDef>) {
+  constructor(
+    typeBuilderTrigger: Trigger<TypeDef>,
+    typeEditorTrigger: Trigger<TypeDef>
+  ) {
     super();
     this.triggerTypeBuilder = () => {
       this.showAndFocus(false);
       typeBuilderTrigger(
         ["GROUP", Initializers.groupTypeDef],
-        () => {
-          this.showAndFocus(true);
-        },
+        () => this.showAndFocus(true),
         (v) => {
           this.showAndFocus(true);
           this.types = [...this.types, v];
+        }
+      );
+    };
+
+    this.triggerTypeEditor = (initializer, index) => {
+      this.showAndFocus(false);
+      typeEditorTrigger(
+        initializer,
+        () => this.showAndFocus(true),
+        (v) => {
+          this.types = [
+            ...this.types.slice(0, index),
+            v,
+            ...this.types.slice(index + 1),
+          ];
         }
       );
     };
@@ -245,8 +300,8 @@ export class NamespaceTypesForm extends CPSForm<Namespace> {
   stepBar!: FormStepBar;
 
   fill(val: Namespace, progress?: ProgressState): void {
-    if (val.typedefs.length !== 0) this.types = [...val.typedefs];
     this.stepBar.setProgressState(progress);
+    if (val.typedefs.length !== 0) this.types = [...val.typedefs];
   }
 
   transform(val: Namespace): Namespace {
@@ -261,6 +316,9 @@ export class NamespaceTypesForm extends CPSForm<Namespace> {
   @property({ type: Function })
   triggerTypeBuilder: () => void = () => {};
 
+  @property({ type: Function })
+  triggerTypeEditor: (initializer: TypeDef, index: number) => void = () => {};
+
   showAndFocus(visible: boolean): void {
     NDXBuilderDefaultShowAndFocus(this, visible);
   }
@@ -271,6 +329,22 @@ export class NamespaceTypesForm extends CPSForm<Namespace> {
 
   @state()
   selected: number = -1;
+
+  private handleDelete(index: number) {
+    let tyname = this.types[index][1].neurodataTypeDef;
+    for (let type of this.types) {
+      if (referenceCollision(type, tyname)) {
+        alert(
+          `Cannot delete type ${tyname} that is referenced in somewhere in other type ${type[1].neurodataTypeDef}.\nEdit ${type[1].neurodataTypeDef} to remove the reference first.`
+        );
+        return;
+      }
+    }
+    this.types = [
+      ...this.types.slice(0, index),
+      ...this.types.slice(index + 1),
+    ];
+  }
 
   render() {
     return html`
@@ -302,14 +376,53 @@ export class NamespaceTypesForm extends CPSForm<Namespace> {
           </ul>
         </div>
         <div class="sidespace">
-          <light-button
-              @click=${this.triggerTypeBuilder}
-            >Create a type &nbsp;
-            <span
-              class="material-symbols-outlined"
-              >add</span
-            ></light-button
-          >
+            ${when(
+              this.selected !== -1,
+              () => html`
+                <div class="inspector">
+                  <span
+                    class="material-symbols-outlined"
+                    id="close"
+                    @click=${() => (this.selected = -1)}
+                    >close</span
+                  >
+                  <span
+                    class="material-symbols-outlined"
+                    @click=${() =>
+                      this.triggerTypeEditor(
+                        this.types[this.selected],
+                        this.selected
+                      )}
+                    >edit</span
+                  >
+                  <span
+                    class="material-symbols-outlined"
+                    @click=${() => this.handleDelete(this.selected)}
+                    >delete</span
+                  >
+                </div>
+                <div class="preview">
+                  <h2>${this.types[this.selected][1].neurodataTypeDef}</h2>
+                  <div class="extends">
+                    <div class="keyword">extends</div>
+                    <div class="inctype">
+                      ${this.types[this.selected][1].neurodataTypeInc[1]
+                        ?.neurodataTypeDef || "None"}
+                    </div>
+                  </div>
+                  <div class="description">
+                    ${this.types[this.selected][1].doc}
+                  </div>
+                </div>
+              `,
+              () =>
+                html`<light-button @click=${() => this.triggerTypeBuilder()}
+                  >Create a type &nbsp;
+                  <span class="material-symbols-outlined"
+                    >add</span
+                  ></light-button
+                >`
+            )}
         </div>
       </div>
       <continue-bar
@@ -349,10 +462,12 @@ export class NamespaceTypesForm extends CPSForm<Namespace> {
 
       .sidespace {
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
         flex: 1;
         min-width: 20em;
+        padding: 2em;
       }
 
       h2 {
@@ -401,6 +516,143 @@ export class NamespaceTypesForm extends CPSForm<Namespace> {
         border: none;
         margin: 1em 0;
       }
+
+      .inspector {
+        display: flex;
+        width: 100%;
+      }
+
+      .inspector > span {
+        margin: 0.25em;
+        padding: 0.1em;
+        padding-bottom: 0.3em;
+        cursor: pointer;
+        transition: 0.2s;
+        border-radius: 0.2em;
+      }
+
+      .inspector > span.material-symbols-outlined:hover:not(:last-child) {
+        color: var(--clickable);
+        padding: 0.2em;
+        background-color: var(--background-light-button);
+      }
+
+      .inspector > span.material-symbols-outlined:hover {
+        padding: 0.2em;
+        background-color: #ffb3b3;
+      }
+
+      .inspector > span#close {
+        margin-left: auto;
+      }
+
+      .inspector > span:last-child {
+        margin-left: 1em;
+      }
+
+      .preview {
+        border: 1px solid var(--color-border-alt);
+        border-radius: 0.5em;
+        padding: 1em;
+        background: var(--color-background);
+        // box-shadow: 0 0 0.5em var(--color-border-alt);
+      }
+
+      .extends {
+        display: flex;
+        font-size: 1.2em;
+        align-items: center;
+        border-bottom: 1px solid var(--color-border-alt);
+        padding-bottom: 0.5em;
+      }
+
+      .keyword {
+        margin-left: auto;
+        color: var(--clickable);
+        font-weight: bold;
+      }
+
+      .inctype {
+        margin-left: 0.5em;
+        border: 1px solid var(--color-border-alt);
+        padding: 0.1em 0.3em;
+      }
     `,
   ];
+}
+
+// recursively check if a typedef contains a reference to another type name
+function referenceCollision(type: TypeDef, name: string): boolean {
+  // nested function to check groups
+  function referenceCollisionGroupDec(type: GroupDec, name: string): boolean {
+    switch (type[0]) {
+      case "INC":
+        return type[1].neurodataTypeInc[1]?.neurodataTypeDef === name;
+      case "ANONYMOUS":
+        return (
+          type[1].groups.some((g) => referenceCollisionGroupDec(g, name)) ||
+          type[1].datasets.some((d) => referenceCollisionDatasetDec(d, name)) ||
+          type[1].links.some((l) => referenceCollisionLinkDec(l, name)) ||
+          type[1].attributes.some((a) => referenceCollisionDtype(a.dtype, name))
+        );
+      default:
+        assertNever(type[0]);
+    }
+  }
+
+  // nested function to check datasets
+  function referenceCollisionDatasetDec(
+    type: DatasetDec,
+    name: string
+  ): boolean {
+    switch (type[0]) {
+      case "INC":
+        return type[1].neurodataTypeInc[1]?.neurodataTypeDef === name;
+      case "ANONYMOUS":
+        return (
+          referenceCollisionDtype(type[1].dtype, name) ||
+          type[1].attributes.some((a) => referenceCollisionDtype(a.dtype, name))
+        );
+      default:
+        assertNever(type[0]);
+    }
+  }
+
+  // nested function to check dtypes
+  function referenceCollisionDtype(type: Dtype, name: string): boolean {
+    switch (type[0]) {
+      case "PRIMITIVE":
+        return false;
+      case "COMPOUND":
+        return type[1].some((f) => referenceCollisionDtype(f.dtype, name));
+      case "REFSPEC":
+        return type[1][1][1]?.neurodataTypeDef === name;
+      default:
+        assertNever(type[0]);
+    }
+  }
+
+  // nested function to check links
+  function referenceCollisionLinkDec(type: LinkDec, name: string): boolean {
+    return type.targetType[1][1]?.neurodataTypeDef === name;
+  }
+
+  // now we are ready to check the top level typedef
+
+  switch (type[0]) {
+    case "GROUP":
+      return (
+        type[1].neurodataTypeInc[1]?.neurodataTypeDef === name ||
+        type[1].groups.some((g) => referenceCollisionGroupDec(g, name)) ||
+        type[1].datasets.some((d) => referenceCollisionDatasetDec(d, name))
+      );
+    case "DATASET":
+      return (
+        type[1].neurodataTypeInc[1]?.neurodataTypeDef === name ||
+        referenceCollisionDtype(type[1].dtype, name) ||
+        type[1].attributes.some((a) => referenceCollisionDtype(a.dtype, name))
+      );
+    default:
+      assertNever(type[0]);
+  }
 }

@@ -45,7 +45,7 @@ function grabAllModules(): [
 
 type Inctype<T> = {
   id: string;
-  kind?: "GROUP" | "DATASET";
+  kind: "GROUP" | "DATASET";
   inctype: T;
 };
 
@@ -548,6 +548,7 @@ export class GroupInctypeForm extends InctypeForm<HasGroupIncType, GroupType> {
     if (typedef[0] == "GROUP") {
       return {
         id: typedef[1].neurodataTypeDef,
+        kind: typedef[0],
         inctype: ["Typedef", typedef[1]],
       };
     } else {
@@ -560,6 +561,7 @@ export class GroupInctypeForm extends InctypeForm<HasGroupIncType, GroupType> {
   noneTypes: Inctype<GroupType>[] = [
     {
       inctype: ["None", null],
+      kind: "GROUP",
       id: "Empty Group",
     },
   ];
@@ -615,6 +617,7 @@ export class DatasetInctypeForm extends InctypeForm<
     if (typedef[0] == "DATASET") {
       return {
         id: typedef[1].neurodataTypeDef,
+        kind: typedef[0],
         inctype: ["Typedef", typedef[1]],
       };
     } else {
@@ -626,6 +629,7 @@ export class DatasetInctypeForm extends InctypeForm<
   noneTypes: Inctype<DatasetType>[] = [
     {
       inctype: ["None", null],
+      kind: "DATASET",
       id: "Empty Dataset",
     },
   ];
@@ -665,11 +669,13 @@ export class TargetIncTypeForm extends InctypeForm<LinkDec, NWBType> {
     if (typedef[0] == "GROUP") {
       return {
         id: typedef[1].neurodataTypeDef,
+        kind: typedef[0],
         inctype: ["GROUP", ["Typedef", typedef[1]]],
       };
     }
     return {
       id: typedef[1].neurodataTypeDef,
+      kind: typedef[0],
       inctype: ["DATASET", ["Typedef", typedef[1]]],
     };
   }

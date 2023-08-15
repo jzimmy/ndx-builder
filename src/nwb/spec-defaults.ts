@@ -12,6 +12,16 @@ import {
   IncDatasetDec,
 } from "./spec";
 
+// const _exampleGroup: GroupTypeDef = {
+//   neurodataTypeDef: "ExampleGroupType",
+//   neurodataTypeInc: ["None", null],
+//   doc: "This is an example group type definition. It is not intended to be used in a real schema. It is only used to test the schema compiler. It is a group type definition that contains all possible fields.",
+//   groups: [],
+//   datasets: [],
+//   attributes: [],
+//   links: [],
+// };
+
 const namespace: Namespace = {
   name: "",
   doc: "",

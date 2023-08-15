@@ -233,7 +233,7 @@ export class QuantityOrNameInput extends NdxInputElem<Quantity | string> {
   }
 }
 
-abstract class ValueInput<T> extends NdxInputElem<T> {
+export abstract class ValueInput<T> extends NdxInputElem<T> {
   @property()
   label: string = "Value";
 

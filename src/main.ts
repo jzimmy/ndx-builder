@@ -57,13 +57,7 @@ export class NdxMain extends LitElement {
                         class="typedef"
                         .onDelete=${() => (this.appState = "NEW")}
                       ></group-def-elem>
-                      <dark-button
-                        .disabled=${this.datasetDef
-                          ? this.datasetDef.valid
-                          : true}
-                        class="save"
-                        >Save</dark-button
-                      >
+                      <dark-button class="save">Save</dark-button>
                     `,
                 ],
                 [
@@ -73,13 +67,7 @@ export class NdxMain extends LitElement {
                       class="typedef"
                       .onDelete=${() => (this.appState = "NEW")}
                     ></dataset-def-elem>
-                    <dark-button
-                      .disabled=${this.datasetDef
-                        ? this.datasetDef.valid
-                        : true}
-                      class="save"
-                      >Save</dark-button
-                    >
+                    <dark-button class="save">Save</dark-button>
                   `,
                 ],
               ],

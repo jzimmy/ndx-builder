@@ -3,31 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>NWB Extension Builder</title>
     <link href="src/index.css" rel="stylesheet" />
+    <script type="module" src="src/parent.ts"></script>
   </head>
-  <script type="module" src="src/main.ts"></script>
-  <style>
-    body {
-      background: var(--color-background-alt);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    #center {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      height: 100%;
-    }
-
-    #center > * {
-      margin: auto;
-      margin-top: 8em;
-    }
-  </style>
   <body>
-    <ndx-main></ndx-main>
+    <form-parent></form-parent>
   </body>
+  <style></style>
 </html>
