@@ -13,15 +13,8 @@ ext_source = ns["name"] + ".extensions.yaml"
 
 
 def gen_types(types):
-    nwb_types = []
-    for ty in types:
-        kind, ty = tuple(ty)
-        if kind == 'GROUP':
-            nwb_types.append(gen_group_spec(ty))
-        elif kind == 'DATASET':
-            nwb_types.append(gen_dataset_spec(ty))
-        else:
-            raise Exception("Unknown type: %s" % kind)
+    return [gen_group_spec(ty) if kind == 'GROUP' else
+            gen_dataset_spec(ty) for kind, ty in types]
 
 
 def gen_group_spec(spec):
@@ -32,20 +25,26 @@ def gen_group_spec(spec):
     return NWBGroupSpec(**spec)
 
 
+def gen_shape(shape):
+    [None if s == "None" else s for s in shape]
+
+
 def gen_dataset_spec(spec):
     spec["attributes"] = [gen_attribute_spec(a) for a in spec["attributes"]]
     spec["dtype"] = gen_dtype_spec(spec["dtype"])
+    spec["shape"] = gen_shape(spec["shape"])
     return NWBDatasetSpec(**spec)
 
 
 def gen_attribute_spec(spec):
     spec["dtype"] = gen_dtype_spec(spec["dtype"])
+    spec["shape"] = gen_shape(spec["shape"])
     return NWBAttributeSpec(**spec)
 
 
 def gen_dtype_spec(spec):
     if isinstance(spec, str):
-        return spec
+        return spec if spec != "None" else None
     elif isinstance(spec, dict) and ['target_type', 'region'] in spec:
         return NWBRefSpec(**spec)
     elif isinstance(spec, dict) and ['name', 'doc', 'dtype'] in spec:
@@ -71,3 +70,14 @@ ns_builder.add_spec(
 )
 
 ns_builder.export(ns_path)
+
+
+"""
+Don't worry about the junk below. It has no effect on this script.
+It is just a signature so that this file can
+be read back in by the extension builder app when you want to make changes.
+"""
+
+"""
+{{"signature"}}
+"""

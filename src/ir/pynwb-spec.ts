@@ -3,10 +3,16 @@
  * the python api more closely. It should ONLY be used for python code generation.
  */
 
+// typescript hack to ensure CoreTypeName != string
+enum __UNIQUE__ {
+  _ = "",
+}
+export type CoreTypeName = string & __UNIQUE__;
+
 export type primitive = string;
 
 export type NWBRefSpec = {
-  targetType: string;
+  target_type: string;
   reftype: "object";
 };
 
@@ -14,24 +20,24 @@ export type NWBAttributeSpec = {
   name: string;
   doc: string;
   dtype: primitive | NWBRefSpec;
-  shape?: number[];
-  dims?: string[];
+  shape?: (number | "None")[][];
+  dims?: string[][];
   required?: boolean;
   value?: string;
-  defaultValue?: string;
+  default_value?: string;
 };
 
 export type NWBLinkSpec = {
   doc: string;
   name?: string;
-  targetType: string;
+  target_type: string;
   quantity?: string | number;
 };
 
 export type NWBDtypeSpec = {
   name: string;
   doc: string;
-  dtype: primitive | NWBDtypeSpec[] | NWBRefSpec;
+  dtype: primitive | NWBRefSpec;
 };
 
 export type NWBDatasetSpec = {
@@ -39,47 +45,34 @@ export type NWBDatasetSpec = {
   name?: string;
   dtype?: primitive | NWBDtypeSpec[] | NWBRefSpec;
   default_name?: string;
-  shape?: number[];
-  dims?: string[];
+  shape?: (number | "None")[][];
+  dims?: string[][];
   attributes?: NWBAttributeSpec[];
   linkable?: "True";
   quantity?: string | number;
-  neurodataTypeDef?: string;
-  neurodataTypeInc?: string;
+  neurodata_type_def?: string;
+  neurodata_type_inc?: string;
 };
 
 export type NWBGroupSpec = {
   doc: string;
   name?: string;
-  shape?: number[];
-  dims?: string[];
+  default_name?: string;
   groups?: NWBGroupSpec[];
   datasets?: NWBDatasetSpec[];
   attributes?: NWBAttributeSpec[];
   links?: NWBLinkSpec[];
   linkable?: "True";
   quantity?: string | number;
-  neurodataTypeDef?: string;
-  neurodataTypeInc?: string;
+  neurodata_type_def?: string;
+  neurodata_type_inc?: string;
 };
 
 export type NWBNamespaceSpec = {
   doc: string;
   name: string;
-  fullName?: string;
+  full_name?: string;
   version?: number[];
   author?: string[];
   contact?: string[];
-};
-
-// this typescript nonsense helps ensure that typeof string != typeof pythonID
-enum _UNIQUE_PYTHONID_ {
-  _ = "UNIQUE",
-}
-
-export type PythonID = string & _UNIQUE_PYTHONID_;
-
-export type Flattened<T> = {
-  id: PythonID;
-  spec: T;
 };
