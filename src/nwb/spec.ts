@@ -77,7 +77,8 @@ export type Quantity =
   | ["+", null]
   | ["Num", number];
 
-// TODO, fetch from NWB
+// TODO, fetch more data from NWB
+
 export type CoreGroupType = {
   neurodataTypeDef: string;
   name: Defaultable<string>;

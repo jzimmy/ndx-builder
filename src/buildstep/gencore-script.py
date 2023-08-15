@@ -76,7 +76,9 @@ u8 = "u8"
 
 
 def read_core_yaml(dir):
-    yamls = pathlib.Path(dir).glob("*.yaml")
+    yamls = [y for y in pathlib.Path(dir).glob("*.yaml")]
+    if len(yamls) == 0:
+        raise Exception("No NWB yaml files found in " + dir)
     return yamls
 
 

@@ -314,12 +314,15 @@ export class ContinueBar extends LitElement {
   @property({ type: Function })
   continue = () => {};
 
+  @property({ type: String })
+  message = "Continue";
+
   @property({ type: Boolean, reflect: true })
   disabled = false;
 
   render() {
     return html`<dark-button .disabled=${this.disabled} @click=${this.continue}
-      >Continue</dark-button
+      >${this.message}</dark-button
     >`;
   }
 
