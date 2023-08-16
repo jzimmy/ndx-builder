@@ -4,7 +4,7 @@ import {
   Namespace,
   AttributeDec,
   GroupDec,
-  AnonymousGroupTypeDec,
+  AnonymousGroupDec,
   LinkDec,
   DatasetDec,
   AnonymousDatasetDec,
@@ -57,7 +57,7 @@ const attributeDec: AttributeDec = {
   required: false,
 };
 
-const anonymousGroupDec: AnonymousGroupTypeDec = {
+const anonymousGroupDec: AnonymousGroupDec = {
   doc: "",
   name: "",
   groups: [],

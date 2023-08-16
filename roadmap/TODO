@@ -1,15 +1,10 @@
-edit or visualize from mytypes-bar
-codegen
-linkform
-groupdefform
-anongroupform
-incgroupform
-dsetdefform
-anondsetform
-incdsetform
-attribform
-linkform
-inhdsetform
-inhgroupform
+// basics
+style add authors
+refspec dtype
 
-// need some cleverness for subcomponents
+// features
+show docstring on hover
+
+// optimizations
+cache certain @query elements
+change string literal comparison to use symbols

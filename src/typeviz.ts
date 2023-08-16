@@ -5,7 +5,7 @@ import { BasicTypeElem, TypeElem } from "./type-elem";
 import "./type-elem";
 import {
   AnonymousDatasetDec,
-  AnonymousGroupTypeDec,
+  AnonymousGroupDec,
   AttributeDec,
   DatasetDec,
   DatasetTypeDef,
@@ -221,20 +221,20 @@ export class AttribDecElem extends BasicTypeElem<AttributeDec> {
 }
 
 @customElement("group-anondec-elem")
-export class AnonGroupDecElem extends BasicTypeElem<AnonymousGroupTypeDec> {
+export class AnonGroupDecElem extends BasicTypeElem<AnonymousGroupDec> {
   firstFocusable?: HTMLElement | undefined;
 
   @query("group-subtree")
   groupSubtree!: GroupSubtree;
 
-  fill(val: AnonymousGroupTypeDec): void {
+  fill(val: AnonymousGroupDec): void {
     this.data = val;
     Promise.resolve(this.updateComplete).then(() =>
       this.groupSubtree.fill(val)
     );
   }
 
-  value(): AnonymousGroupTypeDec {
+  value(): AnonymousGroupDec {
     return { ...this.data, ...this.groupSubtree.value() };
   }
 
@@ -243,7 +243,7 @@ export class AnonGroupDecElem extends BasicTypeElem<AnonymousGroupTypeDec> {
   protected icon = "folder";
 
   @state()
-  protected data: AnonymousGroupTypeDec = {
+  protected data: AnonymousGroupDec = {
     doc: "This is a description of my group it measures temperature",
     name: "AnonGroup",
     groups: [],

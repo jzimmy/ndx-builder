@@ -145,14 +145,12 @@ export type GroupTypeDef = {
 };
 
 // GroupDec is an instantiation of a GroupType, it does not define a top level type
-export type GroupDec =
-  | ["ANONYMOUS", AnonymousGroupTypeDec]
-  | ["INC", IncGroupDec];
+export type GroupDec = ["ANONYMOUS", AnonymousGroupDec] | ["INC", IncGroupDec];
 
 // AnonymousGroupTypeDec is an instantiation of custom GroupDec
 // that is not in the top level. It creates an inline GroupType
 // that cannot be referenced elsewhere.
-export type AnonymousGroupTypeDec = {
+export type AnonymousGroupDec = {
   doc: string;
   name: string;
   groups: GroupDec[];

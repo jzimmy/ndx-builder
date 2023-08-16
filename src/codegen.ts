@@ -1,7 +1,7 @@
 import { customElement, query, state } from "lit/decorators.js";
 import {
   AnonymousDatasetDec,
-  AnonymousGroupTypeDec,
+  AnonymousGroupDec,
   AttributeDec,
   CompoundDtype,
   DatasetDec,
@@ -35,21 +35,21 @@ import {
 import { interpreter_script } from "./data/interpreter";
 import { obfuscateString } from "./upload";
 
-export const MAGIC_SIGNATURE = "NDX_BUILDER_SIGNATURE";
+export const MAGIC_SIGNATURE = "!@#NDX_BUILDER_SIGNATURE!@#";
 
 function codegen(ns: Namespace): string {
-  let namespaceSpec = convertNamespace(ns);
-  let types = ns.typedefs.map(convertTypeDef);
-  let includes = getIncludes(ns);
+  let nsSpec = convertNamespace(ns);
+  let [includes, tydefs] = sortNamespace(ns);
+  let types = tydefs.map(convertTypeDef);
 
   let interpreter = interpreter_script;
 
+  // sed
+
+  interpreter = interpreter.replace('{{"namespace_name"}}', nsSpec.name);
   interpreter = interpreter.replace('{{"types"}}', JSON.stringify(types));
   interpreter = interpreter.replace('{{"includes"}}', JSON.stringify(includes));
-  interpreter = interpreter.replace(
-    '{{"namespace"}}',
-    JSON.stringify(namespaceSpec)
-  );
+  interpreter = interpreter.replace('{{"namespace"}}', JSON.stringify(nsSpec));
   interpreter = interpreter.replace(
     '{{"signature"}}',
     MAGIC_SIGNATURE + obfuscateString(JSON.stringify(ns)) + MAGIC_SIGNATURE
@@ -66,7 +66,6 @@ export class CodegenForm extends CPSForm<Namespace> {
     val: Namespace,
     progress?: { states: string[]; currState: number } | undefined
   ): void {
-    this.script = codegen(val);
     this.namespace = val;
     this.stepBarElem.setProgressState(progress);
   }
@@ -75,16 +74,11 @@ export class CodegenForm extends CPSForm<Namespace> {
     return val;
   }
 
-  clear(): void {
-    this.script = "";
-  }
+  clear(): void {}
 
   showAndFocus(visible: boolean): void {
     NDXBuilderDefaultShowAndFocus(this, visible);
   }
-
-  @state()
-  script: string = "";
 
   @state()
   namespace: Namespace = { ...Initializers.namespace };
@@ -92,17 +86,22 @@ export class CodegenForm extends CPSForm<Namespace> {
   @query("step-bar")
   stepBarElem!: FormStepBar;
 
+  handleExport() {
+    exportFile(codegen(this.namespace), "create_extension_spec.py");
+  }
+
   render() {
     return html`
     <step-bar></step-bar>
     <input type="button" value="back" @click=${this.back}></input>
-    <pre>${this.script}</pre>
-    <continue-bar .message=${"export"} .continue=${() =>
-      exportFile(this.script, "create_extension_spec.py")}></continue-bar>
+    <pre>${JSON.stringify(this.namespace, null, 2)}</pre>
+    <continue-bar .message=${"Export"} .continue=${this.handleExport}
+      ></continue-bar>
     `;
   }
 }
 
+// note that in original NWB spec namespace doesn't contain the typedefs
 function convertNamespace(ns: Namespace): NWBNamespaceSpec {
   let spec: NWBNamespaceSpec = {
     doc: ns.doc,
@@ -116,8 +115,16 @@ function convertNamespace(ns: Namespace): NWBNamespaceSpec {
 }
 
 function convertTypeDef(t: TypeDef): NWBTypeSpec {
-  // nested functions
+  switch (t[0]) {
+    case "GROUP":
+      return ["GROUP", convertGroupTypeDef(t[1])];
+    case "DATASET":
+      return ["DATASET", convertDatasetTypeDef(t[1])];
+    default:
+      assertNever(t[0]);
+  }
 
+  // nested functions
   function convertGroupTypeDef(g: GroupTypeDef): NWBGroupSpec {
     let spec: NWBGroupSpec = {
       doc: g.doc,
@@ -202,7 +209,7 @@ function convertTypeDef(t: TypeDef): NWBTypeSpec {
     return spec;
   }
 
-  function convertAnonGroupDec(g: AnonymousGroupTypeDec): NWBGroupSpec {
+  function convertAnonGroupDec(g: AnonymousGroupDec): NWBGroupSpec {
     let spec: NWBGroupSpec = {
       doc: g.doc,
       groups: g.groups.map(convertGroupDec),
@@ -319,17 +326,6 @@ function convertTypeDef(t: TypeDef): NWBTypeSpec {
         assertNever(p);
     }
   }
-
-  // back to convertTypeDef
-
-  switch (t[0]) {
-    case "GROUP":
-      return ["GROUP", convertGroupTypeDef(t[1])];
-    case "DATASET":
-      return ["DATASET", convertDatasetTypeDef(t[1])];
-    default:
-      assertNever(t[0]);
-  }
 }
 
 // Exports contents as a new file
@@ -352,8 +348,9 @@ type Include = {
 };
 
 function getIncludes(typedef: TypeDef): Include[] {
-  // nested functions
+  return getIncludesTypeDef(typedef);
 
+  // nested recursive functions
   function getIncludesTypeDef(t: TypeDef): Include[] {
     switch (t[0]) {
       case "GROUP":
@@ -443,9 +440,6 @@ function getIncludes(typedef: TypeDef): Include[] {
       ? [{ kind: l.targetType[1][0], def: l.targetType[1][1].neurodataTypeDef }]
       : [];
   }
-
-  // back to getCoreIncludes
-  return getIncludesTypeDef(typedef);
 }
 
 function sortNamespace(ns: Namespace): [string[], TypeDef[]] {
@@ -459,26 +453,30 @@ function sortNamespace(ns: Namespace): [string[], TypeDef[]] {
     }));
 
   let allCore = Array.from(new Set(includes.flatMap((i) => i.coreIncludes)));
+  return [allCore, topologicalSort(includes).map((i) => i.ty)];
 
+  // reorder typedefs so that all dependencies are defined before use
   type IncludeNode = (typeof includes)[0];
+  function topologicalSort(nodes: IncludeNode[]) {
+    const L = new Array<IncludeNode>(nodes.length);
+    let S = nodes.filter((n) => n.deps.length == 0);
 
-  function topologicalSort(nodes: IncludeNode[]) {}
+    while (S.length > 0) {
+      let n = S.pop()!;
+      L.push(n);
+      nodes = nodes.filter((m) => m != n);
+      for (let m of nodes) {
+        m.deps = m.deps.filter((d) => d != n.def);
+        if (m.deps.length == 0) S.push(m);
+      }
+    }
 
-  function findStartNodes(nodes: IncludeNode[]): Swaps[] {
-    return nodes.filter((n) => n.deps.length == 0);
+    if (nodes.every((n) => n.deps.length == 0)) return L;
+    else
+      throw new Error(
+        `Types contain circular dependency. Types with conflict are ${nodes
+          .filter((n) => n.deps.length > 0)
+          .map((n) => n.def)}`
+      );
   }
-
-  return [allCore, ns.typedefs];
-}
-
-type Swaps = { [key: number]: number };
-
-function applySwaps<T>(array: T[], newOrder: Swaps) {
-  for (let i in newOrder) {
-    let j = newOrder[i];
-    let temp = array[i];
-    array[i] = array[j];
-    array[j] = temp;
-  }
-  return array;
 }

@@ -22,32 +22,42 @@ import { when } from "lit/directives/when.js";
 import { Initializers } from "./nwb/spec-defaults";
 import { coreQuery, modules } from "./data/nwbcore";
 
-function grabAllModules(): [
-  name: string,
-  inctype: Inctype<() => CoreType>[]
-][] {
-  let res: [name: string, inctype: Inctype<() => CoreType>[]][] = [];
-  for (const key in modules) {
-    res.push([
-      key,
-      modules[key].map(([kind, id]) => {
-        let inctype: Inctype<() => CoreType> = {
-          id,
-          kind,
-          inctype: () => coreQuery(id),
-        };
-        return inctype;
-      }),
-    ]);
-  }
-  return res;
-}
-
 type Inctype<T> = {
   id: string;
   kind: "GROUP" | "DATASET";
   inctype: T;
 };
+
+function collectModulesIntoInctypeGetter(): {
+  modname: string;
+  inctypes: Inctype<() => CoreType>[];
+}[] {
+  let res = [];
+  for (const modname in modules) {
+    res.push({
+      modname,
+      inctypes: modules[modname].map(([kind, id]) => ({
+        id,
+        kind,
+        inctype: () => coreQuery(id),
+      })),
+    });
+  }
+  return res;
+}
+
+function generateReverseInctypeMap<T>(
+  modules: [string, Inctype<() => T>[]][]
+): Map<string, { modIndex: number; tyIndex: number }> {
+  let res = new Map();
+  for (let i = 0; i < modules.length; i++) {
+    let inctypes = modules[i][1];
+    for (let j = 0; j < inctypes.length; j++) {
+      res.set(inctypes[j].id, { modIndex: i, tyIndex: j });
+    }
+  }
+  return res;
+}
 
 abstract class InctypeForm<T, U> extends BasicTypeBuilderFormPage<T> {
   formTitle: string = "Choose a base type to extend";
@@ -90,6 +100,14 @@ abstract class InctypeForm<T, U> extends BasicTypeBuilderFormPage<T> {
   // types within modules are retrieved lazily
   abstract modules: [name: string, inctype: Inctype<() => U>[]][];
   abstract noneTypes: Inctype<U>[];
+
+  coreModulesLookupMap: Map<
+    string,
+    {
+      modIndex: number;
+      tyIndex: number;
+    }
+  > | null = null;
 
   // beware this one is hacky!
   // To do properly, bundle the data with the environment in the formchain
@@ -234,8 +252,34 @@ abstract class InctypeForm<T, U> extends BasicTypeBuilderFormPage<T> {
     `;
   }
 
-  setIncType(_inctype: NWBType) {
-    // TODO
+  setIncType(nwbtype: NWBType) {
+    if (this.coreModulesLookupMap == null) {
+      this.coreModulesLookupMap = generateReverseInctypeMap(this.modules);
+    }
+    let modIndex = -1;
+    let tyIndex = -1;
+    let inctype = nwbtype[1];
+    if (inctype[0] == "Core") {
+      this.category = InctypeForm.coreCategory;
+      const indices = this.coreModulesLookupMap.get(
+        inctype[1].neurodataTypeDef
+      )!;
+      modIndex = indices.modIndex;
+      tyIndex = indices.tyIndex;
+    } else if (inctype[0] == "None") {
+      this.category = InctypeForm.noBaseCategory;
+      this.selectedModule = -1;
+      return;
+    } else if (inctype[0] == "Typedef") {
+      this.category = InctypeForm.myTypeCategory;
+      this.selectedType = this.myTypes.findIndex(
+        (t) => (t.id = inctype[1]!.neurodataTypeDef)
+      );
+    } else {
+      assertNever(inctype[0]);
+    }
+    this.selectedModule = modIndex;
+    this.selectedType = tyIndex;
   }
 
   body() {
@@ -421,9 +465,9 @@ abstract class InctypeForm<T, U> extends BasicTypeBuilderFormPage<T> {
 }
 
 function collectModulesAsNWBTypes(): [string, Inctype<() => NWBType>[]][] {
-  return grabAllModules().map(([name, module]) => [
-    name,
-    module.map((i) => {
+  return collectModulesIntoInctypeGetter().map(({ modname, inctypes }) => [
+    modname,
+    inctypes.map((i) => {
       let { inctype, id, kind } = i;
       switch (kind) {
         case "DATASET":
@@ -525,19 +569,21 @@ export class GenericInctypeForm extends InctypeForm<TypeDef, NWBType> {
 export class GroupInctypeForm extends InctypeForm<HasGroupIncType, GroupType> {
   constructor() {
     super();
-    const modules: typeof this.modules = grabAllModules().map((mod) => [
-      mod[0],
-      mod[1]
-        .filter(({ kind }) => kind == "GROUP")
-        .map((t) => {
-          let { id, kind, inctype } = t;
-          return {
-            id,
-            kind,
-            inctype: () => ["Core", inctype()[1]] as GroupType,
-          };
-        }),
-    ]);
+    const modules: typeof this.modules = collectModulesIntoInctypeGetter().map(
+      ({ modname, inctypes }) => [
+        modname,
+        inctypes
+          .filter(({ kind }) => kind == "GROUP")
+          .map((t) => {
+            let { id, kind, inctype } = t;
+            return {
+              id,
+              kind,
+              inctype: () => ["Core", inctype()[1]] as GroupType,
+            };
+          }),
+      ]
+    );
     this.modules = modules.filter((mod) => mod[1].length > 0);
   }
 
@@ -595,19 +641,21 @@ export class DatasetInctypeForm extends InctypeForm<
 > {
   constructor() {
     super();
-    const modules: typeof this.modules = grabAllModules().map((mod) => [
-      mod[0],
-      mod[1]
-        .filter(({ kind }) => kind == "DATASET")
-        .map((t) => {
-          let { id, kind, inctype } = t;
-          return {
-            id,
-            kind,
-            inctype: () => ["Core", inctype()[1]] as DatasetType,
-          };
-        }),
-    ]);
+    const modules: typeof this.modules = collectModulesIntoInctypeGetter().map(
+      ({ modname, inctypes }) => [
+        modname,
+        inctypes
+          .filter(({ kind }) => kind == "DATASET")
+          .map((t) => {
+            let { id, kind, inctype } = t;
+            return {
+              id,
+              kind,
+              inctype: () => ["Core", inctype()[1]] as DatasetType,
+            };
+          }),
+      ]
+    );
     this.modules = modules.filter((mod) => mod[1].length > 0);
   }
 

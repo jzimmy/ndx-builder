@@ -28,7 +28,7 @@ import {
   Namespace,
   LinkDec,
   GroupDec,
-  AnonymousGroupTypeDec,
+  AnonymousGroupDec,
   IncGroupDec,
   DatasetDec,
   AnonymousDatasetDec,
@@ -83,12 +83,12 @@ export function buildFormChains(parent: LitElement): Trigger<Namespace> {
     .withParent(parent);
 
   let anonGroupDecChain = fc(
-    new AnonDecNameForm<AnonymousGroupTypeDec>(),
+    new AnonDecNameForm<AnonymousGroupDec>(),
     [],
     0
   ).convert<GroupDec>(
     (v) => ["ANONYMOUS", v],
-    ([_, v]) => v as AnonymousGroupTypeDec
+    ([_, v]) => v as AnonymousGroupDec
   );
 
   let incGroupDecChain = fc(

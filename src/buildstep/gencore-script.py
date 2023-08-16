@@ -3,6 +3,7 @@ import json
 import sys
 import pathlib
 import re
+from pprint import pprint
 
 """
 cd <base-directory>
@@ -90,7 +91,7 @@ def create_core_group(neurodataTypedef: str, default_name: tuple[str, bool], doc
     }, core_group
 
 
-def create_dataset_type(
+def create_core_dataset(
     neurodataTypedef: str,
     default_name: tuple[str, bool],
     doc: str,
@@ -224,10 +225,10 @@ def parse_yaml(y):
         shape = nest_axes(d.get("shape", []))
         dims = nest_axes(d.get("dims", []))
         try:
-            coredset, varty = create_dataset_type(
+            coredset, varty = create_core_dataset(
                 tydef, isdef, doc, shape, dims, dtype)
         except Exception as e:
-            eprint(dtype)
+            eprint(e)
             raise e
         catalog[tydef] = (varty, coredset)
     return catalog

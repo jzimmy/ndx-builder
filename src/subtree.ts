@@ -30,6 +30,9 @@ export class SubtreeBranch extends LitElement {
   @property({ type: Function })
   addElem = () => {};
 
+  @property({ type: Boolean })
+  addButtonBranch = true;
+
   render() {
     return html`
       <div class="branchline">
@@ -41,13 +44,18 @@ export class SubtreeBranch extends LitElement {
         ${when(!this.lastBranch, () => html`<div class="vert"></div>`)}
       </div>
       <slot name="elems"></slot>
-      <div class="branchelement">
-        <light-button ?disabled=${this.disabled} @click=${this.addElem}>
-          <span class="material-symbols-outlined" style="font-size:1.3em"
-            >add</span
-          >
-        </light-button>
-      </div>
+      ${when(
+        this.addButtonBranch,
+        () => html`
+          <div class="branchelement">
+            <light-button ?disabled=${this.disabled} @click=${this.addElem}>
+              <span class="material-symbols-outlined" style="font-size:1.3em"
+                >add</span
+              >
+            </light-button>
+          </div>
+        `
+      )}
     `;
   }
 

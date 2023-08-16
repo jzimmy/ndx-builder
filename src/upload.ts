@@ -1,11 +1,14 @@
 import { MAGIC_SIGNATURE } from "./codegen";
 import { Namespace } from "./nwb/spec";
 
-export function parseOldCreateExtensionSpecScript(contents: string): Namespace {
+export function parseCreateExtensionSpecScript(
+  contents: string
+): Namespace | null {
   let sigRegex = new RegExp(`${MAGIC_SIGNATURE}.*${MAGIC_SIGNATURE}`);
   let sig = contents.match(sigRegex);
   if (!sig) {
-    throw new Error("Could not find signature");
+    alert("Could not find special signature in extension script");
+    return null;
   }
 
   let ns = JSON.parse(
@@ -15,14 +18,22 @@ export function parseOldCreateExtensionSpecScript(contents: string): Namespace {
   );
 
   // pretty dangerous, could add some checks to confirm that this works
-  return ns;
+  if (!verifyNamespace(ns)) {
+    alert("Could not properly parse signature in extension script");
+    return null;
+  }
+
+  return ns as Namespace;
 }
 
-// simple shift to mess up newline characters and make it all unreadable to
-// humans
+function verifyNamespace(_ns: Namespace): boolean {
+  // Kinda Important TODO!
+  return true;
+}
 
+// Simple character shift to mess up newline characters
+// and make it all unreadable to humans.
 // Discourages people from trying to edit the data directly
-
 export function obfuscateString(s: string) {
   let newstr = new Array(s.length);
   for (let i = 0; i < s.length; i++)
@@ -37,10 +48,11 @@ export function deobfuscateString(s: string) {
   return newstr.join("");
 }
 
-// TODO
+// TODO, allow users to upload extension yaml files, this function turns
+// the yaml in a `Namespace` object
 export function parseNDXYaml(
-  namespaceYaml: Object,
-  extYaml: Object
+  _namespaceYaml: Object,
+  _extYaml: Object
 ): Namespace {
   throw new Error("Not implemented");
 }

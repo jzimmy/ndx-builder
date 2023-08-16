@@ -3,12 +3,8 @@ import { ProgressState } from "./hofs";
 import { BasicTypeBuilderFormPage } from "./basic-form";
 import { customElement, query } from "lit/decorators.js";
 import { AttributeDec, Dtype } from "./nwb/spec";
-import {
-  CheckboxInput,
-  DocInput,
-  NameInput,
-  ShapeOrScalarInput,
-} from "./forminputs";
+import { CheckboxInput, DocInput, NameInput } from "./forminputs";
+import { ShapeOrScalarInput } from "./inputs/shape-or-scalar";
 
 @customElement("attrib-info-form")
 export class AttribInfoForm extends BasicTypeBuilderFormPage<AttributeDec> {
@@ -98,7 +94,10 @@ export class AttribValueForm extends BasicTypeBuilderFormPage<AttributeDec> {
 
   fill(val: AttributeDec, progress?: ProgressState | undefined): void {
     this.drawProgressBar(progress);
-    this.shapeOrScalarInput.fill(val.value);
+    if (val.value[0] == "SCALAR" && val.value[1][0] != "") {
+      this.shapeOrScalarInput.fill(val.value);
+    }
+    this._selfValidate();
   }
 
   transform(val: AttributeDec): AttributeDec {
