@@ -1,8 +1,8 @@
 // todo implement onDelete for all
 import { css, CSSResultGroup, html, TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
-import { BasicTypeElem, TypeElem } from "./type-elem";
-import "./type-elem";
+import { BasicTypeElem } from "./abstract-viz-elem";
+import { ClassicTypeElemTemplate } from "./template";
 import {
   AnonymousDatasetDec,
   AnonymousGroupDec,
@@ -17,19 +17,23 @@ import {
   NWBType,
   Quantity,
   Shape,
-} from "./nwb/spec";
+} from "../nwb/spec";
 import {
   HasDatasetIncType,
   HasDefaultName,
   HasGroupIncType,
   HasTypeNameAndDescription,
-} from "./parent";
-import "./forminputs";
+} from "../parent";
+import "../inputs/dtype-input";
+import "../inputs/shape-input";
+import "../inputs/value-input";
+import "../inputs/quantity-or-name";
 import "./subtree";
-import { Initializers } from "./nwb/spec-defaults";
+import { Initializers } from "../nwb/spec-defaults";
 import { when } from "lit-html/directives/when.js";
 import { map } from "lit-html/directives/map.js";
-import { assertNever, Trigger } from "./hofs";
+import { Trigger } from "../logic/hofs";
+import { assertNever } from "../main";
 import { DatasetSubtree, GroupSubtree } from "./subtree";
 
 export function quantityOrNameString(qOrS: Quantity | string): string {
@@ -268,7 +272,7 @@ export class AnonGroupDecElem extends BasicTypeElem<AnonymousGroupDec> {
   subtreeMinimize = true;
 
   @query("type-elem")
-  typeElem!: TypeElem;
+  typeElem!: ClassicTypeElemTemplate;
 
   render() {
     return html`

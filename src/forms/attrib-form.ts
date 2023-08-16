@@ -1,12 +1,11 @@
 import { TemplateResult, html } from "lit";
-import { ProgressState } from "./hofs";
-import { BasicTypeBuilderFormPage } from "./basic-form";
 import { customElement, query } from "lit/decorators.js";
-import { AttributeDec, Dtype } from "./nwb/spec";
-import { CheckboxInput } from "./inputs/radio-input";
-import { DocInput } from "./inputs/value-input";
-import { NameInput } from "./inputs/value-input";
-import { ShapeOrScalarInput } from "./inputs/shape-or-scalar";
+import { BasicTypeBuilderFormPage } from "./abstract-form";
+import { ProgressState } from "../logic/cpsform.ts";
+import { CheckboxInput } from "../inputs/radio-input";
+import { NameInput, DocInput } from "../inputs/value-input";
+import { AttributeDec, Dtype } from "../nwb/spec";
+import { ShapeOrScalarInput } from "../inputs/shape-or-scalar";
 
 @customElement("attrib-info-form")
 export class AttribInfoForm extends BasicTypeBuilderFormPage<AttributeDec> {
@@ -72,7 +71,6 @@ export class AttribInfoForm extends BasicTypeBuilderFormPage<AttributeDec> {
     this.requiredInput.clear();
   }
 }
-
 @customElement("attrib-value-form")
 export class AttribValueForm extends BasicTypeBuilderFormPage<AttributeDec> {
   @query("shape-or-scalar-input")
@@ -118,5 +116,4 @@ export class AttribValueForm extends BasicTypeBuilderFormPage<AttributeDec> {
 
   formTitle: string = "Add a value to the attribute";
 }
-
 export const attribDtypeFormTitle = "Data type of values in attribute";

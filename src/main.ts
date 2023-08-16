@@ -1,11 +1,7 @@
 import { LitElement, html, css } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
-import "./type-elem";
-import "./typeviz";
-import "./basic-elems";
-import "./forminputs";
 import { choose } from "lit/directives/choose.js";
-import { DatasetTypeDefElem, GroupTypeDefElem } from "./typeviz";
+import { DatasetTypeDefElem, GroupTypeDefElem } from "./typeviz/viz-elems";
 
 @customElement("ndx-main")
 export class NdxMain extends LitElement {
@@ -161,4 +157,9 @@ export class NdxMain extends LitElement {
       overflow: scroll;
     }
   `;
+}
+// useful for compile time exhaustiveness assertions, i.e. in a switch statement default
+
+export function assertNever(_: never): never {
+  throw new Error("Unreacheable code encountered! Major bug!");
 }

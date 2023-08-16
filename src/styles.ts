@@ -1,12 +1,5 @@
 import { css } from "lit";
 
-// export const shadowRootCss = css`
-//   :host input:focus,
-//   :host textarea:focus {
-//     outline: 2px solid #99f;
-//   }
-// `;
-
 export const symbols = css`
   .material-symbols-outlined {
     font-family: "Material Symbols Outlined";

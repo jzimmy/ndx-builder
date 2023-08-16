@@ -1,10 +1,10 @@
 import { customElement, query } from "lit/decorators.js";
-import { BasicTypeBuilderFormPage } from "./basic-form";
-import { LinkDec } from "./nwb/spec";
+import { BasicTypeBuilderFormPage } from "./abstract-form";
+import { LinkDec } from "../nwb/spec";
 import { TemplateResult, html } from "lit";
-import { ProgressState } from "./hofs";
-import { DocInput } from "./inputs/value-input";
-import { QuantityOrNameInput } from "./inputs/quantity-or-name";
+import { ProgressState } from "../logic/cpsform.ts";
+import { DocInput } from "../inputs/value-input";
+import { QuantityOrNameInput } from "../inputs/quantity-or-name";
 
 @customElement("link-info-form")
 export class LinkInfoForm extends BasicTypeBuilderFormPage<LinkDec> {

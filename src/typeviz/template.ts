@@ -1,141 +1,17 @@
-import {
-  LitElement,
-  html,
-  css,
-  CSSResultGroup,
-  PropertyValueMap,
-  TemplateResult,
-} from "lit";
-import { customElement, property, query, state } from "lit/decorators.js";
-import { classMap } from "lit/directives/class-map.js";
-import { symbols } from "./styles";
-import { when } from "lit-html/directives/when.js";
+import { LitElement, html, css, CSSResultGroup, TemplateResult } from "lit";
+import { customElement, property, query } from "lit/decorators.js";
+import { TypeElemSkeleton } from "./skeleton";
 import { map } from "lit/directives/map.js";
-import { Shape } from "./nwb/spec";
-import { NdxInputElem } from "./inputs/abstract-input";
-
-/* Wrapper element for a type elem, contains the minimize,
- * close button and slots for the body and subtree.
- * Useful for creating **radically** new type constructor UIs.
- */
-@customElement("type-elem-skeleton")
-export class TypeElemSkeleton extends LitElement {
-  @property({ type: Boolean, reflect: true })
-  hideCloseBtn: boolean = false;
-
-  @property({ type: Function })
-  onDelete = (target?: EventTarget) => {
-    throw new Error(`On delete not implemented. ${target}`);
-  };
-
-  @property({ type: Boolean, reflect: true })
-  hideEditBtn: boolean = false;
-
-  @property({ type: Function })
-  onEdit = () => {
-    throw new Error(`On edit not implemented.`);
-  };
-
-  @property({ type: Boolean, reflect: true })
-  minimize: boolean = true;
-
-  @property({ type: Function })
-  onToggleMinimize: (b: boolean) => void = (_) => {};
-
-  @state()
-  protected subtreeEnabled = false;
-
-  private _handleMinimize() {
-    this.minimize = !this.minimize;
-    this.onToggleMinimize(this.minimize);
-  }
-
-  render() {
-    return html`
-      <div id="main">
-        <div class="row">
-          <span class="material-symbols-outlined" @click=${this._handleMinimize}
-            >${this.minimize ? "expand_content" : "minimize"}</span
-          >
-          ${when(
-            !this.minimize && !this.hideEditBtn,
-            () => html`
-              <span class="material-symbols-outlined" @click=${this.onEdit}
-                >edit</span
-              >
-            `
-          )}
-          ${when(
-            !this.hideCloseBtn,
-            () => html`
-              <span
-                class="material-symbols-outlined"
-                @click=${(e: Event) => this.onDelete(e.target!)}
-                >close</span
-              >
-            `
-          )}
-        </div>
-        <slot name="body"></slot>
-      </div>
-      <slot
-        name="subtree"
-        class=${classMap({ disabled: !this.subtreeEnabled })}
-      ></slot>
-    `;
-  }
-
-  static styles = [
-    symbols,
-    css`
-      :host {
-        position: relative;
-      }
-
-      :host * {
-        transition: 0.2s;
-      }
-
-      .row {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-      }
-
-      .row > span:first-child {
-        margin-left: auto;
-      }
-
-      .row {
-        margin-bottom: 0.5em;
-        margin-right: 0.5em;
-      }
-
-      .row > span {
-        cursor: pointer;
-        user-select: none;
-        margin: 0 0.3em;
-      }
-
-      .row > span:hover {
-        color: var(--clickable-hover);
-        background: var(--background-light-button);
-        padding: 0.05em;
-        border-radius: 0.2em;
-      }
-
-      ::slotted([slot="body"]) {
-        padding: 0.5em;
-      }
-    `,
-  ] as CSSResultGroup;
-}
+import { when } from "lit/directives/when.js";
+import { Shape } from "../nwb/spec";
+import { symbols } from "../styles";
 
 /* Wrapper element for a type elem, contains the body and subtree contents.
  * Uses a template of slots to type constructor UIs very easy to build and modify.
  */
+
 @customElement("type-elem")
-export class TypeElem extends LitElement {
+export class ClassicTypeElemTemplate extends LitElement {
   // TODO: find an automatic solution to hide when no slotted children (ideally css)!!!
   @property({ type: Boolean, reflect: true })
   noProperties: boolean = true;
@@ -290,149 +166,6 @@ export class TypeElem extends LitElement {
       :host([openForm]) ::slotted([slot="form"]) {
         display: flex;
         justify-content: center;
-      }
-    `,
-  ] as CSSResultGroup;
-}
-
-/* Adds some useful helper functions and styles to inherit.
- * This class has little semantic purpose beyond reducing boilerplate.
- */
-export abstract class BasicTypeElem<T> extends NdxInputElem<T> {
-  protected abstract data: T;
-  protected abstract icon: string;
-  protected subtreeDisabled = false;
-  protected renderIcon() {
-    return html`<span slot="icon" class="material-symbols-outlined large"
-      >${this.icon}</span
-    >`;
-  }
-
-  abstract value(): T;
-
-  @property({ type: Function, reflect: true })
-  onDelete: (target?: EventTarget) => void = () => {
-    throw new Error(`On delete not implemented.`);
-  };
-
-  @property({ type: Function })
-  onEdit: (target?: EventTarget) => void = () => {};
-
-  @query("type-elem")
-  typeElem!: TypeElem;
-
-  // using firstUpdated because I don't want to overwrite the render function
-  protected firstUpdated(
-    _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
-  ): void {
-    if (!this.typeElem) return;
-    this.typeElem.onDelete = this.onDelete;
-    this.typeElem.onEdit = this.onEdit;
-  }
-
-  static styles = [
-    symbols,
-    css`
-      light-button[slot="topinput"] {
-        margin-right: 0.5em;
-      }
-
-      light-button[slot="topinput"] + * {
-        margin-top: 0.5em;
-      }
-
-      #keyword {
-        font-size: 1.3em;
-        margin: 0 0.5em;
-        color: var(--clickable);
-        font-weight: bold;
-      }
-
-      .selected {
-        font-weight: bold;
-        color: var(--clickable-hover);
-      }
-
-      [slot="bottominput"] {
-        margin-top: 0.2em;
-      }
-
-      #keyword[slot="bottominput"] {
-        margin-left: auto;
-      }
-
-      [slot="bottominput"]:last-child {
-        margin-right: 0.5em;
-      }
-
-      ndx-input[slot="topinput"] {
-        font-weight: bold;
-      }
-
-      .inctype {
-        padding: 0.3em 0.5em;
-        border: 1px solid var(--color-border);
-        font-weight: bold;
-        border-radius: 0.3em;
-        // background: var(--background-light-button);
-      }
-
-      .typename {
-        font-weight: bold;
-        padding: 0.1em 0.4em;
-        margin-left: 0.5em;
-        transform: scale(1.2);
-      }
-
-      .instancename {
-        padding: 0.1em 0.4em;
-        margin-left: 0.5em;
-        transform: scale(1.2);
-      }
-
-      .fieldlabel {
-        color: var(--color-border-alt);
-        font-weight: 700;
-        padding-left: 0.4em;
-      }
-
-      :not(.checkwrapper) > .fieldlabel::after {
-        content: ":";
-      }
-
-      .fieldvalue {
-        max-width: 45ch;
-        padding: 0.1em 0.4em;
-        border-bottom: 1px solid var(--color-border-alt);
-        opacity: 0.8;
-        // border-radius: 0.3em;
-      }
-
-      .checkwrapper {
-        display: flex;
-      }
-
-      .checkwrapper input {
-        margin-right: 0.5em;
-      }
-
-      .shape-container {
-        display: flex;
-        flex-wrap: nowrap;
-      }
-
-      .shape-container > * {
-        min-width: 1ch;
-        padding: 0.1em 0.3em;
-        border-right: 1px solid var(--color-border-alt);
-      }
-
-      .shape-container > *:last-child {
-        border: 0;
-      }
-
-      .shape-container > * > div:first-child {
-        font-weight: bold;
       }
     `,
   ] as CSSResultGroup;
@@ -596,11 +329,10 @@ export class ShapeVisualizer extends LitElement {
             ${when(i > 0, () => "OR")}
             <div class="shape-container">
               ${shape.map(
-                ([k, v]) =>
-                  html`<div>
-                    <div>${k == "None" ? "Any" : k}</div>
-                    <div>${v}</div>
-                  </div> `
+                ([k, v]) => html`<div>
+                  <div>${k == "None" ? "Any" : k}</div>
+                  <div>${v}</div>
+                </div> `
               )}
             </div>
           `

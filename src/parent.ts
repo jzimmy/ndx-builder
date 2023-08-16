@@ -1,4 +1,4 @@
-import { LitElement, html, css } from "lit";
+import { html, css, LitElement } from "lit";
 import { customElement } from "lit/decorators.js";
 import {
   GroupType,
@@ -10,7 +10,6 @@ import {
   Quantity,
 } from "./nwb/spec";
 import { Initializers } from "./nwb/spec-defaults";
-import "./basic-elems";
 import { symbols } from "./styles";
 import { buildFormChains } from "./formchains";
 
@@ -130,4 +129,13 @@ export class NdxFormParent extends LitElement {
       }
     `,
   ];
+}
+
+export function NDXBuilderDefaultShowAndFocus(
+  elem: LitElement,
+  visibility: boolean,
+  firstInput?: HTMLElement
+) {
+  elem.slot = visibility ? "currForm" : "";
+  if (firstInput) firstInput.focus();
 }

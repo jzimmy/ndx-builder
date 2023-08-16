@@ -1,6 +1,13 @@
 /***
+ * Intermediate Representation
+ *
+ * TSSpec => NWBSpec => Python Code
+ *           -------
+ *          We are here
+ *
  * This is an equivalent to the spec module, but loses information to match
- * the python api more closely. It should ONLY be used for python code generation.
+ * the python API more closely.
+ * It should ONLY be used for python code generation.
  */
 
 // typescript hack to ensure CoreTypeName != string

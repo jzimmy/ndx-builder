@@ -1,4 +1,4 @@
-import "./basic-elems";
+import "../basic-elems";
 import { PropertyValueMap, TemplateResult, css, html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { map } from "lit/directives/map.js";
@@ -9,16 +9,20 @@ import {
   LinkDec,
   Namespace,
   TypeDef,
-} from "./nwb/spec";
-import { CPSForm, Trigger, ProgressState, assertNever } from "./hofs";
-import { BasicFormPage, NDXBuilderDefaultShowAndFocus } from "./basic-form";
-import { FormStepBar, iconOf } from "./basic-elems";
-import { Initializers } from "./nwb/spec-defaults";
+} from "../nwb/spec";
+import { ProgressState } from "../logic/cpsform";
+import { assertNever } from "../main";
+import { CPSForm } from "../logic/cpsform";
+import { BasicFormPage } from "./abstract-form";
+import { NDXBuilderDefaultShowAndFocus } from "../parent";
+import { FormStepBar, iconOf } from "../basic-elems";
+import { Initializers } from "../nwb/spec-defaults";
 import { when } from "lit/directives/when.js";
-import { symbols } from "./styles";
+import { symbols } from "../styles";
 import { classMap } from "lit/directives/class-map.js";
-import { NameInput } from "./inputs/value-input";
-import { ValueInput } from "./inputs/value-input";
+import { NameInput } from "../inputs/value-input";
+import { ValueInput } from "../inputs/value-input";
+import { Trigger } from "../logic/hofs";
 
 @customElement("new-or-existing-namespace-form")
 export class NamespaceStartForm extends CPSForm<Namespace> {

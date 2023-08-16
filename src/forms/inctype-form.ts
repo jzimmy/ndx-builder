@@ -1,33 +1,33 @@
 import { html, css } from "lit";
-import { query, customElement, state } from "lit/decorators.js";
-import { ProgressState, assertNever } from "./hofs";
-import { HasGroupIncType, HasDatasetIncType } from "./parent";
+import { state, query, customElement } from "lit/decorators.js";
+import { choose } from "lit/directives/choose.js";
+import { classMap } from "lit/directives/class-map.js";
+import { map } from "lit/directives/map.js";
+import { when } from "lit/directives/when.js";
+import { modules, coreQuery } from "../data/nwbcore";
+import { ProgressState } from "../logic/cpsform.ts";
+import { assertNever } from "../main";
+import { NamespaceTypesForm } from "./namespace-forms";
 import {
+  CoreType,
+  TypeDef,
+  NWBType,
   CoreDatasetType,
   CoreGroupType,
-  CoreType,
-  DatasetType,
   GroupType,
+  DatasetType,
   LinkDec,
-  NWBType,
-  TypeDef,
-} from "./nwb/spec";
-import { BasicTypeBuilderFormPage } from "./basic-form";
-import { map } from "lit/directives/map.js";
-import { classMap } from "lit/directives/class-map.js";
-import { symbols } from "./styles";
-import { choose } from "lit/directives/choose.js";
-import { NamespaceTypesForm } from "./namespace";
-import { when } from "lit/directives/when.js";
-import { Initializers } from "./nwb/spec-defaults";
-import { coreQuery, modules } from "./data/nwbcore";
+} from "../nwb/spec";
+import { Initializers } from "../nwb/spec-defaults";
+import { HasGroupIncType, HasDatasetIncType } from "../parent";
+import { symbols } from "../styles";
+import { BasicTypeBuilderFormPage } from "./abstract-form";
 
 type Inctype<T> = {
   id: string;
   kind: "GROUP" | "DATASET";
   inctype: T;
 };
-
 function collectModulesIntoInctypeGetter(): {
   modname: string;
   inctypes: Inctype<() => CoreType>[];
@@ -45,7 +45,6 @@ function collectModulesIntoInctypeGetter(): {
   }
   return res;
 }
-
 function generateReverseInctypeMap<T>(
   modules: [string, Inctype<() => T>[]][]
 ): Map<string, { modIndex: number; tyIndex: number }> {
@@ -149,19 +148,18 @@ abstract class InctypeForm<T, U> extends BasicTypeBuilderFormPage<T> {
           <h3>Modules</h3>
           ${map(
             this.modules,
-            ([modname, _modtypes], i) =>
-              html`<div
-                class=${classMap({
-                  inctype: true,
-                  selected: i == this.selectedModule,
-                })}
-                @click=${() => {
-                  this.selectedModule = i;
-                  this.selectedType = -1;
-                }}
-              >
-                ${modname}
-              </div>`
+            ([modname, _modtypes], i) => html`<div
+              class=${classMap({
+                inctype: true,
+                selected: i == this.selectedModule,
+              })}
+              @click=${() => {
+                this.selectedModule = i;
+                this.selectedType = -1;
+              }}
+            >
+              ${modname}
+            </div>`
           )}
         </div>
         <div class="typelist">
@@ -170,20 +168,19 @@ abstract class InctypeForm<T, U> extends BasicTypeBuilderFormPage<T> {
             () => html`
               ${map(
                 this.modules[this.selectedModule][1],
-                ({ id, inctype, kind }, i) =>
-                  html`<div
-                    class=${classMap({
-                      inctype: true,
-                      selected: i == this.selectedType,
-                    })}
-                    @click=${() => {
-                      this.selectedType = i;
-                      this.inctype = inctype();
-                    }}
-                  >
-                    ${this.renderIcon(kind)}
-                    <div>${id}</div>
-                  </div>`
+                ({ id, inctype, kind }, i) => html`<div
+                  class=${classMap({
+                    inctype: true,
+                    selected: i == this.selectedType,
+                  })}
+                  @click=${() => {
+                    this.selectedType = i;
+                    this.inctype = inctype();
+                  }}
+                >
+                  ${this.renderIcon(kind)}
+                  <div>${id}</div>
+                </div>`
               )}
             `
           )}
@@ -197,32 +194,29 @@ abstract class InctypeForm<T, U> extends BasicTypeBuilderFormPage<T> {
       <div class="coremenu-grid">
         ${when(
           this.myTypes.length == 0,
-          () =>
-            html`<div style="color: var(--color-border-alt);">
-              No types defined
-            </div>`,
-          () =>
-            html`
-              <div class="typelist">
-                ${map(
-                  this.myTypes,
-                  ({ id, kind, inctype }, i) =>
-                    html`<div
-                      class=${classMap({
-                        inctype: true,
-                        selected: i == this.selectedType,
-                      })}
-                      @click=${() => {
-                        this.selectedType = i;
-                        this.inctype = inctype;
-                      }}
-                    >
-                      ${this.renderIcon(kind)}
-                      <div>${id}</div>
-                    </div>`
-                )}
-              </div>
-            `
+          () => html`<div style="color: var(--color-border-alt);">
+            No types defined
+          </div>`,
+          () => html`
+            <div class="typelist">
+              ${map(
+                this.myTypes,
+                ({ id, kind, inctype }, i) => html`<div
+                  class=${classMap({
+                    inctype: true,
+                    selected: i == this.selectedType,
+                  })}
+                  @click=${() => {
+                    this.selectedType = i;
+                    this.inctype = inctype;
+                  }}
+                >
+                  ${this.renderIcon(kind)}
+                  <div>${id}</div>
+                </div>`
+              )}
+            </div>
+          `
         )}
       </div>
     `;
@@ -233,20 +227,19 @@ abstract class InctypeForm<T, U> extends BasicTypeBuilderFormPage<T> {
       <div class="typelist">
         ${map(
           this.noneTypes,
-          ({ id, kind, inctype }, i) =>
-            html`<div
-              class=${classMap({
-                selected: i == this.selectedType,
-                inctype: true,
-              })}
-              @click=${() => {
-                this.selectedType = i;
-                this.inctype = inctype;
-              }}
-            >
-              ${this.renderIcon(kind)}
-              <div>${id}</div>
-            </div>`
+          ({ id, kind, inctype }, i) => html`<div
+            class=${classMap({
+              selected: i == this.selectedType,
+              inctype: true,
+            })}
+            @click=${() => {
+              this.selectedType = i;
+              this.inctype = inctype;
+            }}
+          >
+            ${this.renderIcon(kind)}
+            <div>${id}</div>
+          </div>`
         )}
       </div>
     `;
@@ -463,7 +456,6 @@ abstract class InctypeForm<T, U> extends BasicTypeBuilderFormPage<T> {
     `,
   ];
 }
-
 function collectModulesAsNWBTypes(): [string, Inctype<() => NWBType>[]][] {
   return collectModulesIntoInctypeGetter().map(({ modname, inctypes }) => [
     modname,

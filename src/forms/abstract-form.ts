@@ -1,21 +1,29 @@
-import { TemplateResult, html, css, CSSResultGroup, LitElement } from "lit";
-import { state, query, property } from "lit/decorators.js";
-import { CPSForm, ProgressState } from "./hofs";
-import { symbols } from "./styles";
-import { FormStepBar } from "./basic-elems";
+import { TemplateResult, html, css, CSSResultGroup } from "lit";
+import { property, state, query } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
-import { when } from "lit/directives/when.js";
-import { namespaceBuilderSteps } from "./formchains";
+import { FormStepBar } from "../basic-elems";
+import { namespaceBuilderSteps } from "../formchains";
+import { CPSForm, ProgressState } from "../logic/cpsform";
+import { symbols } from "../styles";
+import { NDXBuilderDefaultShowAndFocus } from "../parent";
 
-/* BasicFormPage
+/*****
+ * BasicFormPage
  * A good template a for a basic input 'quiz' style form,
  * Features, a current step bar, a close button, a back button, and a continue button
  *
- * Developer responsibilities for instances:
+ * Developer responsibilities for creating instances:
  * define isValid() method
  * define body() method
  * add this._selfValidate to all inputs
+ *
+ * -- and then the regular CPSForm interface --
+ * fill(val) -> void method
+ *  - make sure to call this.drawProgressBar() in fill
+ * transform(val) -> val method
+ * clear() -> void method
  */
+
 export abstract class BasicFormPage<T> extends CPSForm<T> {
   abstract formTitle: string;
   @property()
@@ -41,11 +49,6 @@ export abstract class BasicFormPage<T> extends CPSForm<T> {
     return this;
   }
 
-  withMetaStepBar(metaStepBar: ProgressState): BasicFormPage<T> {
-    this.metaStepBar = metaStepBar;
-    return this;
-  }
-
   showAndFocus(show: boolean): void {
     NDXBuilderDefaultShowAndFocus(this, show, this.firstInput);
   }
@@ -60,20 +63,11 @@ export abstract class BasicFormPage<T> extends CPSForm<T> {
     this.ready = this.isValid();
   }
 
-  metaStepBar?: ProgressState;
+  metaStepBar: TemplateResult<1> = html``;
 
   render() {
     return html`
-      ${when(
-        this.metaStepBar,
-        () => html`
-          <step-bar
-            .steps=${this.metaStepBar?.states}
-            .currStep=${this.metaStepBar?.currState}
-            style="opacity:0.6;margin-bottom:0.5em;"
-          ></step-bar>
-        `
-      )}
+      ${this.metaStepBar}
       <back-or-quit-bar
         .hideQuit=${this.hideQuit}
         .back=${() => this.back()}
@@ -180,19 +174,25 @@ export abstract class BasicFormPage<T> extends CPSForm<T> {
     `,
   ] as CSSResultGroup;
 }
-
-export function NDXBuilderDefaultShowAndFocus(
-  elem: LitElement,
-  visibility: boolean,
-  firstInput?: HTMLElement
-) {
-  elem.slot = visibility ? "currForm" : "";
-  if (firstInput) firstInput.focus();
-}
+/****
+ *
+ * This is a version of BasicFormPage that has a meta step bar with
+ * the namespace builder steps and current state of `add types`
+ *
+ * Only use it for forms that help to build a type
+ * */
 
 export abstract class BasicTypeBuilderFormPage<T> extends BasicFormPage<T> {
-  metaStepBar: ProgressState = {
+  progress: ProgressState = {
     states: namespaceBuilderSteps,
     currState: 0,
   };
+
+  metaStepBar: TemplateResult<1> = html`
+    <step-bar
+      .steps=${this.progress.states}
+      .currStep=${this.progress.currState}
+      style="opacity:0.6;margin-bottom:0.5em;"
+    ></step-bar>
+  `;
 }

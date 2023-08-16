@@ -4,14 +4,14 @@ import {
   HasTypeNameAndDescription,
   HasDefaultName,
   HasQuantityOrName,
-} from "./parent";
-import { BasicTypeBuilderFormPage } from "./basic-form";
-import { ProgressState } from "./hofs";
-import "./subtree";
-import { CheckboxInput } from "./inputs/radio-input";
-import { DocInput } from "./inputs/value-input";
-import { NameInput } from "./inputs/value-input";
-import { QuantityOrNameInput } from "./inputs/quantity-or-name";
+} from "../parent";
+import { BasicTypeBuilderFormPage } from "./abstract-form";
+import { ProgressState } from "../logic/cpsform.ts";
+import "../typeviz/subtree";
+import { CheckboxInput } from "../inputs/radio-input";
+import { DocInput } from "../inputs/value-input";
+import { NameInput } from "../inputs/value-input";
+import { QuantityOrNameInput } from "../inputs/quantity-or-name";
 
 @customElement("tydef-name-form")
 export class TypenameForm<

@@ -1,9 +1,9 @@
 import { customElement, query } from "lit/decorators.js";
-import { BasicTypeBuilderFormPage } from "./basic-form";
-import { Shape, Dtype } from "./nwb/spec";
+import { BasicTypeBuilderFormPage } from "./abstract-form";
+import { Shape, Dtype } from "../nwb/spec";
 import { TemplateResult, html } from "lit";
-import { ProgressState } from "./hofs";
-import { ShapeInput } from "./inputs/shape-input";
+import { ProgressState } from "../logic/cpsform.ts";
+import { ShapeInput } from "../inputs/shape-input";
 
 export interface HasAxes {
   shape: Shape[];

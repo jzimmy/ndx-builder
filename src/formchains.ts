@@ -2,24 +2,23 @@
  * All the logic for the app is in here, this is where the forms are glued together
  */
 import { LitElement } from "lit";
-import {
-  AttribInfoForm,
-  AttribValueForm,
-  attribDtypeFormTitle,
-} from "./attrib";
-import { CodegenForm } from "./codegen";
-import { CPSForm, FormChain, Trigger } from "./hofs";
+import { attribDtypeFormTitle } from "./forms/attrib-form";
+import { AttribValueForm } from "./forms/attrib-form";
+import { AttribInfoForm } from "./forms/attrib-form";
+import { CodegenForm } from "./forms/codegen-form";
+import { FormChain, Trigger } from "./logic/hofs";
+import { CPSForm } from "./logic/cpsform";
 import {
   DatasetInctypeForm,
   GenericInctypeForm,
   GroupInctypeForm,
   TargetIncTypeForm,
-} from "./inctype";
+} from "./forms/inctype-form";
 import {
   NamespaceStartForm,
   NamespaceTypesForm,
   NamespaceMetadataForm,
-} from "./namespace";
+} from "./forms/namespace-forms";
 import {
   AttributeDec,
   GroupTypeDef,
@@ -34,13 +33,13 @@ import {
   AnonymousDatasetDec,
   IncDatasetDec,
 } from "./nwb/spec";
-import { AxesForm } from "./axes";
-import { TypenameForm } from "./names";
+import { AxesForm } from "./forms/axes-form";
+import { TypenameForm } from "./forms/name-forms";
 import { Initializers } from "./nwb/spec-defaults";
-import { DatasetTypeVizForm, GroupTypeVizForm } from "./typeviz-form";
-import { LinkInfoForm } from "./link";
-import { DtypeForm } from "./dtype";
-import { AnonDecNameForm, IncDecNameForm } from "./names";
+import { DatasetTypeVizForm, GroupTypeVizForm } from "./forms/typeviz-form";
+import { LinkInfoForm } from "./forms/link-form";
+import { DtypeForm } from "./forms/dtype-form";
+import { AnonDecNameForm, IncDecNameForm } from "./forms/name-forms";
 
 // this good place to get a sense of overall workflow
 export const namespaceBuilderSteps = [

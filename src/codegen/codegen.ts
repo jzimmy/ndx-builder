@@ -1,4 +1,5 @@
-import { customElement, query, state } from "lit/decorators.js";
+import { interpreter_script } from "../data/interpreter";
+import { assertNever } from "../main";
 import {
   AnonymousDatasetDec,
   AnonymousGroupDec,
@@ -16,28 +17,22 @@ import {
   PrimitiveDtype,
   Quantity,
   TypeDef,
-} from "./nwb/spec";
-import { CPSForm, assertNever } from "./hofs";
-import { html } from "lit";
-import { NDXBuilderDefaultShowAndFocus } from "./basic-form";
-import { FormStepBar } from "./basic-elems";
-import { Initializers } from "./nwb/spec-defaults";
+} from "../nwb/spec";
 import {
-  NWBAttributeSpec,
-  NWBDatasetSpec,
-  NWBDtypeSpec,
   NWBGroupSpec,
+  NWBDatasetSpec,
+  NWBAttributeSpec,
+  NWBDtypeSpec,
   NWBLinkSpec,
   NWBNamespaceSpec,
   NWBRefSpec,
   primitive,
-} from "./ir/pynwb-spec";
-import { interpreter_script } from "./data/interpreter";
+} from "./pynwb-spec";
 import { obfuscateString } from "./upload";
 
 export const MAGIC_SIGNATURE = "!@#NDX_BUILDER_SIGNATURE!@#";
 
-function codegen(ns: Namespace): string {
+export default function codegen(ns: Namespace): string {
   let nsSpec = convertNamespace(ns);
   let [includes, tydefs] = sortNamespace(ns);
   let types = tydefs.map(convertTypeDef);
@@ -59,47 +54,6 @@ function codegen(ns: Namespace): string {
 }
 
 export type NWBTypeSpec = ["GROUP", NWBGroupSpec] | ["DATASET", NWBDatasetSpec];
-
-@customElement("codegen-form")
-export class CodegenForm extends CPSForm<Namespace> {
-  fill(
-    val: Namespace,
-    progress?: { states: string[]; currState: number } | undefined
-  ): void {
-    this.namespace = val;
-    this.stepBarElem.setProgressState(progress);
-  }
-
-  transform(val: Namespace): Namespace {
-    return val;
-  }
-
-  clear(): void {}
-
-  showAndFocus(visible: boolean): void {
-    NDXBuilderDefaultShowAndFocus(this, visible);
-  }
-
-  @state()
-  namespace: Namespace = { ...Initializers.namespace };
-
-  @query("step-bar")
-  stepBarElem!: FormStepBar;
-
-  handleExport() {
-    exportFile(codegen(this.namespace), "create_extension_spec.py");
-  }
-
-  render() {
-    return html`
-    <step-bar></step-bar>
-    <input type="button" value="back" @click=${this.back}></input>
-    <pre>${JSON.stringify(this.namespace, null, 2)}</pre>
-    <continue-bar .message=${"Export"} .continue=${this.handleExport}
-      ></continue-bar>
-    `;
-  }
-}
 
 // note that in original NWB spec namespace doesn't contain the typedefs
 function convertNamespace(ns: Namespace): NWBNamespaceSpec {
@@ -326,20 +280,6 @@ function convertTypeDef(t: TypeDef): NWBTypeSpec {
         assertNever(p);
     }
   }
-}
-
-// Exports contents as a new file
-function exportFile(contents: string, filename: string) {
-  const element = document.createElement("a");
-  element.setAttribute(
-    "href",
-    "data:text/plain;charset=utf-8," + encodeURIComponent(contents)
-  );
-  element.setAttribute("download", filename);
-  element.style.display = "none";
-  document.body.appendChild(element);
-  element.click();
-  document.body.removeChild(element);
 }
 
 type Include = {

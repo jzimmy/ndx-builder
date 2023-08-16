@@ -1,9 +1,9 @@
 import { TemplateResult, html } from "lit";
 import { customElement, query } from "lit/decorators.js";
-import { BasicTypeBuilderFormPage } from "./basic-form";
-import { ProgressState } from "./hofs";
-import { DtypeInput } from "./inputs/dtype-input";
-import { Dtype } from "./nwb/spec";
+import { BasicTypeBuilderFormPage } from "./abstract-form";
+import { DtypeInput } from "../inputs/dtype-input";
+import { Dtype } from "../nwb/spec";
+import { ProgressState } from "../logic/cpsform";
 
 interface HasDtype {
   dtype: Dtype;

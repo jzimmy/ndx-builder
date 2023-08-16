@@ -1,5 +1,5 @@
 import { customElement, query, state } from "lit/decorators.js";
-import { NDXBuilderDefaultShowAndFocus } from "./basic-form";
+import { NDXBuilderDefaultShowAndFocus } from "../parent";
 import {
   AttributeDec,
   DatasetDec,
@@ -7,13 +7,14 @@ import {
   GroupDec,
   GroupTypeDef,
   LinkDec,
-} from "./nwb/spec";
+} from "../nwb/spec";
 import { TemplateResult, html } from "lit";
-import { CPSForm, CPSFormController, ProgressState, Trigger } from "./hofs";
-import { Initializers } from "./nwb/spec-defaults";
-import "./typeviz";
-import { FormStepBar } from "./basic-elems";
-import { DatasetTypeDefElem, GroupTypeDefElem } from "./typeviz";
+import { CPSFormController, Trigger } from "../logic/hofs";
+import { CPSForm, ProgressState } from "../logic/cpsform";
+import { Initializers } from "../nwb/spec-defaults";
+import "../typeviz/viz-elems";
+import { FormStepBar } from "../basic-elems";
+import { DatasetTypeDefElem, GroupTypeDefElem } from "../typeviz/viz-elems";
 
 function subform<T>(prev: CPSFormController, trigger: Trigger<T>): Trigger<T> {
   return (i, a, c) => {

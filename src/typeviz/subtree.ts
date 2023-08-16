@@ -2,11 +2,12 @@ import { LitElement, html, css } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { map } from "lit/directives/map.js";
 import { when } from "lit/directives/when.js";
-import { AttributeDec, DatasetDec, GroupDec, LinkDec } from "./nwb/spec";
-import { symbols } from "./styles";
-import { Trigger, assertNever } from "./hofs";
-import { Initializers } from "./nwb/spec-defaults";
-import { NdxInputElem } from "./inputs/abstract-input";
+import { AttributeDec, DatasetDec, GroupDec, LinkDec } from "../nwb/spec";
+import { symbols } from "../styles";
+import { Trigger } from "../logic/hofs";
+import { assertNever } from "../main";
+import { Initializers } from "../nwb/spec-defaults";
+import { NdxInputElem } from "../inputs/abstract-input";
 import {
   AnonDatasetDecElem,
   AnonGroupDecElem,
@@ -14,7 +15,7 @@ import {
   IncDatasetDecElem,
   IncGroupDecElem,
   LinkDecElem,
-} from "./typeviz";
+} from "./viz-elems";
 
 @customElement("subtree-branch")
 export class SubtreeBranch extends LitElement {

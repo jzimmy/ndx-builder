@@ -1,5 +1,5 @@
+import { Namespace } from "../nwb/spec";
 import { MAGIC_SIGNATURE } from "./codegen";
-import { Namespace } from "./nwb/spec";
 
 export function parseCreateExtensionSpecScript(
   contents: string

@@ -4,35 +4,29 @@
  *
  * Uses continuation passing style to allow for backtracking and incrementally building the forms
  *
- * See FormChain for the main API
+ * Trigger is a function that takes:
+ *  - Initial data
+ *  - A callback for exiting the form
+ *  - A callback for completing the form that is given the transformed data
+ *
+ * Triggers can be safely combined using:   ** composition operators **
+ *
+ * There are four basic operators
+ *   - then (sequential composition)
+ *   - branch (if-then-else composition)
+ *   - choose (switch composition)
+ *   - convert (type conversion)
+ *
+ * If the type checker approves of your composition,
+ * it will pretty much just work!
+ *
+ * Composition will also handle backtracking
+ *
+ * See FormChain for the main API to build
  */
 
 import { LitElement } from "lit";
-
-// Hacky no override typescript function descriptor, like java `final`
-declare const __special_no_override_unique_symbol: unique symbol;
-type NoOverride = {
-  [__special_no_override_unique_symbol]: typeof __special_no_override_unique_symbol;
-};
-
-export function assertNever(_: never): never {
-  throw new Error("Unreacheable code encountered! Major bug!");
-}
-
-export function id<T>(x: T) {
-  return x;
-}
-
-// ProgressState is used to manage the step bar titles
-export type ProgressState = {
-  states: string[];
-  currState: number | -1;
-};
-
-export const dummyProgress: ProgressState = {
-  states: ["THIS is step1", "then do step2", "then step3", "finally step4"],
-  currState: 0,
-};
+import { CPSForm } from "./cpsform";
 
 // form trigger, this type is used in other modules
 export type Trigger<T> = (
@@ -42,132 +36,12 @@ export type Trigger<T> = (
 ) => void;
 
 // form trigger with backtracking continuation
-// only appears inside this module
-type TriggerK<T> = (
+// only appears inside this module and cpsform.ts
+export type TriggerK<T> = (
   val: T,
   back: () => void,
   fwd: (v: T, resume: () => void) => void
 ) => void;
-
-/**** Continuation passing semantics (not part of API) ****/
-
-// combine two triggers into one
-function then<T>(curr: TriggerK<T>, next: TriggerK<T>): TriggerK<T> {
-  return (val, back, fwd) => {
-    curr(val, back, (vnext, resume) => next(vnext, resume, fwd));
-  };
-}
-
-// convert a trigger from type T to a trigger of type U
-function convert<T, U>(
-  curr: TriggerK<T>,
-  to: (v: T) => U,
-  from: (v: U) => T
-): TriggerK<U> {
-  return (val, back, fwd) =>
-    curr(from(val), back, (vnext, resume) => fwd(to(vnext), resume));
-}
-
-// branch based on a predicate
-function branch<T>(
-  test: (v: T) => boolean,
-  trueNext: TriggerK<T>,
-  falseNext: TriggerK<T>
-): TriggerK<T> {
-  return (val, back, fwd) => {
-    test(val) ? trueNext(val, back, fwd) : falseNext(val, back, fwd);
-  };
-}
-
-// choose a branch based on a key function
-function choose<T, U>(
-  key: (v: T) => U,
-  branches: Array<[U, TriggerK<T>]>,
-  defaultCase: TriggerK<T>
-): TriggerK<T> {
-  return (val, back, fwd) => {
-    let k = key(val);
-    let branch = branches.find(([k_, _]) => k_ == k);
-    if (branch) {
-      branch[1](val, back, fwd);
-    } else if (defaultCase) {
-      defaultCase(val, back, fwd);
-    } else {
-      throw new Error(`No branch for key ${k}`);
-    }
-  };
-}
-
-export abstract class CPSForm<T>
-  extends LitElement
-  implements CPSFormController
-{
-  // show the current form based on the value and progress state, if specified
-  abstract fill(val: T, progress?: ProgressState): void;
-
-  // add information from this form
-  //
-  // IMPORTANT! This function must be idempotent and commutative
-  // meaning that any transform f and g
-  // f(f(x)) = f(x) and f(g(x)) = g(f(x)) for all x
-  abstract transform(val: T): T;
-
-  // clear the form
-  abstract clear(): void;
-
-  // show or hide the form and (usually) focus on the first input
-  abstract showAndFocus(visible: boolean): void;
-
-  // dont override
-  run(states?: string[], currState = -1): TriggerK<T> {
-    const state: ProgressState = {
-      states: states || [],
-      currState,
-    };
-    const triggerRec: TriggerK<T> = (val, back, next) => {
-      this.fill(val, currState != -1 ? state : undefined);
-      this.showAndFocus(true);
-      this.onBack = () => {
-        this.showAndFocus(false);
-        back();
-      };
-      this.onNext = () => {
-        this.showAndFocus(false);
-        next(this.transform(val), () => triggerRec(val, back, next));
-      };
-    };
-    return triggerRec;
-  }
-
-  clearAndHide(): void & NoOverride {
-    this.clear();
-    this.showAndFocus(false);
-  }
-
-  // next form
-  next(): void & NoOverride {
-    this.onNext();
-  }
-  // prev form
-  back(): void & NoOverride {
-    this.onBack();
-  }
-  // quit form
-  quit(): void & NoOverride {
-    this.onQuit();
-  }
-
-  // These are defined lazily during runtime
-  onBack: () => void = () => {
-    throw new Error(`${typeof this} method onBack not implemented`);
-  };
-  onNext: () => void = () => {
-    throw new Error(`${typeof this} method onNext not implemented`);
-  };
-  onQuit: () => void = () => {
-    throw new Error(`${typeof this} method onQuit not implemented`);
-  };
-}
 
 // controls the visuals of a generic CPSForm
 export interface CPSFormController {
@@ -286,4 +160,54 @@ export class FormChain<T> {
       Promise.all(this.mapElems((f) => f.updateComplete)).then(triggerForm);
     };
   }
+}
+
+/**** The real operators ****/
+/**** Using continuation passing semantics ****/
+
+// combine two triggers into one
+function then<T>(curr: TriggerK<T>, next: TriggerK<T>): TriggerK<T> {
+  return (val, back, fwd) => {
+    curr(val, back, (vnext, resume) => next(vnext, resume, fwd));
+  };
+}
+
+// convert a trigger from type T to a trigger of type U
+function convert<T, U>(
+  curr: TriggerK<T>,
+  to: (v: T) => U,
+  from: (v: U) => T
+): TriggerK<U> {
+  return (val, back, fwd) =>
+    curr(from(val), back, (vnext, resume) => fwd(to(vnext), resume));
+}
+
+// branch based on a predicate
+function branch<T>(
+  test: (v: T) => boolean,
+  trueNext: TriggerK<T>,
+  falseNext: TriggerK<T>
+): TriggerK<T> {
+  return (val, back, fwd) => {
+    test(val) ? trueNext(val, back, fwd) : falseNext(val, back, fwd);
+  };
+}
+
+// choose a branch based on a key function
+function choose<T, U>(
+  key: (v: T) => U,
+  branches: Array<[U, TriggerK<T>]>,
+  defaultCase: TriggerK<T>
+): TriggerK<T> {
+  return (val, back, fwd) => {
+    let k = key(val);
+    let branch = branches.find(([k_, _]) => k_ == k);
+    if (branch) {
+      branch[1](val, back, fwd);
+    } else if (defaultCase) {
+      defaultCase(val, back, fwd);
+    } else {
+      throw new Error(`No branch for key ${k}`);
+    }
+  };
 }

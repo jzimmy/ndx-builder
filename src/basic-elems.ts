@@ -2,10 +2,10 @@ import { LitElement, html, css, CSSResultGroup } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { map } from "lit/directives/map.js";
-import { ProgressState, dummyProgress } from "./hofs";
 import { symbols } from "./styles";
 import { when } from "lit/directives/when.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { ProgressState } from "./logic/cpsform";
 
 export function iconOf(kind: "GROUP" | "DATASET") {
   if (kind == "GROUP") return "folder";
@@ -168,10 +168,10 @@ export class FormStepBar extends LitElement {
   hidden: boolean = false;
 
   @property({ type: Array<String> })
-  steps: string[] = dummyProgress.states;
+  steps: string[] = [];
 
   @property({ type: Number })
-  currStep: number = dummyProgress.currState;
+  currStep: number = -1;
 
   setProgressState(progress?: ProgressState) {
     this.hidden = progress == undefined;
