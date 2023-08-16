@@ -8,12 +8,10 @@ import {
 import { BasicTypeBuilderFormPage } from "./basic-form";
 import { ProgressState } from "./hofs";
 import "./subtree";
-import {
-  CheckboxInput,
-  DocInput,
-  NameInput,
-  QuantityOrNameInput,
-} from "./forminputs";
+import { CheckboxInput } from "./inputs/radio-input";
+import { DocInput } from "./inputs/value-input";
+import { NameInput } from "./inputs/value-input";
+import { QuantityOrNameInput } from "./inputs/quantity-or-name";
 
 @customElement("tydef-name-form")
 export class TypenameForm<
@@ -58,22 +56,22 @@ export class TypenameForm<
       <name-input
         id="typename"
         .label=${"Type name"}
-        .input=${() => this._selfValidate()}
+        .onInteraction=${() => this._selfValidate()}
       ></name-input>
       <doc-input
         .label=${"Description"}
-        .input=${() => this._selfValidate()}
+        .onInteraction=${() => this._selfValidate()}
       ></doc-input>
       <h3>Optional</h3>
       <name-input
         id="default-name"
         .required=${false}
         .label=${"Default instance name"}
-        .input=${() => this._selfValidate()}
+        .onInteraction=${() => this._selfValidate()}
       ></name-input>
       <checkbox-input
         .label=${"Allow instance name override"}
-        .input=${() => this._selfValidate()}
+        .onInteraction=${() => this._selfValidate()}
       ></checkbox-input>
     `;
   }
@@ -131,12 +129,12 @@ export class AnonDecNameForm<
   body(): TemplateResult<1> {
     return html`
       <name-input
-        .input=${() => this._selfValidate()}
+        .onInteraction=${() => this._selfValidate()}
         id="name"
         label="Instance name"
       ></name-input>
       <doc-input
-        .input=${() => this._selfValidate()}
+        .onInteraction=${() => this._selfValidate()}
         id="doc"
         label="Description"
       ></doc-input>
@@ -144,7 +142,7 @@ export class AnonDecNameForm<
   }
 
   get firstInput(): HTMLElement | undefined {
-    return this.nameInput.firstFocusable;
+    return this.nameInput.firstFocusableElem;
   }
 
   fill(val: T, progress?: ProgressState | undefined): void {
@@ -188,15 +186,15 @@ export class IncDecNameForm<
       <doc-input
         id="doc"
         label="Description"
-        .input=${() => this._selfValidate()}
+        .onInteraction=${() => this._selfValidate()}
       ></doc-input>
-      <quantity-or-name-input .input=${() => this._selfValidate()}>
+      <quantity-or-name-input .onInteraction=${() => this._selfValidate()}>
       </quantity-or-name-input>
     `;
   }
 
   get firstInput(): HTMLElement | undefined {
-    return this.docInput.firstFocusable;
+    return this.docInput.firstFocusableElem;
   }
 
   fill(val: T, progress?: ProgressState | undefined): void {

@@ -6,7 +6,7 @@ import { AttributeDec, DatasetDec, GroupDec, LinkDec } from "./nwb/spec";
 import { symbols } from "./styles";
 import { Trigger, assertNever } from "./hofs";
 import { Initializers } from "./nwb/spec-defaults";
-import { NdxInputElem } from "./forminputs";
+import { NdxInputElem } from "./inputs/abstract-input";
 import {
   AnonDatasetDecElem,
   AnonGroupDecElem,
@@ -364,7 +364,7 @@ function addLinkDec(l: LinkDec, tree: GroupSubtree) {
 
 @customElement("group-subtree")
 export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
-  firstFocusable?: HTMLElement | undefined;
+  firstFocusableElem?: HTMLElement | undefined;
 
   fill(val: HasGroupSubtree): void {
     // don't overwrite me if you are empty
@@ -555,7 +555,7 @@ export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
 
 @customElement("dataset-subtree")
 export class DatasetSubtree extends NdxInputElem<HasDatasetSubtree> {
-  firstFocusable?: HTMLElement | undefined;
+  firstFocusableElem?: HTMLElement | undefined;
   fill(val: HasDatasetSubtree): void {
     if (val.attributes.length == 0) return;
 

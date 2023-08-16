@@ -3,7 +3,7 @@ import { BasicTypeBuilderFormPage } from "./basic-form";
 import { Shape, Dtype } from "./nwb/spec";
 import { TemplateResult, html } from "lit";
 import { ProgressState } from "./hofs";
-import { ShapeInput } from "./forminputs";
+import { ShapeInput } from "./inputs/shape-input";
 
 export interface HasAxes {
   shape: Shape[];
@@ -22,12 +22,12 @@ export class AxesForm<T extends HasAxes> extends BasicTypeBuilderFormPage<T> {
 
   body(): TemplateResult<1> {
     return html`<shape-input
-      .input=${() => this._selfValidate()}
+      .onInteraction=${() => this._selfValidate()}
     ></shape-input>`;
   }
 
   get firstInput(): HTMLElement | undefined {
-    return this.shapeInput.firstFocusable;
+    return this.shapeInput.firstFocusableElem;
   }
 
   fill(val: T, progress?: ProgressState | undefined): void {

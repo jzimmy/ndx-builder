@@ -3,7 +3,9 @@ import { ProgressState } from "./hofs";
 import { BasicTypeBuilderFormPage } from "./basic-form";
 import { customElement, query } from "lit/decorators.js";
 import { AttributeDec, Dtype } from "./nwb/spec";
-import { CheckboxInput, DocInput, NameInput } from "./forminputs";
+import { CheckboxInput } from "./inputs/radio-input";
+import { DocInput } from "./inputs/value-input";
+import { NameInput } from "./inputs/value-input";
 import { ShapeOrScalarInput } from "./inputs/shape-or-scalar";
 
 @customElement("attrib-info-form")
@@ -28,23 +30,23 @@ export class AttribInfoForm extends BasicTypeBuilderFormPage<AttributeDec> {
       <name-input
         id="name"
         label="Attribute name"
-        .input=${() => this._selfValidate()}
+        .onInteraction=${() => this._selfValidate()}
       ></name-input>
       <doc-input
         id="doc"
         label="Description"
-        .input=${() => this._selfValidate()}
+        .onInteraction=${() => this._selfValidate()}
       ></doc-input>
       <checkbox-input
         id="required"
         label="Required"
-        .input=${() => this._selfValidate()}
+        .onInteraction=${() => this._selfValidate()}
       ></checkbox-input>
     `;
   }
 
   get firstInput(): HTMLElement | undefined {
-    return this.nameInput.firstFocusable;
+    return this.nameInput.firstFocusableElem;
   }
 
   fill(val: AttributeDec, progress?: ProgressState | undefined): void {
@@ -83,13 +85,13 @@ export class AttribValueForm extends BasicTypeBuilderFormPage<AttributeDec> {
   body(): TemplateResult<1> {
     return html`
       <shape-or-scalar-input
-        .input=${() => this._selfValidate()}
+        .onInteraction=${() => this._selfValidate()}
       ></shape-or-scalar-input>
     `;
   }
 
   get firstInput(): HTMLElement | undefined {
-    return this.shapeOrScalarInput.firstFocusable;
+    return this.shapeOrScalarInput.firstFocusableElem;
   }
 
   fill(val: AttributeDec, progress?: ProgressState | undefined): void {

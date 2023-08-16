@@ -2,7 +2,7 @@ import { TemplateResult, html } from "lit";
 import { customElement, query } from "lit/decorators.js";
 import { BasicTypeBuilderFormPage } from "./basic-form";
 import { ProgressState } from "./hofs";
-import { DtypeInput } from "./forminputs";
+import { DtypeInput } from "./inputs/dtype-input";
 import { Dtype } from "./nwb/spec";
 
 interface HasDtype {
@@ -22,12 +22,12 @@ export class DtypeForm<T extends HasDtype> extends BasicTypeBuilderFormPage<T> {
 
   body(): TemplateResult<1> {
     return html`
-      <dtype-input .input=${() => this._selfValidate()}></dtype-input>
+      <dtype-input .onInteraction=${() => this._selfValidate()}></dtype-input>
     `;
   }
 
   get firstInput(): HTMLElement | undefined {
-    return this.dtypeInput.firstFocusable;
+    return this.dtypeInput.firstFocusableElem;
   }
 
   fill(val: T, progress?: ProgressState | undefined): void {

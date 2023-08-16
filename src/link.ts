@@ -3,7 +3,8 @@ import { BasicTypeBuilderFormPage } from "./basic-form";
 import { LinkDec } from "./nwb/spec";
 import { TemplateResult, html } from "lit";
 import { ProgressState } from "./hofs";
-import { DocInput, QuantityOrNameInput } from "./forminputs";
+import { DocInput } from "./inputs/value-input";
+import { QuantityOrNameInput } from "./inputs/quantity-or-name";
 
 @customElement("link-info-form")
 export class LinkInfoForm extends BasicTypeBuilderFormPage<LinkDec> {
@@ -24,16 +25,16 @@ export class LinkInfoForm extends BasicTypeBuilderFormPage<LinkDec> {
       <doc-input
         id="doc"
         label="Description"
-        .input=${() => this._selfValidate()}
+        .onInteraction=${() => this._selfValidate()}
       ></doc-input>
       <quantity-or-name-input
-        .input=${() => this._selfValidate()}
+        .onInteraction=${() => this._selfValidate()}
       ></quantity-or-name-input>
     `;
   }
 
   get firstInput(): HTMLElement | undefined {
-    return this.docInput.firstFocusable;
+    return this.docInput.firstFocusableElem;
   }
 
   fill(val: LinkDec, progress?: ProgressState | undefined): void {

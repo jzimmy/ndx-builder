@@ -17,7 +17,8 @@ import { Initializers } from "./nwb/spec-defaults";
 import { when } from "lit/directives/when.js";
 import { symbols } from "./styles";
 import { classMap } from "lit/directives/class-map.js";
-import { NameInput, ValueInput } from "./forminputs";
+import { NameInput } from "./inputs/value-input";
+import { ValueInput } from "./inputs/value-input";
 
 @customElement("new-or-existing-namespace-form")
 export class NamespaceStartForm extends CPSForm<Namespace> {
@@ -185,13 +186,13 @@ export class NamespaceMetadataForm extends BasicFormPage<Namespace> {
       <step-bar></step-bar>
       <name-input
         label="Name your namespace. Must start with 'ndx-'"
-        .input=${() => this._selfValidate()}
+        .onInteraction=${() => this._selfValidate()}
       >
       </name-input>
       <version-input
         name="namespace-version"
         label="Namespace version"
-        .input=${() => this._selfValidate()}
+        .onInteraction=${() => this._selfValidate()}
       ></version-input>
 
       <label for="namespace-authors">Namespace authors</label>

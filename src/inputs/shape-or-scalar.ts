@@ -2,20 +2,18 @@ import { html } from "lit";
 import { query, state } from "lit/decorators.js";
 import { customElement } from "lit/decorators/custom-element.js";
 import { styleMap } from "lit/directives/style-map.js";
-import {
-  RadioInput,
-  ShapeInput,
-  NameInput,
-  CheckboxInput,
-  NdxInputElem,
-} from "../forminputs";
+import { ShapeInput } from "./shape-input";
+import { CheckboxInput } from "./radio-input";
+import { NameInput } from "./value-input";
+import { RadioInput } from "./radio-input";
+import { NdxInputElem } from "./abstract-input";
 import { Shape, Defaultable } from "../nwb/spec";
 
 @customElement("shape-or-scalar-input")
 export class ShapeOrScalarInput extends NdxInputElem<
   ["SHAPE", Shape[]] | ["SCALAR", Defaultable<string>]
 > {
-  firstFocusable?: HTMLElement | undefined;
+  firstFocusableElem?: HTMLElement | undefined;
   @query("radio-input")
   radioInput!: RadioInput;
 
@@ -72,24 +70,22 @@ export class ShapeOrScalarInput extends NdxInputElem<
         .selected=${this.shapeNotScalar ? 1 : 0}
         .onSelect=${(i: number) => {
           this.shapeNotScalar = i == 1;
-          Promise.resolve(this.updateComplete).then(() => this.input());
+          Promise.resolve(this.updateComplete).then(() => this.onInteraction());
         }}
       ></radio-input>
       <string-input
         style=${styleMap(this.shapeNotScalar ? { display: "None" } : {})}
         label="Attribute value"
-        .input=${() => this.input()}
+        .onInteraction=${() => this.onInteraction()}
       ></string-input>
       <checkbox-input
         style=${styleMap(this.shapeNotScalar ? { display: "None" } : {})}
         label="Allow override"
-        .input=${() => this.input()}
+        .onInteraction=${() => this.onInteraction()}
       ></checkbox-input>
       <shape-input
         style=${styleMap(this.shapeNotScalar ? {} : { display: "None" })}
-        .input=${() => {
-          this.input();
-        }}
+        .onInteraction=${() => this.onInteraction()}
       ></shape-input>
     `;
   }

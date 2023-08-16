@@ -84,7 +84,7 @@ function renderShape(shapes: Shape[]): TemplateResult<1> {
 
 @customElement("link-dec-elem")
 export class LinkDecElem extends BasicTypeElem<LinkDec> {
-  firstFocusable?: HTMLElement | undefined;
+  firstFocusableElem?: HTMLElement | undefined;
   fill(val: LinkDec): void {
     this.data = val;
   }
@@ -137,7 +137,7 @@ export class LinkDecElem extends BasicTypeElem<LinkDec> {
 
 @customElement("attrib-dec-elem")
 export class AttribDecElem extends BasicTypeElem<AttributeDec> {
-  firstFocusable?: HTMLElement | undefined;
+  firstFocusableElem?: HTMLElement | undefined;
   fill(val: AttributeDec): void {
     this.data = val;
   }
@@ -222,7 +222,7 @@ export class AttribDecElem extends BasicTypeElem<AttributeDec> {
 
 @customElement("group-anondec-elem")
 export class AnonGroupDecElem extends BasicTypeElem<AnonymousGroupDec> {
-  firstFocusable?: HTMLElement | undefined;
+  firstFocusableElem?: HTMLElement | undefined;
 
   @query("group-subtree")
   groupSubtree!: GroupSubtree;
@@ -301,7 +301,7 @@ export class AnonGroupDecElem extends BasicTypeElem<AnonymousGroupDec> {
 
 @customElement("group-incdec-elem")
 export class IncGroupDecElem extends BasicTypeElem<IncGroupDec> {
-  firstFocusable?: HTMLElement | undefined;
+  firstFocusableElem?: HTMLElement | undefined;
   fill(val: IncGroupDec): void {
     this.data = val;
   }
@@ -351,7 +351,7 @@ export class AnonDatasetDecElem extends BasicTypeElem<AnonymousDatasetDec> {
   @query("dataset-subtree")
   datasetSubtree!: DatasetSubtree;
 
-  firstFocusable?: HTMLElement | undefined;
+  firstFocusableElem?: HTMLElement | undefined;
   fill(val: AnonymousDatasetDec): void {
     this.data = val;
     Promise.resolve(this.updateComplete).then(() =>
@@ -423,7 +423,7 @@ export class AnonDatasetDecElem extends BasicTypeElem<AnonymousDatasetDec> {
 
 @customElement("dataset-incdec-elem")
 export class IncDatasetDecElem extends BasicTypeElem<IncDatasetDec> {
-  firstFocusable?: HTMLElement | undefined;
+  firstFocusableElem?: HTMLElement | undefined;
   fill(val: IncDatasetDec): void {
     this.data = val;
   }
@@ -508,7 +508,7 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
   @query("group-subtree")
   groupSubtree!: GroupSubtree;
 
-  firstFocusable?: HTMLElement | undefined;
+  firstFocusableElem?: HTMLElement | undefined;
   fill(val: GroupTypeDef): void {
     this.data = val;
     Promise.resolve(this.updateComplete).then(() =>
@@ -621,7 +621,7 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
   @query("dataset-subtree")
   datasetSubtree!: DatasetSubtree;
 
-  firstFocusable?: HTMLElement | undefined;
+  firstFocusableElem?: HTMLElement | undefined;
 
   fill(val: DatasetTypeDef): void {
     this.data = val;

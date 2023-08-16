@@ -12,7 +12,7 @@ import { symbols } from "./styles";
 import { when } from "lit-html/directives/when.js";
 import { map } from "lit/directives/map.js";
 import { Shape } from "./nwb/spec";
-import { NdxInputElem } from "./forminputs";
+import { NdxInputElem } from "./inputs/abstract-input";
 
 /* Wrapper element for a type elem, contains the minimize,
  * close button and slots for the body and subtree.
