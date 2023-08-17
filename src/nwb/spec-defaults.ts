@@ -12,15 +12,70 @@ import {
   IncDatasetDec,
 } from "./spec";
 
-// const _exampleGroup: GroupTypeDef = {
-//   neurodataTypeDef: "ExampleGroupType",
-//   neurodataTypeInc: ["None", null],
-//   doc: "This is an example group type definition. It is not intended to be used in a real schema. It is only used to test the schema compiler. It is a group type definition that contains all possible fields.",
-//   groups: [],
-//   datasets: [],
-//   attributes: [],
-//   links: [],
-// };
+const exampleAttrib: AttributeDec = {
+  name: "Example attribute",
+  doc: "This is an example attribute",
+  required: false,
+  value: ["SCALAR", ["Volts", false]],
+  dtype: ["PRIMITIVE", "f32"],
+};
+
+const exampleGroupTypeDef: GroupTypeDef = {
+  neurodataTypeDef: "ExampleGroupTypeDef",
+  neurodataTypeInc: [
+    "Core",
+    {
+      neurodataTypeDef: "TimeSeries",
+      doc: "A base class for time series data",
+    },
+  ],
+  doc: "This is an example time series",
+  groups: [],
+  datasets: [],
+  attributes: [exampleAttrib],
+  links: [],
+};
+
+const exampleDatasetTypeDef: DatasetTypeDef = {
+  neurodataTypeDef: "ExampleDatasetTypeDef",
+  neurodataTypeInc: [
+    "Core",
+    {
+      neurodataTypeDef: "TimeSeriesDset",
+      doc: "A base class for time series data",
+      shape: [
+        [
+          [1, "label"],
+          ["None", "label"],
+        ],
+      ],
+      dtype: ["PRIMITIVE", "f32"],
+    },
+  ],
+  doc: "",
+  shape: [
+    [
+      [1, "label"],
+      ["None", "label2"],
+    ],
+  ],
+  dtype: ["PRIMITIVE", "f32"],
+  attributes: [exampleAttrib],
+};
+
+const exampleNamespace: Namespace = {
+  name: "MyExampleNamespace",
+  doc: "This is an example namespace used to test the app",
+  version: [0, 0, 1],
+  authors: [
+    ["John Doe", "jdoe@gmail.com"],
+    ["Jane Doe", "janedoe@gmail.com"],
+  ],
+  typedefs: [
+    ["GROUP", exampleGroupTypeDef],
+    ["DATASET", exampleDatasetTypeDef],
+  ],
+};
 
 const namespace: Namespace = {
   name: "",
@@ -112,4 +167,6 @@ export const Initializers = {
 
   attributeDec: attributeDec,
   linkDec: linkDec,
+
+  exampleNamespace: exampleNamespace,
 };

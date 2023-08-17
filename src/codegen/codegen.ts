@@ -40,15 +40,23 @@ export default function codegen(ns: Namespace): string {
   let interpreter = interpreter_script;
 
   // sed
-
   interpreter = interpreter.replace('{{"namespace_name"}}', nsSpec.name);
-  interpreter = interpreter.replace('{{"types"}}', JSON.stringify(types));
-  interpreter = interpreter.replace('{{"includes"}}', JSON.stringify(includes));
-  interpreter = interpreter.replace('{{"namespace"}}', JSON.stringify(nsSpec));
   interpreter = interpreter.replace(
-    '{{"signature"}}',
-    MAGIC_SIGNATURE + obfuscateString(JSON.stringify(ns)) + MAGIC_SIGNATURE
+    '{{"types"}}',
+    JSON.stringify(types, null, 2)
   );
+  interpreter = interpreter.replace(
+    '{{"includes"}}',
+    JSON.stringify(includes, null, 2)
+  );
+  interpreter = interpreter.replace(
+    '{{"namespace"}}',
+    JSON.stringify(nsSpec, null, 2)
+  );
+  //   interpreter = interpreter.replace(
+  //     '{{"signature"}}',
+  //     MAGIC_SIGNATURE + obfuscateString(JSON.stringify(ns)) + MAGIC_SIGNATURE
+  //   );
 
   return interpreter;
 }
@@ -104,6 +112,7 @@ function convertTypeDef(t: TypeDef): NWBTypeSpec {
       shape: d.shape.map((s) => s.map(([d, _l]) => d)),
       dims: d.shape.map((s) => s.map(([_d, l]) => l)),
       neurodata_type_def: d.neurodataTypeDef,
+      dtype: convertDtype(d.dtype),
     };
     if (d.name && d.name[1]) spec.default_name = d.name[0];
     else if (d.name && !d.name[1]) spec.name = d.name[0];
@@ -393,19 +402,22 @@ function sortNamespace(ns: Namespace): [string[], TypeDef[]] {
     }));
 
   let allCore = Array.from(new Set(includes.flatMap((i) => i.coreIncludes)));
+  console.log(topologicalSort(includes).map((i) => i.ty));
   return [allCore, topologicalSort(includes).map((i) => i.ty)];
 
   // reorder typedefs so that all dependencies are defined before use
   type IncludeNode = (typeof includes)[0];
+
+  // uses naive Kahn's algorithm
   function topologicalSort(nodes: IncludeNode[]) {
-    const L = new Array<IncludeNode>(nodes.length);
+    const L = new Array<IncludeNode>();
     let S = nodes.filter((n) => n.deps.length == 0);
 
     while (S.length > 0) {
       let n = S.pop()!;
       L.push(n);
-      nodes = nodes.filter((m) => m != n);
-      for (let m of nodes) {
+      let needsN = nodes.filter((m) => m.deps.includes(n.def));
+      for (let m of needsN) {
         m.deps = m.deps.filter((d) => d != n.def);
         if (m.deps.length == 0) S.push(m);
       }

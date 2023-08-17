@@ -4,18 +4,21 @@ It generates the {{"namespace_name"}} extension
 """
 
 from pynwb.spec import *
+import json
 
-ns = {{"namespace"}}
-types = {{"types"}}
-includes = {{"includes"}}
+ns = json.loads("""{{"namespace"}}""")
+types = json.loads("""{{"types"}}""")
+includes = json.loads("""{{"includes"}}""")
 
 ns_path = ns["name"] + ".namespace.yaml"
 ext_source = ns["name"] + ".extensions.yaml"
 
 
-def gen_types(types):
-    return [gen_group_spec(ty) if kind == 'GROUP' else
-            gen_dataset_spec(ty) for kind, ty in types]
+def gen_type(type):
+    kind, ty = type
+    if kind == "GROUP":
+        return gen_group_spec(ty)
+    return gen_dataset_spec(ty)
 
 
 def gen_group_spec(spec):
@@ -26,21 +29,28 @@ def gen_group_spec(spec):
     return NWBGroupSpec(**spec)
 
 
-def gen_shape(shape):
-    [None if s == "None" else s for s in shape]
-
-
 def gen_dataset_spec(spec):
     spec["attributes"] = [gen_attribute_spec(a) for a in spec["attributes"]]
-    spec["dtype"] = gen_dtype_spec(spec["dtype"])
-    spec["shape"] = gen_shape(spec["shape"])
+    if "dtype" in spec:
+        spec["dtype"] = gen_dtype_spec(spec["dtype"])
+    if "shape" in spec:
+        spec["shape"] = gen_shape(spec["shape"])
     return NWBDatasetSpec(**spec)
 
 
 def gen_attribute_spec(spec):
     spec["dtype"] = gen_dtype_spec(spec["dtype"])
-    spec["shape"] = gen_shape(spec["shape"])
+    if "shape" in spec:
+        spec["shape"] = gen_shape(spec["shape"])
     return NWBAttributeSpec(**spec)
+
+
+def gen_link_spec(spec):
+    return NWBLinkSpec(**spec)
+
+
+def gen_namespace(ns):
+    return NWBNamespaceBuilder(**ns)
 
 
 def gen_dtype_spec(spec):
@@ -53,12 +63,8 @@ def gen_dtype_spec(spec):
         return NWBDtypeSpec(**spec)
 
 
-def gen_link_spec(spec):
-    return NWBLinkSpec(**spec)
-
-
-def gen_namespace(ns):
-    return NWBNamespaceBuilder(**ns)
+def gen_shape(shape):
+    [None if s == "None" else s for s in shape]
 
 
 ns_builder = gen_namespace(ns)
@@ -66,12 +72,10 @@ ns_builder = gen_namespace(ns)
 for inc in includes:
     ns_builder.include_type(inc, namespace="core")
 
-ns_builder.add_spec(
-    ext_source, [gen_types(ty) for ty in types]
-)
+for ty in types:
+    ns_builder.add_spec(ext_source, gen_type(ty))
 
 ns_builder.export(ns_path)
-
 
 """
 Don't worry about the junk below. It has no effect on this script.

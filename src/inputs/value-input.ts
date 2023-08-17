@@ -42,6 +42,7 @@ export class StringInput extends ValueInput<string> {
 
   fill(val: string): void {
     this.inputElem.value = val;
+    this.onInteraction();
   }
 
   value(): string | null {
@@ -51,23 +52,17 @@ export class StringInput extends ValueInput<string> {
 }
 
 @customElement("name-input")
-export class NameInput extends ValueInput<string> {
+export class NameInput extends StringInput {
   isValid: () => boolean = () => {
-    return (
-      (!this.required && this.inputElem.value == "") ||
-      this.inputElem.value.match(/^[a-zA-Z]+$/) != null
-    );
+    return !this.required && this.inputElem.value != "";
   };
+}
 
-  fill(val: string): void {
-    this.inputElem.value = val;
-    this.onInteraction();
-  }
-
-  value(): string | null {
-    if (!this.isValid()) return null;
-    return this.inputElem.value;
-  }
+@customElement("namespace-name-input")
+export class NamespaceNameInput extends StringInput {
+  isValid: () => boolean = () => {
+    return this.inputElem.value.match(/^ndx-[a-zA-Z_][a-zA-Z_0-9]*$/) != null;
+  };
 }
 
 @customElement("doc-input")

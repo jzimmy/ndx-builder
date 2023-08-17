@@ -2,6 +2,11 @@ import { CPSFormController, TriggerK } from "./hofs";
 
 import { LitElement } from "lit";
 
+// Developer responibilities for CPSForm:
+//  fill
+//  clear
+//  transform
+//  showAndFocus
 export abstract class CPSForm<T>
   extends LitElement
   implements CPSFormController

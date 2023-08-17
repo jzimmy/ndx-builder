@@ -78,16 +78,16 @@ export type Quantity =
   | ["Num", number];
 
 // TODO, fetch more data from NWB
-
 export type CoreGroupType = {
   neurodataTypeDef: string;
-  name: Defaultable<string>;
+  name?: Defaultable<string>;
   doc: string;
 };
 
+// TODO, fetch more data from NWB
 export type CoreDatasetType = {
   neurodataTypeDef: string;
-  name: Defaultable<string>;
+  name?: Defaultable<string>;
   doc: string;
   shape: Shape[];
   dtype: Dtype;

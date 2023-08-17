@@ -52,9 +52,6 @@ export interface CPSFormController {
 }
 
 export class FormChain<T> {
-  private trigger: TriggerK<T>;
-  private mapElems: <U>(f: (v: CPSFormController & LitElement) => U) => U[];
-
   // create a new form chain
   constructor(form?: CPSForm<T>, titles?: string[], index = -1) {
     if (!form) {
@@ -68,8 +65,6 @@ export class FormChain<T> {
     };
     this.mapElems = (apply) => [apply(form)];
   }
-
-  alreadyHasTitles = false;
 
   then(f: CPSForm<T>, titles?: string[], index?: number): this {
     const oldMapElems = this.mapElems;
@@ -161,6 +156,9 @@ export class FormChain<T> {
       Promise.all(this.mapElems((f) => f.updateComplete)).then(triggerForm);
     };
   }
+
+  private trigger: TriggerK<T>;
+  private mapElems: <U>(f: (v: CPSFormController & LitElement) => U) => U[];
 }
 
 /**** The real operators ****/

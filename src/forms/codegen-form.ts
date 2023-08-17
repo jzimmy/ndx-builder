@@ -17,6 +17,7 @@ export class CodegenForm extends CPSForm<Namespace> {
     this.stepBarElem.setProgressState(progress);
   }
 
+  // inaccessible
   transform(val: Namespace): Namespace {
     return val;
   }
@@ -39,10 +40,13 @@ export class CodegenForm extends CPSForm<Namespace> {
 
   render() {
     return html`
-    <step-bar></step-bar>
-    <input type="button" value="back" @click=${this.back}></input>
-    <pre>${JSON.stringify(this.namespace, null, 2)}</pre>
-    <continue-bar .message=${"Export"} .continue=${this.handleExport}
+      <back-or-quit-bar>
+        <step-bar></step-bar>
+      </back-or-quit-bar>
+      <pre>${codegen(this.namespace)}</pre>
+      <continue-bar
+        .message=${"Export"}
+        .continue=${() => this.handleExport()}
       ></continue-bar>
     `;
   }

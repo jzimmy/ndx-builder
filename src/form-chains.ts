@@ -40,6 +40,7 @@ import { DatasetTypeVizForm, GroupTypeVizForm } from "./forms/typeviz-form";
 import { LinkInfoForm } from "./forms/link-form";
 import { DtypeForm } from "./forms/dtype-form";
 import { AnonDecNameForm, IncDecNameForm } from "./forms/name-forms";
+import codegen from "./codegen/codegen";
 
 // this good place to get a sense of overall workflow
 export const namespaceBuilderSteps = [
@@ -66,8 +67,8 @@ const datasetTypeDefBuilderSteps = [
 const attributeBuilderSteps = ["Name attribute", "Define axes"];
 
 // alias for `new FormChain<T>(...)`
-function fc<T>(f?: CPSForm<T>, steps?: string[], index = -1) {
-  return new FormChain(f, steps, index);
+function fc<T>(f?: CPSForm<T>, titleSteps?: string[], index = -1) {
+  return new FormChain(f, titleSteps, index);
 }
 
 // Empty chain a.k.a. unit. Like nullptr in C++
@@ -228,7 +229,12 @@ export function buildFormChains(parent: LitElement): Trigger<Namespace> {
     )
     .withParent(parent);
 
-  let namespaceBuilderTrigger = fc<Namespace>(new NamespaceStartForm())
+  let namespaceBuilderTrigger = fc<Namespace>(
+    new NamespaceStartForm().addDebugTrigger(
+      fc(new CodegenForm()).withParent(parent),
+      Initializers.exampleNamespace
+    )
+  )
     .then(
       new NamespaceTypesForm(typedefBuilderTrigger, typedefEditorTrigger),
       namespaceBuilderSteps,
