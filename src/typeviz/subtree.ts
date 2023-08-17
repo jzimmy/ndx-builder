@@ -16,6 +16,7 @@ import {
   IncGroupDecElem,
   LinkDecElem,
 } from "./viz-elems";
+import { HasDatasetIncType, HasGroupIncType } from "..";
 
 @customElement("subtree-branch")
 export class SubtreeBranch extends LitElement {
@@ -329,23 +330,24 @@ function addLinkDec(l: LinkDec, tree: GroupSubtree) {
 }
 
 // TODO: rewrite the functions for the inherited types
-// no delete, special edit, added to different "branch"
-// @developer remove export when complete
-export function addInheritedGroupDec(
-  _g: GroupDec,
-  _tree: GroupSubtree,
-  _index = -1
-) {}
-export function addInheritedDatasetDec(
+// no delete, special edit, added to tree.inherited<Some>Decs
+
+// This shouldn't allow any edits, but if it has children,
+// then render the children completely and allow edits on them
+function addInheritedGroupDec(_g: GroupDec, _tree: GroupSubtree, _index = -1) {}
+// This should allow limited edits
+function addInheritedDatasetDec(
   _d: DatasetDec,
   _tree: GroupSubtree,
   _index = -1
 ) {}
-export function addInheritedAttributeDec(
+// This should allow limited edits
+function addInheritedAttributeDec(
   _a: AttributeDec,
-  _tree: GroupSubtree
+  _tree: GroupSubtree | DatasetSubtree
 ) {}
-export function addInheritedLinkDec(_l: LinkDec, _tree: GroupSubtree) {}
+// This should allow no edits
+function addInheritedLinkDec(_l: LinkDec, _tree: GroupSubtree) {}
 
 function insertAtIndex<T>(elem: T, arr: T[], index: number) {
   return index < 0
@@ -362,7 +364,7 @@ function removeElem<T>(arr: T[], elem: T) {
 export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
   firstFocusableElem?: HTMLElement | undefined;
 
-  fill(val: HasGroupSubtree): void {
+  fill(val: HasGroupSubtree | (HasGroupSubtree & HasGroupIncType)): void {
     // don't overwrite me if you are empty
     if (
       val.attributes.length == 0 &&
@@ -377,6 +379,15 @@ export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
     for (let l of val.links) addLinkDec(l, this);
     for (let d of val.datasets) addDatasetDec(d, this);
     for (let g of val.groups) addGroupDec(g, this);
+
+    if ("neurodataTypeInc" in val && val.neurodataTypeInc[0] == "Typedef") {
+      let incty = val.neurodataTypeInc[1];
+      for (let a of incty.attributes) addInheritedAttributeDec(a, this);
+      for (let l of incty.links) addInheritedLinkDec(l, this);
+      for (let d of incty.datasets) addInheritedDatasetDec(d, this);
+      for (let g of incty.groups) addInheritedGroupDec(g, this);
+    }
+
     this.requestUpdate();
   }
 
@@ -593,11 +604,16 @@ export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
 @customElement("dataset-subtree")
 export class DatasetSubtree extends NdxInputElem<HasDatasetSubtree> {
   firstFocusableElem?: HTMLElement | undefined;
-  fill(val: HasDatasetSubtree): void {
+  fill(val: HasDatasetSubtree | (HasDatasetSubtree & HasDatasetIncType)): void {
     if (val.attributes.length == 0) return;
 
     this.clear();
     for (let a of val.attributes) addAttributeDec(a, this);
+    if ("neurodataTypeInc" in val && val.neurodataTypeInc[0] == "Typedef") {
+      let incty = val.neurodataTypeInc[1];
+      for (let a of incty.attributes) addInheritedAttributeDec(a, this);
+    }
+
     this.requestUpdate();
   }
 
