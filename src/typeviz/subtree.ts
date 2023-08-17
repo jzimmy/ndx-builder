@@ -5,7 +5,7 @@ import { when } from "lit/directives/when.js";
 import { AttributeDec, DatasetDec, GroupDec, LinkDec } from "../nwb/spec";
 import { symbols } from "../styles";
 import { Trigger } from "../logic/hofs";
-import { assertNever } from "../main";
+import { assertNever } from "../utils";
 import { Initializers } from "../nwb/spec-defaults";
 import { NdxInputElem } from "../inputs/abstract-input";
 import {
@@ -15,8 +15,9 @@ import {
   IncDatasetDecElem,
   IncGroupDecElem,
   LinkDecElem,
-} from "./viz-elems";
+} from "./dec-viz-elems";
 import { HasDatasetIncType, HasGroupIncType } from "..";
+import { removeElem, insertAtIndex } from "../utils";
 
 @customElement("subtree-branch")
 export class SubtreeBranch extends LitElement {
@@ -135,6 +136,10 @@ export class SubtreeBranch extends LitElement {
         margin-top: var(--upper-break);
         height: 2px;
         width: 2ch;
+      }
+
+      ::slotted(light-button) {
+        margin-top: calc(var(--upper-break) - 1.1em);
       }
     `,
   ];
@@ -348,17 +353,6 @@ function addInheritedAttributeDec(
 ) {}
 // This should allow no edits
 function addInheritedLinkDec(_l: LinkDec, _tree: GroupSubtree) {}
-
-function insertAtIndex<T>(elem: T, arr: T[], index: number) {
-  return index < 0
-    ? [...arr, elem]
-    : [...arr.slice(0, index), elem, ...arr.slice(index)];
-}
-
-function removeElem<T>(arr: T[], elem: T) {
-  let index = arr.indexOf(elem);
-  return [...arr.slice(0, index), ...arr.slice(index + 1)];
-}
 
 @customElement("group-subtree")
 export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {

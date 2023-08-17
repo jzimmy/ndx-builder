@@ -1,5 +1,5 @@
 import { interpreter_script } from "../data/interpreter";
-import { assertNever } from "../main";
+import { assertNever } from "../utils";
 import {
   AnonymousDatasetDec,
   AnonymousGroupDec,

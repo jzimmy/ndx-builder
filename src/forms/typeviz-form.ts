@@ -10,11 +10,12 @@ import {
 } from "../nwb/spec";
 import { TemplateResult, html } from "lit";
 import { CPSFormController, Trigger } from "../logic/hofs";
-import { CPSForm, ProgressState } from "../logic/cpsform";
+import { CPSForm, ProgressState } from "../logic/cps-form";
 import { Initializers } from "../nwb/spec-defaults";
-import "../typeviz/viz-elems";
+import "../typeviz/viz-utils";
 import { FormStepBar } from "../basic-elems";
-import { DatasetTypeDefElem, GroupTypeDefElem } from "../typeviz/viz-elems";
+import { DatasetTypeDefElem, GroupTypeDefElem } from "../typeviz/def-viz-elems";
+import "../typeviz/all";
 
 function subform<T>(prev: CPSFormController, trigger: Trigger<T>): Trigger<T> {
   return (i, a, c) => {

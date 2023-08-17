@@ -7,7 +7,7 @@ import { AttribValueForm } from "./forms/attrib-form";
 import { AttribInfoForm } from "./forms/attrib-form";
 import { CodegenForm } from "./forms/codegen-form";
 import { FormChain, Trigger } from "./logic/hofs";
-import { CPSForm } from "./logic/cpsform";
+import { CPSForm } from "./logic/cps-form";
 import {
   DatasetInctypeForm,
   GenericInctypeForm,

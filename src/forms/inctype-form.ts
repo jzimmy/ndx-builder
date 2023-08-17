@@ -5,8 +5,8 @@ import { classMap } from "lit/directives/class-map.js";
 import { map } from "lit/directives/map.js";
 import { when } from "lit/directives/when.js";
 import { modules, coreQuery } from "../data/nwbcore";
-import { ProgressState } from "../logic/cpsform.ts";
-import { assertNever } from "../main";
+import { ProgressState } from "../logic/cps-form.ts";
+import { assertNever } from "../utils.ts";
 import { NamespaceTypesForm } from "./namespace-forms";
 import {
   CoreType,

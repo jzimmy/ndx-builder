@@ -2,7 +2,7 @@ import { html, css, LitElement } from "lit";
 import { customElement } from "lit/decorators.js";
 import { Initializers } from "./nwb/spec-defaults";
 import { symbols } from "./styles";
-import { buildFormChains } from "./formchains";
+import { buildFormChains } from "./form-chains";
 
 // form manager
 @customElement("form-parent")

@@ -3,7 +3,7 @@ import { customElement, query } from "lit/decorators.js";
 import { BasicTypeBuilderFormPage } from "./abstract-form";
 import { DtypeInput } from "../inputs/dtype-input";
 import { Dtype } from "../nwb/spec";
-import { ProgressState } from "../logic/cpsform";
+import { ProgressState } from "../logic/cps-form";
 
 interface HasDtype {
   dtype: Dtype;

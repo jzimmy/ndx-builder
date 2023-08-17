@@ -10,9 +10,9 @@ import {
   Namespace,
   TypeDef,
 } from "../nwb/spec";
-import { ProgressState } from "../logic/cpsform";
-import { assertNever } from "../main";
-import { CPSForm } from "../logic/cpsform";
+import { ProgressState } from "../logic/cps-form";
+import { assertNever } from "../utils";
+import { CPSForm } from "../logic/cps-form";
 import { BasicFormPage } from "./abstract-form";
 import { NDXBuilderDefaultShowAndFocus } from "..";
 import { FormStepBar, iconOf } from "../basic-elems";

@@ -1,7 +1,7 @@
 import { TemplateResult, html } from "lit";
 import { customElement, query } from "lit/decorators.js";
 import { BasicTypeBuilderFormPage } from "./abstract-form";
-import { ProgressState } from "../logic/cpsform.ts";
+import { ProgressState } from "../logic/cps-form.ts";
 import { CheckboxInput } from "../inputs/radio-input";
 import { NameInput, DocInput } from "../inputs/value-input";
 import { AttributeDec, Dtype } from "../nwb/spec";

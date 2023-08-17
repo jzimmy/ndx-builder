@@ -2,10 +2,11 @@ import { TemplateResult, html, css, CSSResultGroup } from "lit";
 import { property, state, query } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { FormStepBar } from "../basic-elems";
-import { namespaceBuilderSteps } from "../formchains";
-import { CPSForm, ProgressState } from "../logic/cpsform";
+import { namespaceBuilderSteps } from "../form-chains";
+import { CPSForm, ProgressState } from "../logic/cps-form";
 import { symbols } from "../styles";
 import { NDXBuilderDefaultShowAndFocus } from "..";
+import "../inputs/all";
 
 /*****
  * BasicFormPage

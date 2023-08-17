@@ -2,7 +2,7 @@ import { customElement, query } from "lit/decorators.js";
 import { BasicTypeBuilderFormPage } from "./abstract-form";
 import { LinkDec } from "../nwb/spec";
 import { TemplateResult, html } from "lit";
-import { ProgressState } from "../logic/cpsform.ts";
+import { ProgressState } from "../logic/cps-form.ts";
 import { DocInput } from "../inputs/value-input";
 import { QuantityOrNameInput } from "../inputs/quantity-or-name";
 

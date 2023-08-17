@@ -6,7 +6,7 @@ import {
   HasQuantityOrName,
 } from "../index.ts";
 import { BasicTypeBuilderFormPage } from "./abstract-form";
-import { ProgressState } from "../logic/cpsform.ts";
+import { ProgressState } from "../logic/cps-form.ts";
 import "../typeviz/subtree";
 import { CheckboxInput } from "../inputs/radio-input";
 import { DocInput } from "../inputs/value-input";

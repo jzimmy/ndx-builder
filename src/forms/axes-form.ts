@@ -2,7 +2,7 @@ import { customElement, query } from "lit/decorators.js";
 import { BasicTypeBuilderFormPage } from "./abstract-form";
 import { Shape, Dtype } from "../nwb/spec";
 import { TemplateResult, html } from "lit";
-import { ProgressState } from "../logic/cpsform.ts";
+import { ProgressState } from "../logic/cps-form.ts";
 import { ShapeInput } from "../inputs/shape-input";
 
 export interface HasAxes {

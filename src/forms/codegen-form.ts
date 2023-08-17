@@ -1,5 +1,5 @@
 import { customElement, query, state } from "lit/decorators.js";
-import { CPSForm } from "../logic/cpsform";
+import { CPSForm } from "../logic/cps-form";
 import { html } from "lit";
 import { NDXBuilderDefaultShowAndFocus } from "..";
 import { FormStepBar } from "../basic-elems";

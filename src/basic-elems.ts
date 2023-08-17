@@ -5,7 +5,7 @@ import { map } from "lit/directives/map.js";
 import { symbols } from "./styles";
 import { when } from "lit/directives/when.js";
 import { styleMap } from "lit/directives/style-map.js";
-import { ProgressState } from "./logic/cpsform";
+import { ProgressState } from "./logic/cps-form";
 
 export function iconOf(kind: "GROUP" | "DATASET") {
   if (kind == "GROUP") return "folder";

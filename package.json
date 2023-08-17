@@ -6,11 +6,10 @@
   "scripts": {
     "dev:host": "vite --host",
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "./build.sh -q && tsc && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@lit-labs/motion": "^1.0.3",
     "js-yaml": "^4.1.0",
     "lit": "^2.7.2",
     "material-symbols": "^0.9.0"

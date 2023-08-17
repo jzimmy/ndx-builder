@@ -26,7 +26,7 @@
  */
 
 import { LitElement } from "lit";
-import { CPSForm } from "./cpsform";
+import { CPSForm } from "./cps-form";
 
 // form trigger, this type is used in other modules
 export type Trigger<T> = (

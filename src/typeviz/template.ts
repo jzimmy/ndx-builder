@@ -3,8 +3,10 @@ import { customElement, property, query } from "lit/decorators.js";
 import { TypeElemSkeleton } from "./skeleton";
 import { map } from "lit/directives/map.js";
 import { when } from "lit/directives/when.js";
-import { Shape } from "../nwb/spec";
+import { CompoundDtype, Dtype, NWBType, Shape } from "../nwb/spec";
 import { symbols } from "../styles";
+import "./skeleton";
+import { choose } from "lit/directives/choose.js";
 
 /* Wrapper element for a type elem, contains the body and subtree contents.
  * Uses a template of slots to type constructor UIs very easy to build and modify.
@@ -376,4 +378,47 @@ export class ShapeVisualizer extends LitElement {
       }
     `,
   ];
+}
+
+@customElement("dtype-viz")
+export class DtypeVisualizer extends LitElement {
+  @property()
+  dtype: Dtype = ["PRIMITIVE", "Any"];
+
+  render() {
+    return html`${choose(this.dtype[0], [
+      ["PRIMITIVE", () => html`<div>${this.dtype[1]}</div>`],
+      [
+        "REFSPEC",
+        () => {
+          let [_, [refKind, refType]] = this.dtype as ["REFSPEC", NWBType];
+          return html` <span class="material-symbols-outlined">
+              ${refKind == "GROUP" ? "folder" : "dataset"}
+            </span>
+            <div>${refType[1]?.neurodataTypeDef}</div>`;
+        },
+      ],
+      [
+        "COMPOUND",
+        () => html` <div class="compound-wrapper">
+          ${map(
+            this.dtype[1] as CompoundDtype[],
+            ({ dtype }) =>
+              html`
+                <div>
+                  ${when(
+                    dtype[0] == "PRIMITIVE",
+                    () => html`<div>${dtype[1]}</div>`,
+                    () =>
+                      html`<div>
+                        ${(dtype[1] as NWBType)[1][1]?.neurodataTypeDef}
+                      </div>`
+                  )}
+                </div>
+              `
+          )}
+        </div>`,
+      ],
+    ])}`;
+  }
 }
