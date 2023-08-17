@@ -19,7 +19,7 @@ import { when } from "lit-html/directives/when.js";
 @customElement("type-elem-skeleton")
 export class TypeElemSkeleton extends LitElement {
   @property({ type: Boolean, reflect: true })
-  hideCloseBtn: boolean = false;
+  hideDeleteBtn: boolean = false;
 
   @property({ type: Function })
   onDelete = (target?: EventTarget) => {
@@ -64,7 +64,7 @@ export class TypeElemSkeleton extends LitElement {
             `
           )}
           ${when(
-            !this.hideCloseBtn,
+            !this.hideDeleteBtn,
             () => html`
               <span
                 class="material-symbols-outlined"

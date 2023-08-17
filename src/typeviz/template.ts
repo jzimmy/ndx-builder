@@ -48,7 +48,7 @@ export class ClassicTypeElemTemplate extends LitElement {
   render() {
     return html`
       <type-elem-skeleton
-        .hideCloseBtn=${this.hideCloseBtn}
+        .hideDeleteBtn=${this.hideCloseBtn}
         .hideEditBtn=${this.hideEditBtn}
         .onDelete=${this.onDelete}
         .onEdit=${this.onEdit}

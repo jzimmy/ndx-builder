@@ -572,7 +572,7 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
       <type-elem
         .noProperties=${true}
         .noOptions=${false}
-        .hideCloseBtn=${true}
+        .hideDeleteBtn=${true}
         .hideEditBtn=${this.hideEditBtn}
       >
         ${this.header()}
@@ -686,7 +686,7 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
       <type-elem
         .noProperties=${false}
         .noOptions=${false}
-        .hideCloseBtn=${true}
+        .hideDeleteBtn=${true}
         .hideEditBtn=${this.hideEditBtn}
       >
         ${this.header()}

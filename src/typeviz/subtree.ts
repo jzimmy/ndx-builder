@@ -22,17 +22,8 @@ export class SubtreeBranch extends LitElement {
   @property({ type: Boolean })
   lastBranch = false;
 
-  @property()
-  elems: HTMLElement[] = [];
-
   @property({ type: Boolean, reflect: true })
   disabled = false;
-
-  @property({ type: Function })
-  addElem = () => {};
-
-  @property({ type: Boolean })
-  addButtonBranch = true;
 
   render() {
     return html`
@@ -44,19 +35,7 @@ export class SubtreeBranch extends LitElement {
         </div>
         ${when(!this.lastBranch, () => html`<div class="vert"></div>`)}
       </div>
-      <slot name="elems"></slot>
-      ${when(
-        this.addButtonBranch,
-        () => html`
-          <div class="branchelement">
-            <light-button ?disabled=${this.disabled} @click=${this.addElem}>
-              <span class="material-symbols-outlined" style="font-size:1.3em"
-                >add</span
-              >
-            </light-button>
-          </div>
-        `
-      )}
+      <slot name="elem"></slot>
     `;
   }
 
@@ -207,10 +186,11 @@ type DatasetDecElem =
   | ["ANONYMOUS", AnonDatasetDecElem];
 
 function setElemsSlot(elem: HTMLElement) {
-  elem.slot = "elems";
+  elem.slot = "elem";
 }
 
-function groupDecSubtreeElem(g: GroupDec, tree: GroupSubtree) {
+// only use these functions to create subtree elems!!!
+function createGroupDecSubtreeElem(g: GroupDec, tree: GroupSubtree) {
   let dec: GroupDecElem;
   switch (g[0]) {
     case "INC":
@@ -218,7 +198,6 @@ function groupDecSubtreeElem(g: GroupDec, tree: GroupSubtree) {
         g[0],
         document.createElement("group-incdec-elem") as IncGroupDecElem,
       ];
-      console.log(dec[1], dec[1].fill);
       dec[1].fill(g[1]);
       break;
     case "ANONYMOUS":
@@ -226,7 +205,6 @@ function groupDecSubtreeElem(g: GroupDec, tree: GroupSubtree) {
         g[0],
         document.createElement("group-anondec-elem") as AnonGroupDecElem,
       ];
-      console.log(dec[1], dec[1].fill);
       dec[1].fill(g[1]);
       dec[1].triggerAttribDecBuilderForm = tree.triggerAttribDecBuilderForm;
       dec[1].triggerDatasetDecBuilderForm = tree.triggerDatasetDecBuilderForm;
@@ -240,7 +218,7 @@ function groupDecSubtreeElem(g: GroupDec, tree: GroupSubtree) {
   return dec;
 }
 
-function datasetDecSubtreeElem(
+function createDatasetDecSubtreeElem(
   d: DatasetDec,
   tree: GroupSubtree | DatasetSubtree
 ) {
@@ -268,38 +246,25 @@ function datasetDecSubtreeElem(
   return dec;
 }
 
-function attribDecSubtreeElem(a: AttributeDec) {
+function createAttribDecSubtreeElem(a: AttributeDec) {
   let dec = document.createElement("attrib-dec-elem") as AttribDecElem;
   dec.fill(a);
   setElemsSlot(dec);
   return dec;
 }
 
-function linkDecSubtreeElem(l: LinkDec) {
+function createLinkDecSubtreeElem(l: LinkDec) {
   let dec = document.createElement("link-dec-elem") as LinkDecElem;
   dec.fill(l);
   setElemsSlot(dec);
   return dec;
 }
 
-function insertAtIndex<T>(elem: T, branch: T[], index: number = -1) {
-  return index == -1
-    ? [...branch, elem]
-    : [...branch.slice(0, index), elem, ...branch.slice(index)];
-}
-
-function removeElem<T>(branch: T[], elem: T) {
-  let index = branch.indexOf(elem);
-  console.log("found at ", index);
-  return [...branch.slice(0, index), ...branch.slice(index + 1)];
-}
-
 function addGroupDec(g: GroupDec, tree: GroupSubtree, index = -1) {
-  const groupDecElem = groupDecSubtreeElem(g, tree);
+  const groupDecElem = createGroupDecSubtreeElem(g, tree);
   groupDecElem[1].onDelete = () =>
     (tree.groups = removeElem(tree.groups, groupDecElem));
   groupDecElem[1].onEdit = () => {
-    console.log("EDITING");
     tree.triggerGroupDecBuilderForm(
       [groupDecElem[0], groupDecElem[1].value()] as GroupDec,
       () => {},
@@ -314,7 +279,7 @@ function addGroupDec(g: GroupDec, tree: GroupSubtree, index = -1) {
 }
 
 function addDatasetDec(d: DatasetDec, tree: GroupSubtree, index = -1) {
-  const datasetDecElem = datasetDecSubtreeElem(d, tree);
+  const datasetDecElem = createDatasetDecSubtreeElem(d, tree);
   datasetDecElem[1].onDelete = () =>
     (tree.datasets = removeElem(tree.datasets, datasetDecElem));
   datasetDecElem[1].onEdit = () => {
@@ -332,7 +297,7 @@ function addDatasetDec(d: DatasetDec, tree: GroupSubtree, index = -1) {
 }
 
 function addAttributeDec(a: AttributeDec, tree: GroupSubtree | DatasetSubtree) {
-  const attribDecElem = attribDecSubtreeElem(a);
+  const attribDecElem = createAttribDecSubtreeElem(a);
   attribDecElem.onDelete = () =>
     (tree.attribs = removeElem(tree.attribs, attribDecElem));
   attribDecElem.onEdit = () =>
@@ -344,11 +309,11 @@ function addAttributeDec(a: AttributeDec, tree: GroupSubtree | DatasetSubtree) {
         tree.requestUpdate();
       }
     );
-  tree.attribs = insertAtIndex(attribDecElem, tree.attribs);
+  tree.attribs = insertAtIndex(attribDecElem, tree.attribs, -1);
 }
 
 function addLinkDec(l: LinkDec, tree: GroupSubtree) {
-  const linkDecElem = linkDecSubtreeElem(l);
+  const linkDecElem = createLinkDecSubtreeElem(l);
   linkDecElem.onDelete = () =>
     (tree.links = removeElem(tree.links, linkDecElem));
   linkDecElem.onEdit = () =>
@@ -360,7 +325,37 @@ function addLinkDec(l: LinkDec, tree: GroupSubtree) {
         tree.requestUpdate();
       }
     );
-  tree.links = insertAtIndex(linkDecElem, tree.links);
+  tree.links = insertAtIndex(linkDecElem, tree.links, -1);
+}
+
+// TODO: rewrite the functions for the inherited types
+// no delete, special edit, added to different "branch"
+// @developer remove export when complete
+export function addInheritedGroupDec(
+  _g: GroupDec,
+  _tree: GroupSubtree,
+  _index = -1
+) {}
+export function addInheritedDatasetDec(
+  _d: DatasetDec,
+  _tree: GroupSubtree,
+  _index = -1
+) {}
+export function addInheritedAttributeDec(
+  _a: AttributeDec,
+  _tree: GroupSubtree
+) {}
+export function addInheritedLinkDec(_l: LinkDec, _tree: GroupSubtree) {}
+
+function insertAtIndex<T>(elem: T, arr: T[], index: number) {
+  return index < 0
+    ? [...arr, elem]
+    : [...arr.slice(0, index), elem, ...arr.slice(index)];
+}
+
+function removeElem<T>(arr: T[], elem: T) {
+  let index = arr.indexOf(elem);
+  return [...arr.slice(0, index), ...arr.slice(index + 1)];
 }
 
 @customElement("group-subtree")
@@ -404,6 +399,8 @@ export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
   @property({ type: Boolean })
   disabled = true;
 
+  // Important! Don't add to these directly, use add<Some>Dec()
+  // It could mess up equality checks
   @state()
   attribs: AttribDecElem[] = [];
   @state()
@@ -412,6 +409,16 @@ export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
   datasets: DatasetDecElem[] = [];
   @state()
   groups: GroupDecElem[] = [];
+
+  // Don't add either to these, use addInherited<Some>Dec()
+  @state()
+  inheritedAttribs: AttribDecElem[] = [];
+  @state()
+  inheritedLinks: LinkDecElem[] = [];
+  @state()
+  inheritedDatasets: DatasetDecElem[] = [];
+  @state()
+  inheritedGroups: GroupDecElem[] = [];
 
   @property({ type: Function })
   triggerAttribDecBuilderForm: Trigger<AttributeDec> = (_v, _a, _c) => {};
@@ -427,119 +434,148 @@ export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
   typedef = false;
 
   render() {
-    console.log("GROUPS", this.groups);
-    console.log("DATASETS", this.datasets);
-    console.log("ATTRIBS", this.attribs);
-    console.log("LINKS", this.links);
-
-    let groups = [] as GroupDec[];
-    let datasets = [] as DatasetDec[];
-    let attribs = [] as AttributeDec[];
-    let links = [] as LinkDec[];
-    const allBranchesFilled =
-      (attribs.length > 0 &&
-        groups.length > 0 &&
-        datasets.length > 0 &&
-        links.length > 0) ||
-      !this.minimized;
     return html`
-      ${when(
-        groups.length > 0 || !this.minimized,
-        () => html` <subtree-branch
-          ?disabled=${this.disabled}
-          slot="subtree"
-          id="groups"
-          .addElem=${() =>
-            this.triggerGroupDecBuilderForm(
-              Initializers.groupDec,
-              () => {},
-              (v) => addGroupDec(v, this)
-            )}
-        >
-          <span slot="icon" class="material-symbols-outlined">folder</span>
-          ${map(
-            this.groups,
-            (g) =>
-              html` ${g}
-                <div slot="elems"></div>`
-          )}
-        </subtree-branch>`
+      ${map(
+        this.groups,
+        (g) => html`<subtree-branch slot="subtree"> ${g} </subtree-branch>`
+      )}
+      ${map(
+        this.datasets,
+        (d) => html`<subtree-branch slot="subtree"> ${d} </subtree-branch>`
+      )}
+      ${map(
+        this.attribs,
+        (a) => html`<subtree-branch slot="subtree"> ${a} </subtree-branch>`
+      )}
+      ${map(
+        this.links,
+        (l) => html`<subtree-branch slot="subtree"> ${l} </subtree-branch>`
       )}
       ${when(
-        this.datasets.length > 0 || !this.minimized,
-        () => html` <subtree-branch
-          ?disabled=${this.disabled}
-          slot="subtree"
-          id="datasets"
-          .addElem=${() =>
-            this.triggerDatasetDecBuilderForm(
-              Initializers.datasetDec,
-              () => {},
-              (d) => addDatasetDec(d, this)
-            )}
-        >
-          <span slot="icon" class="material-symbols-outlined">dataset</span>
-          ${map(
-            datasets,
-            (d) =>
-              html` ${d}
-                <div slot="elems"></div>`
-          )}
-        </subtree-branch>`
-      )}
-      ${when(
-        datasets.length > 0 || !this.minimized,
-        () => html` <subtree-branch
-          ?disabled=${this.disabled}
-          slot="subtree"
-          id="attributes"
-          .addElem=${() =>
-            this.triggerAttribDecBuilderForm(
-              Initializers.attributeDec,
-              () => {},
-              (a) => {
-                addAttributeDec(a, this);
-                this.requestUpdate();
-              }
-            )}
-        >
-          <span slot="icon" class="material-symbols-outlined">edit_note</span>
-          ${map(
-            this.attribs,
-            (a) =>
-              html` ${a}
-                <div slot="elems"></div>`
-          )}
-        </subtree-branch>`
-      )}
-      ${when(
-        this.links.length > 0 || !this.minimized,
+        !this.minimized,
         () => html`
-          <subtree-branch
-            ?disabled=${this.disabled}
-            slot="subtree"
-            id="links"
-            .lastBranch=${allBranchesFilled}
-            .addElem=${() =>
-              this.triggerLinkDecBuilderForm(
-                Initializers.linkDec,
-                () => {},
-                (l) => addLinkDec(l, this)
-              )}
-          >
-            <span slot="icon" class="material-symbols-outlined">link</span>
-            ${map(
-              this.links,
-              (link) =>
-                html` ${link}
-                  <div slot="elems"></div>`
-            )}
+          ${map(
+            this.inheritedGroups,
+            (g) => html`
+              <subtree-branch slot="subtree">
+                <div class="keyword" slot="icon">inherits</div>
+                ${g}
+              </subtree-branch>
+            `
+          )}
+          ${map(
+            this.inheritedDatasets,
+            (d) => html`
+              <subtree-branch slot="subtree">
+                <div class="keyword" slot="icon">inherits</div>
+                ${d}
+              </subtree-branch>
+            `
+          )}
+          ${map(
+            this.inheritedAttribs,
+            (a) => html`
+              <subtree-branch slot="subtree">
+                <div class="keyword" slot="icon">inherits</div>
+                ${a}
+              </subtree-branch>
+            `
+          )}
+          ${map(
+            this.inheritedLinks,
+            (l) => html`
+              <subtree-branch slot="subtree">
+                <div class="keyword" slot="icon">inherits</div>
+                ${l}
+              </subtree-branch>
+            `
+          )}
+          <subtree-branch slot="subtree">
+            <span slot="icon" class="material-symbols-outlined">folder</span>
+            <light-button
+              slot="elem"
+              ?disabled=${this.disabled}
+              @click=${() =>
+                this.triggerGroupDecBuilderForm(
+                  Initializers.groupDec,
+                  () => {},
+                  (g) => {
+                    addGroupDec(g, this);
+                    this.requestUpdate();
+                  }
+                )}
+            >
+              <span class="material-symbols-outlined" style="font-size:1.3em"
+                >add</span
+              >
+            </light-button>
           </subtree-branch>
-        `
-      )}
-      ${when(
-        !allBranchesFilled,
-        () => html`<hidden-subtree slot="subtree"></hidden-subtree>`
+          <subtree-branch slot="subtree">
+            <span slot="icon" class="material-symbols-outlined">dataset</span>
+            <light-button
+              slot="elem"
+              ?disabled=${this.disabled}
+              @click=${() =>
+                this.triggerDatasetDecBuilderForm(
+                  Initializers.datasetDec,
+                  () => {},
+                  (d) => {
+                    addDatasetDec(d, this);
+                    this.requestUpdate();
+                  }
+                )}
+            >
+              <span class="material-symbols-outlined" style="font-size:1.3em"
+                >add</span
+              >
+            </light-button>
+          </subtree-branch>
+          <subtree-branch slot="subtree">
+            <span slot="icon" class="material-symbols-outlined">edit_note</span>
+            <light-button
+              slot="elem"
+              ?disabled=${this.disabled}
+              @click=${() =>
+                this.triggerAttribDecBuilderForm(
+                  Initializers.attributeDec,
+                  () => {},
+                  (a) => {
+                    addAttributeDec(a, this);
+                    this.requestUpdate();
+                  }
+                )}
+            >
+              <span class="material-symbols-outlined" style="font-size:1.3em"
+                >add</span
+              >
+            </light-button>
+          </subtree-branch>
+          <subtree-branch slot="subtree" .lastBranch=${true}>
+            <span slot="icon" class="material-symbols-outlined">link</span>
+            <light-button
+              slot="elem"
+              ?disabled=${this.disabled}
+              @click=${() =>
+                this.triggerLinkDecBuilderForm(
+                  Initializers.linkDec,
+                  () => {},
+                  (l) => {
+                    addLinkDec(l, this);
+                    this.requestUpdate();
+                  }
+                )}
+            >
+              <span class="material-symbols-outlined" style="font-size:1.3em"
+                >add</span
+              >
+            </light-button>
+          </subtree-branch>
+        `,
+        () =>
+          html`<hidden-subtree
+            slot="subtree"
+            .lastBranch=${true}
+          ></hidden-subtree>`
       )}
     `;
   }
@@ -576,8 +612,13 @@ export class DatasetSubtree extends NdxInputElem<HasDatasetSubtree> {
   @property({ type: Boolean })
   disabled = false;
 
+  // Important! Don't add to these directly, use the add functions.
+  // It could mess up equality checks
   @state()
   attribs: AttribDecElem[] = [];
+
+  @state()
+  inheritedAttribs: AttribDecElem[] = [];
 
   @property({ type: Boolean })
   minimized = false;
@@ -586,35 +627,52 @@ export class DatasetSubtree extends NdxInputElem<HasDatasetSubtree> {
   triggerAttribDecBuilderForm: Trigger<AttributeDec> = (_v, _a, _c) => {};
 
   render() {
-    const allBranchesFilled = this.attribs.length > 0 || !this.minimized;
-    return html` ${when(
-      allBranchesFilled,
+    return html` ${map(
+      this.attribs,
+      (a) =>
+        html`
+          <subtree-branch slot="subtree" ?disabled=${this.disabled}>
+            ${a}
+          </subtree-branch>
+        `
+    )}
+    ${when(
+      !this.minimized,
       () => html`
-        <subtree-branch
-          ?disabled=${this.disabled}
-          slot="subtree"
-          id="attributes"
-          .lastBranch=${allBranchesFilled}
-          .addElem=${() =>
-            this.triggerAttribDecBuilderForm(
-              Initializers.attributeDec,
-              () => {},
-              (a) => {
-                addAttributeDec(a, this);
-                this.requestUpdate();
-              }
-            )}
-        >
+        ${map(
+          this.inheritedAttribs,
+          (a) => html`
+            <subtree-branch slot="subtree" ?disabled=${this.disabled}>
+              <div class="keyword" slot="icon">inherits</div>
+              ${a}
+            </subtree-branch>
+          `
+        )}
+        <subtree-branch slot="subtree" .lastBranch=${true}>
           <span slot="icon" class="material-symbols-outlined">edit_note</span>
-          ${map(
-            this.attribs,
-            (a) =>
-              html` ${a}
-                <div slot="elems"></div>`
-          )}
+          <light-button
+            slot="elem"
+            ?disabled=${this.disabled}
+            @click=${() =>
+              this.triggerAttribDecBuilderForm(
+                Initializers.attributeDec,
+                () => {},
+                (a) => {
+                  addAttributeDec(a, this);
+                  this.requestUpdate();
+                }
+              )}
+          >
+            <span class="material-symbols-outlined" style="font-size:1.3em"
+              >add</span
+            >
+          </light-button>
         </subtree-branch>
       `,
-      () => html` <hidden-subtree slot="subtree"></hidden-subtree> `
+      () =>
+        html`
+          <hidden-subtree slot="subtree" .lastBranch=${true}></hidden-subtree>
+        `
     )}`;
   }
 
