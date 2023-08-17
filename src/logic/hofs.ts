@@ -2,16 +2,17 @@
  * Higher Order Forms
  * An internal library for creating chained forms with programmable logic
  *
- * Uses continuation passing style to allow for backtracking and incrementally building the forms
+ * Uses continuation passing style to allow for backtracking and incrementally
+ * build the form logic all in once place, then call when ready
  *
  * Trigger is a function that takes:
  *  - Initial data
  *  - A callback for exiting the form
- *  - A callback for completing the form that is given the transformed data
+ *  - A callback for completing the form, it is given the transformed data
  *
- * Triggers can be safely combined using:   ** composition operators **
+ * Triggers can be safely combined using: ** composition operators **
  *
- * There are four basic operators
+ * There are four basic operators:
  *   - then (sequential composition)
  *   - branch (if-then-else composition)
  *   - choose (switch composition)

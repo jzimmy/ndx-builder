@@ -544,7 +544,7 @@ export class NamespaceTypesForm extends CPSForm<Namespace> {
 
       .inspector > span.material-symbols-outlined:hover {
         padding: 0.2em;
-        background-color: #ffb3b3;
+        background-color: var(--background-danger);
       }
 
       .inspector > span#close {

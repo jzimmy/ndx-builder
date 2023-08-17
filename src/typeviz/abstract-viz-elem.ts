@@ -2,12 +2,18 @@ import { html, PropertyValueMap, css, CSSResultGroup } from "lit";
 import { property, query } from "lit/decorators.js";
 import { NdxInputElem } from "../inputs/abstract-input";
 import { symbols } from "../styles";
-import { ClassicTypeElemTemplate as TypeElem } from "./template";
+import { TypeElemTemplate as TypeElem } from "./template";
+
+export type Inherited<T> = {
+  readonly inh: T;
+  mine: T;
+};
 
 /* Adds some useful helper functions and styles to inherit.
- * This class has little semantic purpose beyond reducing boilerplate.
+ *
+ * It is very important to note that it is an extension of NdxInputElem,
+ * so interact with it ONLY through the fill(), clear(), and value() methods.
  */
-
 export abstract class BasicTypeElem<T> extends NdxInputElem<T> {
   protected abstract data: T;
   protected abstract icon: string;

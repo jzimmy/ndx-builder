@@ -16,7 +16,7 @@ import {
 import { Initializers } from "../nwb/spec-defaults";
 import { BasicTypeElem } from "./abstract-viz-elem";
 import { GroupSubtree, DatasetSubtree } from "./subtree";
-import { ClassicTypeElemTemplate } from "./template";
+import { TypeElemTemplate } from "./template";
 
 @customElement("link-dec-elem")
 export class LinkDecElem extends BasicTypeElem<LinkDec> {
@@ -204,7 +204,7 @@ export class AnonGroupDecElem extends BasicTypeElem<AnonymousGroupDec> {
   subtreeMinimize = true;
 
   @query("type-elem")
-  typeElem!: ClassicTypeElemTemplate;
+  typeElem!: TypeElemTemplate;
 
   render() {
     return html`
@@ -397,7 +397,7 @@ export class IncDatasetDecElem extends BasicTypeElem<IncDatasetDec> {
           slot="properties"
           .label=${hasQuantity ? "Quantity" : "Name"}
           .value=${quantityOrNameString(this.data.quantityOrName)}
-        >
+        ></labeled-field-value>
       </type-elem>
     `;
   }

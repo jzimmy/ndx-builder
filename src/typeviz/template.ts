@@ -13,7 +13,7 @@ import { choose } from "lit/directives/choose.js";
  */
 
 @customElement("type-elem")
-export class ClassicTypeElemTemplate extends LitElement {
+export class TypeElemTemplate extends LitElement {
   // TODO: find an automatic solution to hide when no slotted children (ideally css)!!!
   @property({ type: Boolean, reflect: true })
   noProperties: boolean = true;
@@ -27,7 +27,7 @@ export class ClassicTypeElemTemplate extends LitElement {
   }
 
   @property({ type: Boolean, reflect: true })
-  hideCloseBtn: boolean = false;
+  hideDeleteBtn: boolean = false;
 
   @property({ type: Function })
   onToggleMinimize = (_: boolean) => {};
@@ -50,7 +50,7 @@ export class ClassicTypeElemTemplate extends LitElement {
   render() {
     return html`
       <type-elem-skeleton
-        .hideDeleteBtn=${this.hideCloseBtn}
+        .hideDeleteBtn=${this.hideDeleteBtn}
         .hideEditBtn=${this.hideEditBtn}
         .onDelete=${this.onDelete}
         .onEdit=${this.onEdit}

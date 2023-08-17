@@ -2,7 +2,13 @@ import { LitElement, html, css } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { map } from "lit/directives/map.js";
 import { when } from "lit/directives/when.js";
-import { AttributeDec, DatasetDec, GroupDec, LinkDec } from "../nwb/spec";
+import {
+  AnonymousDatasetDec,
+  AttributeDec,
+  DatasetDec,
+  GroupDec,
+  LinkDec,
+} from "../nwb/spec";
 import { symbols } from "../styles";
 import { Trigger } from "../logic/hofs";
 import { assertNever } from "../utils";
@@ -18,6 +24,7 @@ import {
 } from "./dec-viz-elems";
 import { HasDatasetIncType, HasGroupIncType } from "..";
 import { removeElem, insertAtIndex } from "../utils";
+import { Inherited } from "./abstract-viz-elem";
 
 @customElement("subtree-branch")
 export class SubtreeBranch extends LitElement {
@@ -282,6 +289,7 @@ function addGroupDec(g: GroupDec, tree: GroupSubtree, index = -1) {
     );
   };
   tree.groups = insertAtIndex(groupDecElem, tree.groups, index);
+  return groupDecElem;
 }
 
 function addDatasetDec(d: DatasetDec, tree: GroupSubtree, index = -1) {
@@ -300,6 +308,7 @@ function addDatasetDec(d: DatasetDec, tree: GroupSubtree, index = -1) {
     );
   };
   tree.datasets = insertAtIndex(datasetDecElem, tree.datasets, index);
+  return datasetDecElem;
 }
 
 function addAttributeDec(a: AttributeDec, tree: GroupSubtree | DatasetSubtree) {
@@ -316,6 +325,7 @@ function addAttributeDec(a: AttributeDec, tree: GroupSubtree | DatasetSubtree) {
       }
     );
   tree.attribs = insertAtIndex(attribDecElem, tree.attribs, -1);
+  return attribDecElem;
 }
 
 function addLinkDec(l: LinkDec, tree: GroupSubtree) {
@@ -332,6 +342,7 @@ function addLinkDec(l: LinkDec, tree: GroupSubtree) {
       }
     );
   tree.links = insertAtIndex(linkDecElem, tree.links, -1);
+  return linkDecElem;
 }
 
 // TODO: rewrite the functions for the inherited types
@@ -339,20 +350,108 @@ function addLinkDec(l: LinkDec, tree: GroupSubtree) {
 
 // This shouldn't allow any edits, but if it has children,
 // then render the children completely and allow edits on them
-function addInheritedGroupDec(_g: GroupDec, _tree: GroupSubtree, _index = -1) {}
+function addInheritedGroupDec(g: GroupDec, tree: GroupSubtree, index = -1) {
+  let groupDecElem = createGroupDecSubtreeElem(g, tree);
+  groupDecElem[1].typeElem.hideDeleteBtn = true;
+  groupDecElem[1].typeElem.hideEditBtn = true;
+  tree.inheritedGroups = insertAtIndex(
+    groupDecElem,
+    tree.inheritedGroups,
+    index
+  );
+}
+
 // This should allow limited edits
-function addInheritedDatasetDec(
-  _d: DatasetDec,
-  _tree: GroupSubtree,
-  _index = -1
-) {}
+function addInheritedDatasetDec(d: DatasetDec, tree: GroupSubtree, index = -1) {
+  let inhDatasetDecElem = createDatasetDecSubtreeElem(d, tree);
+  inhDatasetDecElem[1].typeElem.hideDeleteBtn = true;
+  if (d[0] == "INC") inhDatasetDecElem[1].typeElem.hideEditBtn = true;
+  else if (d[0] == "ANONYMOUS") {
+    let init: Inherited<AnonymousDatasetDec> = {
+      inh: d[1],
+      mine: d[1],
+    };
+
+    // this is hard and ugly, but genuinely complex too
+
+    // It should:
+    //  1. trigger inheritedDatasetDecEditForm with a deep copy of the
+    //    inherited dataset.
+    //  2. At the end of the form,
+    //    ({mine}) => addDatasetDecElem({mine}, this.datasets)
+    //  3. If the new elem is deleted, then remove it from this.datasets, and
+    //    add back to inherited datasets
+    //  4. If the new elem is edited, trigger the form again with the new elem,
+    //    but update the addElem
+    inhDatasetDecElem[1].typeElem.onEdit = () => {
+      init.mine = anonDatasetDecDeepCopy(init.mine);
+      tree.triggerInheritedDatasetDecEditForm(
+        init,
+        () => {},
+        ({ mine }) => {
+          let noLongerInhElem = addDatasetDec(["ANONYMOUS", mine], tree);
+          let inhIndex = tree.inheritedDatasets.indexOf(inhDatasetDecElem);
+          tree.inheritedDatasets = removeElem(
+            tree.inheritedDatasets,
+            inhDatasetDecElem
+          );
+          noLongerInhElem[1].onDelete = () => {
+            tree.datasets = removeElem(tree.datasets, noLongerInhElem);
+            addInheritedDatasetDec(d, tree, inhIndex);
+          };
+          noLongerInhElem[1].onEdit = () =>
+            tree.triggerInheritedDatasetDecEditForm(
+              { inh: d[1], mine: mine },
+              () => {},
+              ({ mine }) => {
+                let i = tree.datasets.indexOf(noLongerInhElem);
+                tree.datasets = removeElem(tree.datasets, inhDatasetDecElem);
+                addDatasetDec(["ANONYMOUS", mine], tree, i);
+              }
+            );
+        }
+      );
+    };
+  } else assertNever(d[0]);
+
+  tree.inheritedDatasets = insertAtIndex(
+    inhDatasetDecElem,
+    tree.inheritedDatasets,
+    index
+  );
+}
+
 // This should allow limited edits
 function addInheritedAttributeDec(
-  _a: AttributeDec,
-  _tree: GroupSubtree | DatasetSubtree
-) {}
+  a: AttributeDec,
+  tree: GroupSubtree | DatasetSubtree
+) {
+  let attribDecElem = createAttribDecSubtreeElem(a);
+  attribDecElem.typeElem.hideDeleteBtn = true;
+  attribDecElem.onEdit = () => {
+    throw new Error("Unimplemented");
+  };
+  tree.inheritedAttribs = insertAtIndex(
+    attribDecElem,
+    tree.inheritedAttribs,
+    -1
+  );
+}
+
 // This should allow no edits
-function addInheritedLinkDec(_l: LinkDec, _tree: GroupSubtree) {}
+function addInheritedLinkDec(l: LinkDec, tree: GroupSubtree) {
+  let linkDecElem = createLinkDecSubtreeElem(l);
+  linkDecElem.typeElem.hideDeleteBtn = true;
+  linkDecElem.typeElem.hideEditBtn = true;
+  tree.inheritedLinks = insertAtIndex(linkDecElem, tree.inheritedLinks, -1);
+}
+
+function anonDatasetDecDeepCopy(d: AnonymousDatasetDec): AnonymousDatasetDec {
+  return {
+    ...d,
+    attributes: d.attributes.map((a) => ({ ...a })),
+  };
+}
 
 @customElement("group-subtree")
 export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
@@ -433,6 +532,13 @@ export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
   triggerGroupDecBuilderForm: Trigger<GroupDec> = (_v, _a, _c) => {};
   @property({ type: Function })
   triggerLinkDecBuilderForm: Trigger<LinkDec> = (_v, _a, _c) => {};
+
+  @property({ type: Function })
+  triggerInheritedDatasetDecEditForm: Trigger<Inherited<AnonymousDatasetDec>> =
+    () => {};
+  @property({ type: Function })
+  triggerInheritedAttribDecEditForm: Trigger<Inherited<AttributeDec>> =
+    () => {};
 
   @property()
   minimized = false;

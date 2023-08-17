@@ -68,6 +68,7 @@ export class TypeElemSkeleton extends LitElement {
             () => html`
               <span
                 class="material-symbols-outlined"
+                id="delete"
                 @click=${(e: Event) => this.onDelete(e.target!)}
                 >delete</span
               >
@@ -105,7 +106,7 @@ export class TypeElemSkeleton extends LitElement {
       }
 
       .row {
-        margin-bottom: 0.5em;
+        margin-bottom: 0.2em;
         margin-right: 0.5em;
       }
 
@@ -113,13 +114,18 @@ export class TypeElemSkeleton extends LitElement {
         cursor: pointer;
         user-select: none;
         margin: 0 0.3em;
+        padding: 0.1em;
       }
 
       .row > span:hover {
         color: var(--clickable-hover);
         background: var(--background-light-button);
-        padding: 0.05em;
         border-radius: 0.2em;
+      }
+
+      .row > span#delete:hover {
+        background: var(--background-danger);
+        color: inherit;
       }
 
       ::slotted([slot="body"]) {
