@@ -1,7 +1,7 @@
 import { customElement, query, state } from "lit/decorators.js";
 import { CPSForm } from "../logic/cpsform";
 import { html } from "lit";
-import { NDXBuilderDefaultShowAndFocus } from "../parent";
+import { NDXBuilderDefaultShowAndFocus } from "..";
 import { FormStepBar } from "../basic-elems";
 import { Initializers } from "../nwb/spec-defaults";
 import codegen from "../codegen/codegen";

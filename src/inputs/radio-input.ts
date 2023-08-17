@@ -119,7 +119,6 @@ export class CheckboxInput extends NdxInputElem<boolean> {
 
   render() {
     return html`
-      <!-- <input type="checkbox" .value=${this.default} /> -->
       <div class=${classMap({ checked: this.checked, checkbox: true })}>
         <span class="material-symbols-outlined">done</span>
       </div>

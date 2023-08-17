@@ -14,7 +14,7 @@ import { ProgressState } from "../logic/cpsform";
 import { assertNever } from "../main";
 import { CPSForm } from "../logic/cpsform";
 import { BasicFormPage } from "./abstract-form";
-import { NDXBuilderDefaultShowAndFocus } from "../parent";
+import { NDXBuilderDefaultShowAndFocus } from "..";
 import { FormStepBar, iconOf } from "../basic-elems";
 import { Initializers } from "../nwb/spec-defaults";
 import { when } from "lit/directives/when.js";

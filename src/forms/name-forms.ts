@@ -4,7 +4,7 @@ import {
   HasTypeNameAndDescription,
   HasDefaultName,
   HasQuantityOrName,
-} from "../parent";
+} from "../index.ts";
 import { BasicTypeBuilderFormPage } from "./abstract-form";
 import { ProgressState } from "../logic/cpsform.ts";
 import "../typeviz/subtree";

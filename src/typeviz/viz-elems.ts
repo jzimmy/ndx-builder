@@ -23,7 +23,7 @@ import {
   HasDefaultName,
   HasGroupIncType,
   HasTypeNameAndDescription,
-} from "../parent";
+} from "..";
 import "../inputs/dtype-input";
 import "../inputs/shape-input";
 import "../inputs/value-input";

@@ -7,6 +7,8 @@ import { choose } from "lit/directives/choose.js";
 import { when } from "lit/directives/when.js";
 import { Quantity } from "../nwb/spec";
 import { NdxInputElem } from "./abstract-input";
+import "./radio-input";
+import "./value-input";
 
 @customElement("quantity-or-name-input")
 export class QuantityOrNameInput extends NdxInputElem<Quantity | string> {

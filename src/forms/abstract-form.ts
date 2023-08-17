@@ -5,7 +5,7 @@ import { FormStepBar } from "../basic-elems";
 import { namespaceBuilderSteps } from "../formchains";
 import { CPSForm, ProgressState } from "../logic/cpsform";
 import { symbols } from "../styles";
-import { NDXBuilderDefaultShowAndFocus } from "../parent";
+import { NDXBuilderDefaultShowAndFocus } from "..";
 
 /*****
  * BasicFormPage

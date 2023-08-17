@@ -1,5 +1,5 @@
 import { customElement, query, state } from "lit/decorators.js";
-import { NDXBuilderDefaultShowAndFocus } from "../parent";
+import { NDXBuilderDefaultShowAndFocus } from "..";
 import {
   AttributeDec,
   DatasetDec,

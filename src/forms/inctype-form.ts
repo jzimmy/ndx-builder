@@ -19,15 +19,16 @@ import {
   LinkDec,
 } from "../nwb/spec";
 import { Initializers } from "../nwb/spec-defaults";
-import { HasGroupIncType, HasDatasetIncType } from "../parent";
 import { symbols } from "../styles";
 import { BasicTypeBuilderFormPage } from "./abstract-form";
+import { HasDatasetIncType, HasGroupIncType } from "../index.ts";
 
 type Inctype<T> = {
   id: string;
   kind: "GROUP" | "DATASET";
   inctype: T;
 };
+
 function collectModulesIntoInctypeGetter(): {
   modname: string;
   inctypes: Inctype<() => CoreType>[];
