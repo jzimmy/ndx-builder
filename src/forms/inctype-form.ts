@@ -23,6 +23,10 @@ import { symbols } from "../styles";
 import { BasicTypeBuilderFormPage } from "./abstract-form";
 import { HasDatasetIncType, HasGroupIncType } from "../index.ts";
 
+// @rly or @oruebel TODO: fill me
+// check src/data/nwbcore.ts for the list of core types
+const commonTypes = new Set([]);
+
 type Inctype<T> = {
   id: string;
   kind: "GROUP" | "DATASET";
@@ -46,6 +50,7 @@ function collectModulesIntoInctypeGetter(): {
   }
   return res;
 }
+
 function generateReverseInctypeMap<T>(
   modules: [string, Inctype<() => T>[]][]
 ): Map<string, { modIndex: number; tyIndex: number }> {
@@ -57,6 +62,21 @@ function generateReverseInctypeMap<T>(
     }
   }
   return res;
+}
+
+function addCommonModule<T>(
+  modules: [string, Inctype<() => T>[]][],
+  commonTypes: Set<string>
+): typeof modules {
+  return [
+    [
+      "Common",
+      modules
+        .flatMap(([_, inctypes]) => inctypes)
+        .filter(({ id }) => commonTypes.has(id)),
+    ],
+    ...modules,
+  ];
 }
 
 abstract class InctypeForm<T, U> extends BasicTypeBuilderFormPage<T> {
@@ -250,16 +270,20 @@ abstract class InctypeForm<T, U> extends BasicTypeBuilderFormPage<T> {
     if (this.coreModulesLookupMap == null) {
       this.coreModulesLookupMap = generateReverseInctypeMap(this.modules);
     }
-    let modIndex = -1;
-    let tyIndex = -1;
+
     let inctype = nwbtype[1];
-    if (inctype[0] == "Core") {
+
+    if (this.firstVisit && inctype[0] == "None") {
+      this.category = InctypeForm.coreCategory;
+      this.selectedModule = 0;
+      this.selectedType = -1;
+    } else if (inctype[0] == "Core") {
       this.category = InctypeForm.coreCategory;
       const indices = this.coreModulesLookupMap.get(
         inctype[1].neurodataTypeDef
       )!;
-      modIndex = indices.modIndex;
-      tyIndex = indices.tyIndex;
+      this.selectedModule = indices.modIndex;
+      this.selectedType = indices.tyIndex;
     } else if (inctype[0] == "None") {
       this.category = InctypeForm.noBaseCategory;
       this.selectedModule = -1;
@@ -272,8 +296,6 @@ abstract class InctypeForm<T, U> extends BasicTypeBuilderFormPage<T> {
     } else {
       assertNever(inctype[0]);
     }
-    this.selectedModule = modIndex;
-    this.selectedType = tyIndex;
   }
 
   body() {
@@ -491,7 +513,7 @@ function collectModulesAsNWBTypes(): [string, Inctype<() => NWBType>[]][] {
 export class GenericInctypeForm extends InctypeForm<TypeDef, NWBType> {
   constructor() {
     super();
-    this.modules = collectModulesAsNWBTypes();
+    this.modules = addCommonModule(collectModulesAsNWBTypes(), commonTypes);
   }
   @state()
   inctype: NWBType = ["GROUP", ["None", null]];

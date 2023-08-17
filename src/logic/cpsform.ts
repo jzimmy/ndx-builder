@@ -22,8 +22,7 @@ export abstract class CPSForm<T>
   // show or hide the form and (usually) focus on the first input
   abstract showAndFocus(visible: boolean): void;
 
-  // dont override
-  run(states?: string[], currState = -1): TriggerK<T> {
+  run(states?: string[], currState = -1): TriggerK<T> & NoOverride {
     const state: ProgressState = {
       states: states || [],
       currState,
@@ -31,6 +30,7 @@ export abstract class CPSForm<T>
     const triggerRec: TriggerK<T> = (val, back, next) => {
       this.fill(val, currState != -1 ? state : undefined);
       this.showAndFocus(true);
+      this._firstVisit = false;
       this.onBack = () => {
         this.showAndFocus(false);
         back();
@@ -40,12 +40,18 @@ export abstract class CPSForm<T>
         next(this.transform(val), () => triggerRec(val, back, next));
       };
     };
-    return triggerRec;
+    return triggerRec as TriggerK<T> & NoOverride;
   }
 
   clearAndHide(): void & NoOverride {
+    this._firstVisit = true;
     this.clear();
     this.showAndFocus(false);
+  }
+
+  private _firstVisit = true;
+  get firstVisit(): boolean {
+    return this._firstVisit;
   }
 
   // next form
@@ -72,12 +78,14 @@ export abstract class CPSForm<T>
     throw new Error(`${typeof this} method onQuit not implemented`);
   };
 }
-// Hacky no override typescript function descriptor, like java `final`
 
+// Hacky no override typescript function annotation, like java `final`
+// Works perfectly though :)
 declare const __special_no_override_unique_symbol: unique symbol;
 type NoOverride = {
   [__special_no_override_unique_symbol]: typeof __special_no_override_unique_symbol;
 };
+
 // ProgressState is used to manage the step bar titles
 export type ProgressState = {
   states: string[];
