@@ -56,6 +56,7 @@ export type Shape = [number | "None", string][];
 
 export type Namespace = {
   name: string;
+  fullname: string;
   doc: string;
   version: [number, number, number];
   authors: [string, string][];

@@ -33,6 +33,7 @@ export class AxesForm<T extends HasAxes> extends BasicTypeBuilderFormPage<T> {
   fill(val: T, progress?: ProgressState | undefined): void {
     this.drawProgressBar(progress);
     this.shapeInput.fill(val.shape);
+    this._selfValidate();
   }
 
   transform(val: T): T {

@@ -7,7 +7,7 @@ import { when } from "lit/directives/when.js";
 import { modules, coreQuery } from "../data/nwbcore";
 import { ProgressState } from "../logic/cps-form.ts";
 import { assertNever } from "../utils.ts";
-import { NamespaceTypesForm } from "./namespace-forms";
+import { NamespaceMyTypesForm } from "./my-types-form.ts";
 import {
   CoreType,
   TypeDef,
@@ -133,7 +133,7 @@ abstract class InctypeForm<T, U> extends BasicTypeBuilderFormPage<T> {
   // To do properly, bundle the data with the environment in the formchain
   get myTypes(): Inctype<U>[] {
     return (
-      document.querySelector("namespace-types-form") as NamespaceTypesForm
+      document.querySelector("namespace-types-form") as NamespaceMyTypesForm
     ).types
       .map(this.fromTypedef)
       .filter((t) => t !== null) as Inctype<U>[];

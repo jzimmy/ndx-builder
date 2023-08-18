@@ -1,4 +1,4 @@
-import { interpreter_script } from "../data/interpreter";
+import { interpreterScript } from "../data/interpreter";
 import { assertNever } from "../utils";
 import {
   AnonymousDatasetDec,
@@ -37,7 +37,7 @@ export default function codegen(ns: Namespace): string {
   let [includes, tydefs] = sortNamespace(ns);
   let types = tydefs.map(convertTypeDef);
 
-  let interpreter = interpreter_script;
+  let interpreter = interpreterScript;
 
   // sed
   interpreter = interpreter.replace('{{"namespace_name"}}', nsSpec.name);
@@ -53,10 +53,10 @@ export default function codegen(ns: Namespace): string {
     '{{"namespace"}}',
     JSON.stringify(nsSpec, null, 2)
   );
-  //   interpreter = interpreter.replace(
-  //     '{{"signature"}}',
-  //     MAGIC_SIGNATURE + obfuscateString(JSON.stringify(ns)) + MAGIC_SIGNATURE
-  //   );
+  interpreter = interpreter.replace(
+    '{{"signature"}}',
+    MAGIC_SIGNATURE + obfuscateString(JSON.stringify(ns)) + MAGIC_SIGNATURE
+  );
 
   return interpreter;
 }
@@ -402,13 +402,12 @@ function sortNamespace(ns: Namespace): [string[], TypeDef[]] {
     }));
 
   let allCore = Array.from(new Set(includes.flatMap((i) => i.coreIncludes)));
-  console.log(topologicalSort(includes).map((i) => i.ty));
   return [allCore, topologicalSort(includes).map((i) => i.ty)];
 
   // reorder typedefs so that all dependencies are defined before use
   type IncludeNode = (typeof includes)[0];
 
-  // uses naive Kahn's algorithm
+  // uses Kahn's algorithm
   function topologicalSort(nodes: IncludeNode[]) {
     const L = new Array<IncludeNode>();
     let S = nodes.filter((n) => n.deps.length == 0);
@@ -418,7 +417,7 @@ function sortNamespace(ns: Namespace): [string[], TypeDef[]] {
       L.push(n);
       let needsN = nodes.filter((m) => m.deps.includes(n.def));
       for (let m of needsN) {
-        m.deps = m.deps.filter((d) => d != n.def);
+        m.deps = m.deps.filter((dep) => dep != n.def);
         if (m.deps.length == 0) S.push(m);
       }
     }

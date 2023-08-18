@@ -12,7 +12,7 @@ export class NdxFormParent extends LitElement {
     let namespaceBuilderTrigger = buildFormChains(this);
 
     namespaceBuilderTrigger(
-      Initializers.namespace,
+      Initializers.exampleNamespace,
       () => {
         throw new Error("Quit form start, unreachable");
       },

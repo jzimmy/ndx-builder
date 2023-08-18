@@ -84,7 +84,7 @@ export class TypenameForm<
     };
   };
 
-  fill(data: T, progress: ProgressState): this {
+  fill(data: T, progress: ProgressState): void {
     this.drawProgressBar(progress);
     if (data.neurodataTypeDef) {
       this.typenameInput.fill(data.neurodataTypeDef);
@@ -97,7 +97,9 @@ export class TypenameForm<
       this.defaultNameInput.fill(name);
       this.allowOverrideInput.fill(!fixed);
     }
-    return this;
+    Promise.resolve(this.updateComplete).then(() => {
+      this._selfValidate();
+    });
   }
 
   static styles = [super.styles, css``];

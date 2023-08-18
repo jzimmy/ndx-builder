@@ -52,7 +52,7 @@ const exampleDatasetTypeDef: DatasetTypeDef = {
       dtype: ["PRIMITIVE", "f32"],
     },
   ],
-  doc: "",
+  doc: "This is an example time series dataset",
   shape: [
     [
       [1, "label"],
@@ -64,7 +64,8 @@ const exampleDatasetTypeDef: DatasetTypeDef = {
 };
 
 const exampleNamespace: Namespace = {
-  name: "MyExampleNamespace",
+  fullname: "MyExampleNamespace",
+  name: "ndx-example",
   doc: "This is an example namespace used to test the app",
   version: [0, 0, 1],
   authors: [
@@ -78,7 +79,8 @@ const exampleNamespace: Namespace = {
 };
 
 const namespace: Namespace = {
-  name: "",
+  name: "ndx-",
+  fullname: "",
   doc: "",
   version: [0, 1, 0],
   authors: [],

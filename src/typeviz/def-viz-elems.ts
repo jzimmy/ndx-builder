@@ -146,18 +146,6 @@ export class GroupTypeDefElem extends TypeDefElem<GroupTypeDef> {
         <group-subtree
           .disabled=${false}
           slot="subtree"
-          .groups=${this.data.groups}
-          .datasets=${this.data.datasets}
-          .attribs=${this.data.attributes}
-          .links=${this.data.links}
-          .setGroupDecs=${(groups: GroupDec[]) =>
-            (this.data = { ...this.data, groups })}
-          .setDatasetDecs=${(datasets: DatasetDec[]) =>
-            (this.data = { ...this.data, datasets })}
-          .setAttributeDecs=${(attributes: AttributeDec[]) =>
-            (this.data = { ...this.data, attributes })}
-          .setLinkDecs=${(links: LinkDec[]) =>
-            (this.data = { ...this.data, links })}
           .triggerAttribDecBuilderForm=${this.triggerAttribDecBuilderForm}
           .triggerLinkDecBuilderForm=${this.triggerLinkDecBuilderForm}
           .triggerGroupDecBuilderForm=${this.triggerGroupDecBuilderForm}
@@ -179,9 +167,9 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
 
   fill(val: DatasetTypeDef): void {
     this.data = val;
-    Promise.resolve(this.updateComplete).then(() =>
-      this.datasetSubtree.fill(val)
-    );
+    this.datasetSubtree.fill(val);
+    // Promise.resolve(this.updateComplete).then(() =>
+    // );
   }
 
   value(): DatasetTypeDef {
@@ -265,9 +253,6 @@ export class DatasetTypeDefElem extends TypeDefElem<DatasetTypeDef> {
         <dataset-subtree
           .disabled=${false}
           slot="subtree"
-          .attribs=${this.data.attributes}
-          .setAttributeDecs=${(attributes: AttributeDec[]) =>
-            (this.data = { ...this.data, attributes })}
           .triggerAttribDecBuilderForm=${this.triggerAttribDecBuilderForm}
         ></dataset-subtree>
       </type-elem>

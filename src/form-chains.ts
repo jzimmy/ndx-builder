@@ -16,9 +16,9 @@ import {
 } from "./forms/inctype-form";
 import {
   NamespaceStartForm,
-  NamespaceTypesForm,
   NamespaceMetadataForm,
 } from "./forms/namespace-forms";
+import { NamespaceMyTypesForm } from "./forms/my-types-form";
 import {
   AttributeDec,
   GroupTypeDef,
@@ -40,7 +40,6 @@ import { DatasetTypeVizForm, GroupTypeVizForm } from "./forms/typeviz-form";
 import { LinkInfoForm } from "./forms/link-form";
 import { DtypeForm } from "./forms/dtype-form";
 import { AnonDecNameForm, IncDecNameForm } from "./forms/name-forms";
-import codegen from "./codegen/codegen";
 
 // this good place to get a sense of overall workflow
 export const namespaceBuilderSteps = [
@@ -236,7 +235,7 @@ export function buildFormChains(parent: LitElement): Trigger<Namespace> {
     )
   )
     .then(
-      new NamespaceTypesForm(typedefBuilderTrigger, typedefEditorTrigger),
+      new NamespaceMyTypesForm(typedefBuilderTrigger, typedefEditorTrigger),
       namespaceBuilderSteps,
       0
     )

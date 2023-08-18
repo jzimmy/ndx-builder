@@ -1,4 +1,4 @@
-import { customElement, query, state } from "lit/decorators.js";
+import { customElement, query } from "lit/decorators.js";
 import { NDXBuilderDefaultShowAndFocus } from "..";
 import {
   AttributeDec,
@@ -11,7 +11,6 @@ import {
 import { TemplateResult, html } from "lit";
 import { CPSFormController, Trigger } from "../logic/hofs";
 import { CPSForm, ProgressState } from "../logic/cps-form";
-import { Initializers } from "../nwb/spec-defaults";
 import "../typeviz/viz-utils";
 import { FormStepBar } from "../basic-elems";
 import { DatasetTypeDefElem, GroupTypeDefElem } from "../typeviz/def-viz-elems";
@@ -87,16 +86,12 @@ export class GroupTypeVizForm extends TypeVizForm<GroupTypeDef> {
   triggerDatasetDecBuilderForm: Trigger<DatasetDec>;
   triggerGroupDecBuilderForm: Trigger<GroupDec>;
 
-  @state()
-  groupDef: GroupTypeDef = { ...Initializers.groupTypeDef };
-
   @query("group-def-elem")
   groupDefElem!: GroupTypeDefElem;
 
   body(): TemplateResult<1> {
     return html`
       <group-def-elem
-        .data=${this.groupDef}
         .triggerAttribDecBuilderForm=${this.triggerAttribDecBuilderForm}
         .triggerLinkDecBuilderForm=${this.triggerLinkDecBuilderForm}
         .triggerDatasetDecBuilderForm=${this.triggerDatasetDecBuilderForm}
@@ -107,23 +102,7 @@ export class GroupTypeVizForm extends TypeVizForm<GroupTypeDef> {
 
   fill(val: GroupTypeDef, progress?: ProgressState | undefined): void {
     this.drawProgressBar(progress);
-    if (
-      this.groupDef.attributes.length == 0 &&
-      this.groupDef.groups.length == 0 &&
-      this.groupDef.links.length == 0 &&
-      this.groupDef.datasets.length == 0
-    ) {
-      let internalData = this.groupDefElem.value();
-      this.groupDef = {
-        ...val,
-        links: internalData.links,
-        attributes: internalData.attributes,
-        groups: internalData.groups,
-        datasets: internalData.datasets,
-      };
-    } else {
-      this.groupDef = val;
-    }
+    this.groupDefElem.fill(val);
   }
 
   transform(_: GroupTypeDef): GroupTypeDef {
@@ -131,7 +110,7 @@ export class GroupTypeVizForm extends TypeVizForm<GroupTypeDef> {
   }
 
   clear(): void {
-    this.groupDef = { ...Initializers.groupTypeDef };
+    this.groupDefElem.clear();
   }
 }
 
@@ -144,16 +123,12 @@ export class DatasetTypeVizForm extends TypeVizForm<DatasetTypeDef> {
 
   triggerAttribDecBuilderForm: Trigger<AttributeDec>;
 
-  @state()
-  datasetDef: DatasetTypeDef = { ...Initializers.datasetTypeDef };
-
   @query("dataset-def-elem")
   datasetDefElem!: DatasetTypeDefElem;
 
   body(): TemplateResult<1> {
     return html`
       <dataset-def-elem
-        .data=${this.datasetDef}
         .triggerAttribDecBuilderForm=${this.triggerAttribDecBuilderForm}
       ></dataset-def-elem>
     `;
@@ -161,15 +136,7 @@ export class DatasetTypeVizForm extends TypeVizForm<DatasetTypeDef> {
 
   fill(val: DatasetTypeDef, progress?: ProgressState | undefined): void {
     this.drawProgressBar(progress);
-    if (this.attributes.length == 0) {
-      this.datasetDef = {
-        ...val,
-        attributes: this.datasetDefElem.value().attributes,
-      };
-    } else {
-      this.datasetDef = val;
-    }
-    console.log(this.datasetDef);
+    this.datasetDefElem.fill(val);
   }
 
   transform(_val: DatasetTypeDef): DatasetTypeDef {
@@ -177,6 +144,6 @@ export class DatasetTypeVizForm extends TypeVizForm<DatasetTypeDef> {
   }
 
   clear(): void {
-    this.datasetDef = { ...Initializers.datasetTypeDef };
+    this.datasetDefElem.clear();
   }
 }

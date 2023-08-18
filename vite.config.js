@@ -1,3 +1,4 @@
 export default {
-    base: "/ndx-builder/"
+    base: "/ndx-builder/",
+    assetsInclude: ["**/*.py?inline"]
 }

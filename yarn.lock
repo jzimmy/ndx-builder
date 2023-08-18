@@ -112,13 +112,6 @@
   resolved "https://registry.yarnpkg.com/@esbuild/win32-x64/-/win32-x64-0.17.19.tgz#8cfaf2ff603e9aabb910e9c0558c26cf32744061"
   integrity sha512-lAhycmKnVOuRYNtRtatQR1LPQf2oYCkRGkSFnseDAKPl8lu5SOsK/e1sXe5a0Pc5kHIHe6P2I/ilntNv2xf3cA==
 
-"@lit-labs/motion@^1.0.3":
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/@lit-labs/motion/-/motion-1.0.3.tgz#8ca5c6a002acd9fa2cb1a45c5a325e369a00880c"
-  integrity sha512-y62SxlUTeFtoQTS8/KqAnOnOTdm0FpB23PgFFc99lPj9T5Gg0uktzRmmmqxPaGoNeRg2cLcPpbvK8iEo8CWMoQ==
-  dependencies:
-    lit "^2.0.0"
-
 "@lit-labs/ssr-dom-shim@^1.0.0", "@lit-labs/ssr-dom-shim@^1.1.0":
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@lit-labs/ssr-dom-shim/-/ssr-dom-shim-1.1.1.tgz#64df34e2f12e68e78ac57e571d25ec07fa460ca9"
@@ -174,6 +167,11 @@ fsevents@~2.3.2:
   resolved "https://registry.yarnpkg.com/fsevents/-/fsevents-2.3.2.tgz#8a526f78b8fdf4623b709e0b975c52c24c02fd1a"
   integrity sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==
 
+highlight.js@^11.8.0:
+  version "11.8.0"
+  resolved "https://registry.yarnpkg.com/highlight.js/-/highlight.js-11.8.0.tgz#966518ea83257bae2e7c9a48596231856555bb65"
+  integrity sha512-MedQhoqVdr0U6SSnWPzfiadUcDHfN/Wzq25AkXiQv9oiOO/sG0S7XkvpFIqWBl9Yq1UYyYOOVORs5UW2XlPyzg==
+
 js-yaml@^4.1.0:
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-4.1.0.tgz#c1fb65f8f5017901cdd2c951864ba18458a10602"
@@ -197,7 +195,7 @@ lit-html@^2.7.0:
   dependencies:
     "@types/trusted-types" "^2.0.2"
 
-lit@^2.0.0, lit@^2.7.2:
+lit@^2.7.2:
   version "2.7.5"
   resolved "https://registry.yarnpkg.com/lit/-/lit-2.7.5.tgz#60bc82990cfad169d42cd786999356dcf79b035f"
   integrity sha512-i/cH7Ye6nBDUASMnfwcictBnsTN91+aBjXoTHF2xARghXScKxpD4F4WYI+VLXg9lqbMinDfvoI7VnZXjyHgdfQ==

@@ -36,8 +36,10 @@ export abstract class ValueInput<T> extends NdxInputElem<T> {
 
 @customElement("string-input")
 export class StringInput extends ValueInput<string> {
+  validationRegex: RegExp = /./;
+
   isValid: () => boolean = () => {
-    return this.inputElem.value != "";
+    return this.validationRegex.test(this.inputElem.value) || !this.required;
   };
 
   fill(val: string): void {
@@ -53,32 +55,18 @@ export class StringInput extends ValueInput<string> {
 
 @customElement("name-input")
 export class NameInput extends StringInput {
-  isValid: () => boolean = () => {
-    return !this.required && this.inputElem.value != "";
-  };
+  validationRegex = new RegExp(/^[a-zA-Z_][a-zA-Z_0-9]*$/);
 }
 
 @customElement("namespace-name-input")
 export class NamespaceNameInput extends StringInput {
-  isValid: () => boolean = () => {
-    return this.inputElem.value.match(/^ndx-[a-zA-Z_][a-zA-Z_0-9]*$/) != null;
-  };
+  validationRegex: RegExp = new RegExp(/^ndx-[a-zA-Z\-][a-zA-Z0-9\-]*$/);
 }
 
 @customElement("doc-input")
-export class DocInput extends ValueInput<string> {
+export class DocInput extends StringInput {
   @query("textarea")
   inputElem!: HTMLInputElement;
-
-  isValid: () => boolean = () => this.inputElem.value != "";
-  fill(val: string): void {
-    this.inputElem.value = val;
-    this.onInteraction();
-  }
-  value(): string | null {
-    if (!this.isValid()) return null;
-    return this.inputElem.value;
-  }
   render() {
     return html`
       <div>${this.label}</div>

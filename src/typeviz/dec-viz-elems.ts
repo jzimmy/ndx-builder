@@ -346,10 +346,8 @@ export class AnonDatasetDecElem extends BasicTypeElem<AnonymousDatasetDec> {
           .value=${this.data.dtype[1]}
         ></labeled-field-value>
         <dataset-subtree
-          .attribs=${this.data.attributes}
-          .setAttributeDecs=${(attributes: AttributeDec[]) =>
-            (this.data = { ...this.data, attributes })}
           .minimized=${this.subtreeMinimize}
+          .triggerAttribDecBuilderForm=${this.triggerAttribDecBuilderForm}
           slot="subtree"
         ></dataset-subtree>
       </type-elem>

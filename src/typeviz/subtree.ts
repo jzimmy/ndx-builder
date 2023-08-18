@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { map } from "lit/directives/map.js";
 import { when } from "lit/directives/when.js";
 import {
@@ -325,6 +325,7 @@ function addAttributeDec(a: AttributeDec, tree: GroupSubtree | DatasetSubtree) {
       }
     );
   tree.attribs = insertAtIndex(attribDecElem, tree.attribs, -1);
+  console.log(tree.attribs);
   return attribDecElem;
 }
 
@@ -345,9 +346,6 @@ function addLinkDec(l: LinkDec, tree: GroupSubtree) {
   return linkDecElem;
 }
 
-// TODO: rewrite the functions for the inherited types
-// no delete, special edit, added to tree.inherited<Some>Decs
-
 // This shouldn't allow any edits, but if it has children,
 // then render the children completely and allow edits on them
 function addInheritedGroupDec(g: GroupDec, tree: GroupSubtree, index = -1) {
@@ -355,7 +353,7 @@ function addInheritedGroupDec(g: GroupDec, tree: GroupSubtree, index = -1) {
   groupDecElem[1].typeElem.hideDeleteBtn = true;
   groupDecElem[1].typeElem.hideEditBtn = true;
   tree.inheritedGroups = insertAtIndex(
-    groupDecElem,
+    visible(groupDecElem),
     tree.inheritedGroups,
     index
   );
@@ -363,51 +361,59 @@ function addInheritedGroupDec(g: GroupDec, tree: GroupSubtree, index = -1) {
 
 // This should allow limited edits
 function addInheritedDatasetDec(d: DatasetDec, tree: GroupSubtree, index = -1) {
-  let inhDatasetDecElem = createDatasetDecSubtreeElem(d, tree);
-  inhDatasetDecElem[1].typeElem.hideDeleteBtn = true;
-  if (d[0] == "INC") inhDatasetDecElem[1].typeElem.hideEditBtn = true;
+  let inhDatasetDec = visible(createDatasetDecSubtreeElem(d, tree));
+  inhDatasetDec.elem[1].typeElem.hideDeleteBtn = true;
+  if (d[0] == "INC") inhDatasetDec.elem[1].typeElem.hideEditBtn = true;
   else if (d[0] == "ANONYMOUS") {
     let init: Inherited<AnonymousDatasetDec> = {
       inh: d[1],
       mine: d[1],
     };
 
-    // this is hard and ugly, but genuinely complex too
+    // this is hard, dense and ugly, but genuinely complex as well
 
-    // It should:
-    //  1. trigger inheritedDatasetDecEditForm with a deep copy of the
-    //    inherited dataset.
-    //  2. At the end of the form,
-    //    ({mine}) => addDatasetDecElem({mine}, this.datasets)
-    //  3. If the new elem is deleted, then remove it from this.datasets, and
-    //    add back to inherited datasets
-    //  4. If the new elem is edited, trigger the form again with the new elem,
-    //    but update the addElem
-    inhDatasetDecElem[1].typeElem.onEdit = () => {
+    // This function adds an edited inherited elem to the main datasets list
+    // with some caveats.
+    //
+    // it hides the inherited version
+    // onDelete it makes the inherited visible
+    // onEdit it deletes this version and calls the function recursively to apply other rules
+    const addEditedInheritedElem = ({ mine }: typeof init) => {
+      let noLongerInhElem = addDatasetDec(["ANONYMOUS", mine], tree);
+      inhDatasetDec.visible = false;
+      noLongerInhElem[1].onDelete = () => {
+        tree.datasets = removeElem(tree.datasets, noLongerInhElem);
+        inhDatasetDec.visible = true;
+      };
+      noLongerInhElem[1].onEdit = () =>
+        tree.triggerInheritedDatasetDecEditForm(
+          { inh: d[1], mine: mine },
+          () => {},
+          (v) => {
+            tree.datasets = removeElem(tree.datasets, noLongerInhElem);
+            addEditedInheritedElem(v);
+          }
+        );
+    };
+
+    inhDatasetDec.elem[1].typeElem.onEdit = () => {
       init.mine = anonDatasetDecDeepCopy(init.mine);
       tree.triggerInheritedDatasetDecEditForm(
         init,
         () => {},
         ({ mine }) => {
           let noLongerInhElem = addDatasetDec(["ANONYMOUS", mine], tree);
-          let inhIndex = tree.inheritedDatasets.indexOf(inhDatasetDecElem);
-          tree.inheritedDatasets = removeElem(
-            tree.inheritedDatasets,
-            inhDatasetDecElem
-          );
+          let inhIndex = tree.inheritedDatasets.indexOf(inhDatasetDec);
+          inhDatasetDec.visible = false;
           noLongerInhElem[1].onDelete = () => {
             tree.datasets = removeElem(tree.datasets, noLongerInhElem);
             addInheritedDatasetDec(d, tree, inhIndex);
           };
           noLongerInhElem[1].onEdit = () =>
             tree.triggerInheritedDatasetDecEditForm(
-              { inh: d[1], mine: mine },
+              { inh: d[1], mine },
               () => {},
-              ({ mine }) => {
-                let i = tree.datasets.indexOf(noLongerInhElem);
-                tree.datasets = removeElem(tree.datasets, inhDatasetDecElem);
-                addDatasetDec(["ANONYMOUS", mine], tree, i);
-              }
+              addEditedInheritedElem
             );
         }
       );
@@ -415,7 +421,7 @@ function addInheritedDatasetDec(d: DatasetDec, tree: GroupSubtree, index = -1) {
   } else assertNever(d[0]);
 
   tree.inheritedDatasets = insertAtIndex(
-    inhDatasetDecElem,
+    inhDatasetDec,
     tree.inheritedDatasets,
     index
   );
@@ -428,11 +434,9 @@ function addInheritedAttributeDec(
 ) {
   let attribDecElem = createAttribDecSubtreeElem(a);
   attribDecElem.typeElem.hideDeleteBtn = true;
-  attribDecElem.onEdit = () => {
-    throw new Error("Unimplemented");
-  };
+  attribDecElem.onEdit = () => {};
   tree.inheritedAttribs = insertAtIndex(
-    attribDecElem,
+    visible(attribDecElem),
     tree.inheritedAttribs,
     -1
   );
@@ -443,7 +447,11 @@ function addInheritedLinkDec(l: LinkDec, tree: GroupSubtree) {
   let linkDecElem = createLinkDecSubtreeElem(l);
   linkDecElem.typeElem.hideDeleteBtn = true;
   linkDecElem.typeElem.hideEditBtn = true;
-  tree.inheritedLinks = insertAtIndex(linkDecElem, tree.inheritedLinks, -1);
+  tree.inheritedLinks = insertAtIndex(
+    visible(linkDecElem),
+    tree.inheritedLinks,
+    -1
+  );
 }
 
 function anonDatasetDecDeepCopy(d: AnonymousDatasetDec): AnonymousDatasetDec {
@@ -453,26 +461,42 @@ function anonDatasetDecDeepCopy(d: AnonymousDatasetDec): AnonymousDatasetDec {
   };
 }
 
+function visible<T>(elem: T) {
+  return {
+    elem,
+    visible: true,
+  };
+}
+
+type Hideable<T> = {
+  elem: T;
+  visible: boolean;
+};
+
 @customElement("group-subtree")
 export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
   firstFocusableElem?: HTMLElement | undefined;
 
   fill(val: HasGroupSubtree | (HasGroupSubtree & HasGroupIncType)): void {
+    console.log(val);
     // don't overwrite me if you are empty
     if (
-      val.attributes.length == 0 &&
-      val.links.length == 0 &&
-      val.datasets.length == 0 &&
-      val.groups.length == 0
-    )
-      return;
+      val.attributes.length != 0 ||
+      val.links.length != 0 ||
+      val.datasets.length != 0 ||
+      val.groups.length != 0
+    ) {
+      this.groups = [];
+      this.links = [];
+      this.datasets = [];
+      this.groups = [];
+      for (let a of val.attributes) addAttributeDec(a, this);
+      for (let l of val.links) addLinkDec(l, this);
+      for (let d of val.datasets) addDatasetDec(d, this);
+      for (let g of val.groups) addGroupDec(g, this);
+    }
 
-    this.clear();
-    for (let a of val.attributes) addAttributeDec(a, this);
-    for (let l of val.links) addLinkDec(l, this);
-    for (let d of val.datasets) addDatasetDec(d, this);
-    for (let g of val.groups) addGroupDec(g, this);
-
+    this.clearInherited();
     if ("neurodataTypeInc" in val && val.neurodataTypeInc[0] == "Typedef") {
       let incty = val.neurodataTypeInc[1];
       for (let a of incty.attributes) addInheritedAttributeDec(a, this);
@@ -498,6 +522,14 @@ export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
     this.links = [];
     this.datasets = [];
     this.groups = [];
+    this.clearInherited();
+  }
+
+  clearInherited() {
+    this.inheritedAttribs = [];
+    this.inheritedLinks = [];
+    this.inheritedDatasets = [];
+    this.inheritedGroups = [];
   }
 
   @property({ type: Boolean })
@@ -505,24 +537,16 @@ export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
 
   // Important! Don't add to these directly, use add<Some>Dec()
   // It could mess up equality checks
-  @state()
   attribs: AttribDecElem[] = [];
-  @state()
   links: LinkDecElem[] = [];
-  @state()
   datasets: DatasetDecElem[] = [];
-  @state()
   groups: GroupDecElem[] = [];
 
   // Don't add either to these, use addInherited<Some>Dec()
-  @state()
-  inheritedAttribs: AttribDecElem[] = [];
-  @state()
-  inheritedLinks: LinkDecElem[] = [];
-  @state()
-  inheritedDatasets: DatasetDecElem[] = [];
-  @state()
-  inheritedGroups: GroupDecElem[] = [];
+  inheritedAttribs: Hideable<AttribDecElem>[] = [];
+  inheritedLinks: Hideable<LinkDecElem>[] = [];
+  inheritedDatasets: Hideable<DatasetDecElem>[] = [];
+  inheritedGroups: Hideable<GroupDecElem>[] = [];
 
   @property({ type: Function })
   triggerAttribDecBuilderForm: Trigger<AttributeDec> = (_v, _a, _c) => {};
@@ -545,6 +569,10 @@ export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
   typedef = false;
 
   render() {
+    console.log("groups", this.groups);
+    console.log("datasets", this.datasets);
+    console.log("attribs", this.attribs);
+    console.log("links", this.links);
     return html`
       ${map(
         this.groups,
@@ -565,41 +593,45 @@ export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
       ${when(
         !this.minimized,
         () => html`
-          ${map(
-            this.inheritedGroups,
-            (g) => html`
-              <subtree-branch slot="subtree">
-                <div class="keyword" slot="icon">inherits</div>
-                ${g}
-              </subtree-branch>
-            `
+          ${map(this.inheritedGroups, ({ elem, visible }) =>
+            visible
+              ? html`
+                  <subtree-branch slot="subtree">
+                    <div class="keyword" slot="icon">inherits</div>
+                    ${elem}
+                  </subtree-branch>
+                `
+              : html``
           )}
-          ${map(
-            this.inheritedDatasets,
-            (d) => html`
-              <subtree-branch slot="subtree">
-                <div class="keyword" slot="icon">inherits</div>
-                ${d}
-              </subtree-branch>
-            `
+          ${map(this.inheritedDatasets, ({ elem, visible }) =>
+            visible
+              ? html`
+                  <subtree-branch slot="subtree">
+                    <div class="keyword" slot="icon">inherits</div>
+                    ${elem}
+                  </subtree-branch>
+                `
+              : html``
           )}
-          ${map(
-            this.inheritedAttribs,
-            (a) => html`
-              <subtree-branch slot="subtree">
-                <div class="keyword" slot="icon">inherits</div>
-                ${a}
-              </subtree-branch>
-            `
+          ${map(this.inheritedAttribs, ({ elem, visible }) =>
+            visible
+              ? html`
+                  <subtree-branch slot="subtree">
+                    <div class="keyword" slot="icon">inherits</div>
+                    ${elem}
+                  </subtree-branch>
+                `
+              : html``
           )}
-          ${map(
-            this.inheritedLinks,
-            (l) => html`
-              <subtree-branch slot="subtree">
-                <div class="keyword" slot="icon">inherits</div>
-                ${l}
-              </subtree-branch>
-            `
+          ${map(this.inheritedLinks, ({ visible, elem }) =>
+            visible
+              ? html`
+                  <subtree-branch slot="subtree">
+                    <div class="keyword" slot="icon">inherits</div>
+                    ${elem}
+                  </subtree-branch>
+                `
+              : html``
           )}
           <subtree-branch slot="subtree">
             <span slot="icon" class="material-symbols-outlined">folder</span>
@@ -705,10 +737,13 @@ export class GroupSubtree extends NdxInputElem<HasGroupSubtree> {
 export class DatasetSubtree extends NdxInputElem<HasDatasetSubtree> {
   firstFocusableElem?: HTMLElement | undefined;
   fill(val: HasDatasetSubtree | (HasDatasetSubtree & HasDatasetIncType)): void {
-    if (val.attributes.length == 0) return;
+    if (val.attributes.length != 0) {
+      this.clear();
+      for (let a of val.attributes) addAttributeDec(a, this);
+    }
 
-    this.clear();
-    for (let a of val.attributes) addAttributeDec(a, this);
+    this.clearInherited();
+
     if ("neurodataTypeInc" in val && val.neurodataTypeInc[0] == "Typedef") {
       let incty = val.neurodataTypeInc[1];
       for (let a of incty.attributes) addInheritedAttributeDec(a, this);
@@ -721,8 +756,14 @@ export class DatasetSubtree extends NdxInputElem<HasDatasetSubtree> {
     const attribs = this.attribs.map((a) => a.value());
     return { attributes: attribs };
   }
+
   clear(): void {
     this.attribs = [];
+    this.clearInherited();
+  }
+
+  clearInherited(): void {
+    this.inheritedAttribs = [];
   }
 
   @property({ type: Boolean })
@@ -730,11 +771,8 @@ export class DatasetSubtree extends NdxInputElem<HasDatasetSubtree> {
 
   // Important! Don't add to these directly, use the add functions.
   // It could mess up equality checks
-  @state()
   attribs: AttribDecElem[] = [];
-
-  @state()
-  inheritedAttribs: AttribDecElem[] = [];
+  inheritedAttribs: Hideable<AttribDecElem>[] = [];
 
   @property({ type: Boolean })
   minimized = false;
@@ -755,14 +793,15 @@ export class DatasetSubtree extends NdxInputElem<HasDatasetSubtree> {
     ${when(
       !this.minimized,
       () => html`
-        ${map(
-          this.inheritedAttribs,
-          (a) => html`
-            <subtree-branch slot="subtree" ?disabled=${this.disabled}>
-              <div class="keyword" slot="icon">inherits</div>
-              ${a}
-            </subtree-branch>
-          `
+        ${map(this.inheritedAttribs, ({ elem, visible }) =>
+          visible
+            ? html`
+                <subtree-branch slot="subtree" ?disabled=${this.disabled}>
+                  <div class="keyword" slot="icon">inherits</div>
+                  ${elem}
+                </subtree-branch>
+              `
+            : html``
         )}
         <subtree-branch slot="subtree" .lastBranch=${true}>
           <span slot="icon" class="material-symbols-outlined">edit_note</span>
