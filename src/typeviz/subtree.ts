@@ -428,15 +428,34 @@ function addInheritedDatasetDec(d: DatasetDec, tree: GroupSubtree, index = -1) {
 }
 
 // This should allow limited edits
+// see above for explanation, basically the same code
 function addInheritedAttributeDec(
   a: AttributeDec,
   tree: GroupSubtree | DatasetSubtree
 ) {
-  let attribDecElem = createAttribDecSubtreeElem(a);
-  attribDecElem.typeElem.hideDeleteBtn = true;
-  attribDecElem.onEdit = () => {};
+  let inhAttribDec = visible(createAttribDecSubtreeElem(a));
+  inhAttribDec.elem.typeElem.hideDeleteBtn = true;
+  let init: Inherited<AttributeDec> = { inh: a, mine: a };
+  const addEditedInheritedElem = ({ mine }: typeof init) => {
+    let noLongerInhElem = addAttributeDec(mine, tree);
+    inhAttribDec.visible = false;
+    noLongerInhElem.onDelete = () => {
+      tree.attribs = removeElem(tree.attribs, noLongerInhElem);
+      inhAttribDec.visible = true;
+    };
+    noLongerInhElem.onEdit = () =>
+      tree.triggerInheritedAttribDecEditForm(
+        { inh: a, mine },
+        () => {},
+        (v) => {
+          tree.attribs = removeElem(tree.attribs, noLongerInhElem);
+          addEditedInheritedElem(v);
+        }
+      );
+  };
+  inhAttribDec.elem.onEdit = () => {};
   tree.inheritedAttribs = insertAtIndex(
-    visible(attribDecElem),
+    inhAttribDec,
     tree.inheritedAttribs,
     -1
   );
@@ -779,6 +798,10 @@ export class DatasetSubtree extends NdxInputElem<HasDatasetSubtree> {
 
   @property({ type: Function })
   triggerAttribDecBuilderForm: Trigger<AttributeDec> = (_v, _a, _c) => {};
+
+  @property({ type: Function })
+  triggerInheritedAttribDecEditForm: Trigger<Inherited<AttributeDec>> =
+    () => {};
 
   render() {
     return html` ${map(

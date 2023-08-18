@@ -48,6 +48,7 @@ export interface AttributeAndShape {
   shape: Shape[];
   dtype: Dtype;
 }
+
 export function NDXBuilderDefaultShowAndFocus(
   elem: LitElement,
   visibility: boolean,
